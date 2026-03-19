@@ -1,0 +1,112 @@
+# Layer Boundaries — KAS App Architecture Constitution
+# Defines intra-block layering rules following Clean Architecture
+# Enforced by lint:architecture CI job
+#
+# Wave 2 Bridge Work: Establishes dependency direction rules
+# to prevent circular dependencies and maintain clean separation
+
+version: 1
+created: 2026-03-19
+description: |
+  Defines which layers can depend on which other layers within Block 3.
+  Follows Clean Architecture: dependencies point inward toward the domain.
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                           UI Layer                              │
+  │                    (screens, components)                        │
+  │  ─────────────────────────────────────────────────────────────  │
+  │                       Adapters Layer                            │
+  │                  (database, external APIs)                      │
+  │  ─────────────────────────────────────────────────────────────  │
+  │                        Ports Layer                              │
+  │                    (interfaces, types)                          │
+  │  ─────────────────────────────────────────────────────────────  │
+  │                     Application Layer                           │
+  │                  (use cases, business logic)                    │
+  │  ─────────────────────────────────────────────────────────────  │
+  │                       Domain Layer                              │
+  │                (entities, value objects, rules)                 │
+  └─────────────────────────────────────────────────────────────────┘
+
+layers:
+  domain:
+    description: Core business entities, value objects, and invariants
+    path_patterns:
+      - "src/core/types/**"
+    can_import_from: []
+    cannot_import_from:
+      - application
+      - ports
+      - adapters
+      - ui
+
+  application:
+    description: Business logic, use cases, orchestration
+    path_patterns:
+      - "src/engines/**"
+    can_import_from:
+      - domain
+    cannot_import_from:
+      - ports
+      - adapters
+      - ui
+
+  ports:
+    description: Interfaces and contracts for external dependencies
+    path_patterns:
+      - "src/core/context/**"
+      - "src/core/navigation/**"
+    can_import_from:
+      - domain
+      - application
+    cannot_import_from:
+      - adapters
+      - ui
+
+  adapters:
+    description: Implementations of ports — database, external APIs
+    path_patterns:
+      - "src/data/**"
+    can_import_from:
+      - domain
+      - application
+      - ports
+    cannot_import_from:
+      - ui
+
+  ui:
+    description: React components, screens, visual presentation
+    path_patterns:
+      - "src/screens/**"
+      - "src/components/**"
+      - "src/hooks/**"
+    can_import_from:
+      - domain
+      - application
+      - ports
+      - adapters
+    cannot_import_from: []
+
+# Special rules for cross-cutting concerns
+exceptions:
+  - description: Hooks may access all layers as orchestration points
+    path: "src/hooks/**"
+    may_import_from:
+      - domain
+      - application
+      - ports
+      - adapters
+
+  - description: Context providers orchestrate initialization
+    path: "src/core/context/*Provider.tsx"
+    may_import_from:
+      - application  # engines/spec-initializer.ts
+      - adapters     # data/database-adapter.ts
+
+# Violation severity
+violations:
+  ui_imports_domain: warning  # OK but prefer application layer
+  adapters_imports_ui: error
+  application_imports_ui: error
+  domain_imports_anything: error
+  circular_dependency: error

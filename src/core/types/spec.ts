@@ -88,6 +88,12 @@ export interface SpecMeta {
   generation_confidence: number;
   version_history: VersionHistoryEntry[];
   customizations: string[];
+  // Version lineage fields (Wave 1 Bridge Work)
+  template_family?: string;
+  template_version?: number;
+  spec_version?: number;
+  // Policy version for event envelope governance (Wave 2 Bridge Work)
+  policy_version?: number;
 }
 
 // ──────────────────────────────────────────

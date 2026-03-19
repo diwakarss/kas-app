@@ -208,6 +208,59 @@ describe("Schema Engine — generateDDL", () => {
     expect(events).toContain("data_json TEXT");
   });
 
+  // Wave 2 Bridge Work: Extended event envelope columns
+  test("_events table includes change_class column (Wave 2)", () => {
+    const spec = makeSpec([
+      { name: "Item", display_name: "Item", display_name_plural: "Items", icon: "📦", fields: [], relationships: [] },
+    ]);
+    const ddl = generateDDL(spec);
+    const events = ddl.find((s) => s.includes("CREATE TABLE") && s.includes("_events"));
+    expect(events).toContain("change_class TEXT");
+  });
+
+  test("_events table includes spec_version column (Wave 2)", () => {
+    const spec = makeSpec([
+      { name: "Item", display_name: "Item", display_name_plural: "Items", icon: "📦", fields: [], relationships: [] },
+    ]);
+    const ddl = generateDDL(spec);
+    const events = ddl.find((s) => s.includes("CREATE TABLE") && s.includes("_events"));
+    expect(events).toContain("spec_version INTEGER");
+  });
+
+  test("_events table includes policy_version column (Wave 2)", () => {
+    const spec = makeSpec([
+      { name: "Item", display_name: "Item", display_name_plural: "Items", icon: "📦", fields: [], relationships: [] },
+    ]);
+    const ddl = generateDDL(spec);
+    const events = ddl.find((s) => s.includes("CREATE TABLE") && s.includes("_events"));
+    expect(events).toContain("policy_version INTEGER");
+  });
+
+  test("_events table includes diff_ref column (Wave 2)", () => {
+    const spec = makeSpec([
+      { name: "Item", display_name: "Item", display_name_plural: "Items", icon: "📦", fields: [], relationships: [] },
+    ]);
+    const ddl = generateDDL(spec);
+    const events = ddl.find((s) => s.includes("CREATE TABLE") && s.includes("_events"));
+    expect(events).toContain("diff_ref TEXT");
+  });
+
+  // Wave 2 Bridge Work: _schema_version table for migration traceability
+  test("generates _schema_version table (Wave 2)", () => {
+    const spec = makeSpec([
+      { name: "Item", display_name: "Item", display_name_plural: "Items", icon: "📦", fields: [], relationships: [] },
+    ]);
+    const ddl = generateDDL(spec);
+    const schemaVersion = ddl.find((s) => s.includes("CREATE TABLE") && s.includes("_schema_version"));
+    expect(schemaVersion).toBeDefined();
+    expect(schemaVersion).toContain("id TEXT PRIMARY KEY");
+    expect(schemaVersion).toContain("before_version INTEGER NOT NULL");
+    expect(schemaVersion).toContain("after_version INTEGER NOT NULL");
+    expect(schemaVersion).toContain("applied_statements TEXT NOT NULL");
+    expect(schemaVersion).toContain("success INTEGER NOT NULL");
+    expect(schemaVersion).toContain("applied_at TEXT");
+  });
+
   test("generates FTS5 sync triggers (insert, update, delete)", () => {
     const spec = makeSpec([
       {

@@ -181,6 +181,53 @@ describe('Performance Benchmarks', () => {
     });
   });
 
+  /**
+   * Wave 2 Performance Gate P3: Search results <300ms
+   * CI-enforced threshold. Failure blocks merge.
+   */
+  describe('P3: Search results gate (<300ms)', () => {
+    it('should return search results in <300ms for 500 records', () => {
+      // Ensure we have 500+ students
+      const adapter = benchDb.getAdapter();
+      const countResult = adapter.getFirst<{ cnt: number }>('SELECT COUNT(*) as cnt FROM student');
+      if ((countResult?.cnt ?? 0) < 500) {
+        benchDb.seedStudents(500);
+      }
+
+      const query = buildSearchQueryFallback('student', 'Student', ['name', 'phone'], 20);
+
+      // Run search 5 times and take average
+      const times: number[] = [];
+      for (let i = 0; i < 5; i++) {
+        const start = performance.now();
+        adapter.getAll(query.sql, query.params);
+        times.push(performance.now() - start);
+      }
+
+      const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+
+      // P3 Gate: Search must complete in <300ms on average
+      expect(avgTime).toBeLessThan(300);
+    });
+
+    it('should handle multiple concurrent searches in <300ms each', () => {
+      const adapter = benchDb.getAdapter();
+      const queries = [
+        buildSearchQueryFallback('student', 'Student 1', ['name', 'phone'], 20),
+        buildSearchQueryFallback('student', 'Student 2', ['name', 'phone'], 20),
+        buildSearchQueryFallback('student', 'Student 3', ['name', 'phone'], 20),
+      ];
+
+      for (const query of queries) {
+        const start = performance.now();
+        adapter.getAll(query.sql, query.params);
+        const elapsed = performance.now() - start;
+
+        expect(elapsed).toBeLessThan(300);
+      }
+    });
+  });
+
   describe('PF-3: Computed field evaluation', () => {
     it('should evaluate computed fields for 1 entity in <50ms', () => {
       const adapter = benchDb.getAdapter();

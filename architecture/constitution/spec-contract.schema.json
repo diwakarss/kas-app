@@ -58,6 +58,11 @@
           "type": "integer",
           "description": "Spec version within this app instance"
         },
+        "policy_version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Policy version for event envelope governance tracking"
+        },
         "version_history": {
           "type": "array",
           "items": {

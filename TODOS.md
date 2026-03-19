@@ -22,6 +22,15 @@
 - `lint-architecture` — Block boundary enforcement (placeholder)
 **Verification:** `npm run validate:spec` and `npm run check:migration-safety` pass
 
+### Performance Verification Procedures (Wave 2)
+**What:** Document manual verification procedures for P1 (cold start <1000ms) and P2 (scroll 60fps) performance gates
+**Why:** These gates cannot be CI-automated; need clear runbook for release verification
+**Pros:** Ensures performance is verified before every release, creates reproducible process
+**Cons:** Manual step in release process
+**Context:** Wave 2 adds hard thresholds for performance. P3 (search <300ms) is CI-gated, but P1/P2 require Expo DevTools profiling on real device/simulator
+**Depends on:** None
+**Added:** 2026-03-19 via /plan-eng-review (Wave 2)
+
 ## Design
 
 ### Empty State Illustrations

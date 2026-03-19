@@ -52,7 +52,7 @@ export class CrudService {
     const query = buildInsertQuery(tableName, data);
     const result = this.db.run(query.sql, query.params);
 
-    logEvent(this.db, entityType, result.lastInsertRowId, 'created', data);
+    logEvent(this.db, this.spec, entityType, result.lastInsertRowId, 'created', data);
     invalidateCacheForSource(entityType, this.spec);
 
     return result.lastInsertRowId;
@@ -104,7 +104,7 @@ export class CrudService {
     const result = this.db.run(query.sql, query.params);
 
     if (result.changes > 0) {
-      logEvent(this.db, entityType, id, 'updated', data);
+      logEvent(this.db, this.spec, entityType, id, 'updated', data);
       invalidateCache(entityType);
       invalidateCacheForSource(entityType, this.spec);
     }
@@ -122,7 +122,7 @@ export class CrudService {
     const result = this.db.run(query.sql, query.params);
 
     if (result.changes > 0) {
-      logEvent(this.db, entityType, id, 'archived');
+      logEvent(this.db, this.spec, entityType, id, 'archived');
       invalidateCache(entityType);
       invalidateCacheForSource(entityType, this.spec);
     }
