@@ -9,7 +9,7 @@
 
 import initSqlJs from 'sql.js';
 import { InMemoryDatabaseAdapter } from '../../src/data/in-memory-database-adapter';
-import { generateDDL, generateMigration } from '../../src/engines/schema-engine';
+import { generateDDL, generateMigration, recordMigration, getMigrationHistory } from '../../src/engines/schema-engine';
 import type { KASAppSpec, Entity } from '../../src/core/types/spec';
 
 function makeSpec(entities: Entity[]): KASAppSpec {
@@ -320,5 +320,123 @@ describe('Schema Migration — generateMigration', () => {
     expect(migration).toEqual([]);
     expect(migration.some((s) => s.includes('created_at'))).toBe(false);
     expect(migration.some((s) => s.includes('updated_at'))).toBe(false);
+  });
+});
+
+/**
+ * Wave 2 Bridge Work: Migration Recording Tests
+ * Tests for recordMigration with transaction atomicity
+ */
+describe('Schema Migration — recordMigration (Wave 2)', () => {
+  test('records successful migration in _schema_version', () => {
+    // First create the _schema_version table
+    const spec = makeSpec([
+      { name: 'Item', display_name: 'Item', display_name_plural: 'Items', icon: '📦', fields: [], relationships: [] },
+    ]);
+    for (const stmt of generateDDL(spec)) {
+      adapter.execRaw(stmt);
+    }
+
+    const statements = ['CREATE TABLE test_table (id INTEGER PRIMARY KEY)'];
+    const result = recordMigration(adapter, statements, 1, 2);
+
+    expect(result.success).toBe(true);
+    expect(result.before_version).toBe(1);
+    expect(result.after_version).toBe(2);
+    expect(result.applied_statements).toEqual(statements);
+    expect(result.id).toMatch(/^mig_/);
+  });
+
+  test('records empty migration with success', () => {
+    const spec = makeSpec([
+      { name: 'Item', display_name: 'Item', display_name_plural: 'Items', icon: '📦', fields: [], relationships: [] },
+    ]);
+    for (const stmt of generateDDL(spec)) {
+      adapter.execRaw(stmt);
+    }
+
+    const result = recordMigration(adapter, [], 1, 1);
+
+    expect(result.success).toBe(true);
+    expect(result.applied_statements).toEqual([]);
+  });
+
+  test('stores applied_statements as JSON array', () => {
+    const spec = makeSpec([
+      { name: 'Item', display_name: 'Item', display_name_plural: 'Items', icon: '📦', fields: [], relationships: [] },
+    ]);
+    for (const stmt of generateDDL(spec)) {
+      adapter.execRaw(stmt);
+    }
+
+    const statements = [
+      'ALTER TABLE item ADD COLUMN foo TEXT',
+      'ALTER TABLE item ADD COLUMN bar INTEGER',
+    ];
+    recordMigration(adapter, statements, 1, 2);
+
+    const row = adapter.getFirst<{ applied_statements: string }>(
+      'SELECT applied_statements FROM _schema_version LIMIT 1'
+    );
+    expect(row).toBeDefined();
+    expect(JSON.parse(row!.applied_statements)).toEqual(statements);
+  });
+
+  test('getMigrationHistory returns migration records', () => {
+    const spec = makeSpec([
+      { name: 'Item', display_name: 'Item', display_name_plural: 'Items', icon: '📦', fields: [], relationships: [] },
+    ]);
+    for (const stmt of generateDDL(spec)) {
+      adapter.execRaw(stmt);
+    }
+
+    recordMigration(adapter, ['CREATE TABLE t1 (id INTEGER)'], 1, 2);
+    recordMigration(adapter, ['CREATE TABLE t2 (id INTEGER)'], 2, 3);
+
+    const history = getMigrationHistory(adapter, 10);
+
+    expect(history.length).toBe(2);
+    // Both records returned (order depends on applied_at which may be same)
+    const versions = history.map(h => h.after_version).sort();
+    expect(versions).toEqual([2, 3]);
+    expect(history.every(h => h.success)).toBe(true);
+  });
+
+  test('records failure when statement throws', () => {
+    const spec = makeSpec([
+      { name: 'Item', display_name: 'Item', display_name_plural: 'Items', icon: '📦', fields: [], relationships: [] },
+    ]);
+    for (const stmt of generateDDL(spec)) {
+      adapter.execRaw(stmt);
+    }
+
+    // Invalid SQL that will fail
+    const statements = ['INVALID SQL STATEMENT'];
+    const result = recordMigration(adapter, statements, 1, 2);
+
+    expect(result.success).toBe(false);
+    expect(result.before_version).toBe(1);
+    expect(result.after_version).toBe(2);
+
+    // Verify recorded in database with success=0
+    const row = adapter.getFirst<{ success: number }>(
+      'SELECT success FROM _schema_version WHERE id = ?',
+      [result.id]
+    );
+    expect(row?.success).toBe(0);
+  });
+
+  test('generates unique migration IDs', () => {
+    const spec = makeSpec([
+      { name: 'Item', display_name: 'Item', display_name_plural: 'Items', icon: '📦', fields: [], relationships: [] },
+    ]);
+    for (const stmt of generateDDL(spec)) {
+      adapter.execRaw(stmt);
+    }
+
+    const result1 = recordMigration(adapter, [], 1, 1);
+    const result2 = recordMigration(adapter, [], 1, 1);
+
+    expect(result1.id).not.toBe(result2.id);
   });
 });

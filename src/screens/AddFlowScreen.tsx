@@ -173,13 +173,17 @@ export default function AddFlowScreen() {
             disabled={!flow.canAdvance}
             className="rounded-xl items-center"
             style={{
-              backgroundColor: flow.canAdvance ? colors.stream : colors.mist + '30',
+              backgroundColor: flow.canAdvance ? colors.stream : colors.mist + '50',
               paddingVertical: 16,
+              opacity: flow.canAdvance ? 1 : 0.6,
             }}
+            accessibilityLabel={flow.isLastStep ? 'Done, save entry' : 'Next step'}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !flow.canAdvance }}
           >
             <Text
               className="font-inter-medium text-base"
-              style={{ color: flow.canAdvance ? colors.dawn : colors.mist }}
+              style={{ color: flow.canAdvance ? colors.dawn : colors.clay + '80' }}
             >
               {flow.isLastStep ? 'Done' : 'Next'}
             </Text>

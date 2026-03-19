@@ -11,6 +11,7 @@
     "template_family": "shopkeeper",
     "template_version": 1,
     "spec_version": 1,
+    "policy_version": 1,
     "version_history": [
       {
         "version": 1,

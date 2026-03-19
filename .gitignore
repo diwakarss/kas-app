@@ -51,3 +51,4 @@ yarn-error.*
 
 # Screenshots (but not assets)
 wave1-*.png
+.gstack/

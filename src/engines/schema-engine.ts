@@ -203,6 +203,7 @@ export function generateDDL(spec: KASAppSpec): string[] {
   }
 
   // ── _events table (once, after all entity tables) ──
+  // Wave 2 Bridge Work: Extended event envelope for governance tracking
   statements.push(
     `CREATE TABLE IF NOT EXISTS _events (\n` +
     `  id INTEGER PRIMARY KEY AUTOINCREMENT,\n` +
@@ -210,6 +211,10 @@ export function generateDDL(spec: KASAppSpec): string[] {
     `  entity_id INTEGER NOT NULL,\n` +
     `  event_type TEXT NOT NULL,\n` +
     `  data_json TEXT,\n` +
+    `  change_class TEXT DEFAULT 'S',\n` +
+    `  spec_version INTEGER,\n` +
+    `  policy_version INTEGER,\n` +
+    `  diff_ref TEXT,\n` +
     `  created_at TEXT DEFAULT (datetime('now'))\n` +
     `);`
   );
@@ -220,6 +225,18 @@ export function generateDDL(spec: KASAppSpec): string[] {
 
   statements.push(
     `CREATE INDEX IF NOT EXISTS idx_events_created ON _events(created_at);`
+  );
+
+  // ── _schema_version table (Wave 2 Bridge Work: Migration traceability) ──
+  statements.push(
+    `CREATE TABLE IF NOT EXISTS _schema_version (\n` +
+    `  id TEXT PRIMARY KEY,\n` +
+    `  before_version INTEGER NOT NULL,\n` +
+    `  after_version INTEGER NOT NULL,\n` +
+    `  applied_statements TEXT NOT NULL,\n` +
+    `  success INTEGER NOT NULL DEFAULT 1,\n` +
+    `  applied_at TEXT DEFAULT (datetime('now'))\n` +
+    `);`
   );
 
   return statements;
@@ -323,4 +340,123 @@ export function generateMigration(
   }
 
   return statements;
+}
+
+// ───────────────────────────────────────────────
+// Migration Recording (Wave 2 Bridge Work)
+// ───────────────────────────────────────────────
+
+/**
+ * Migration record for _schema_version table.
+ */
+export interface MigrationRecord {
+  id: string;
+  before_version: number;
+  after_version: number;
+  applied_statements: string[];
+  success: boolean;
+  applied_at?: string;
+}
+
+/**
+ * Generate a unique migration ID.
+ */
+function generateMigrationId(): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 8);
+  return `mig_${timestamp}_${random}`;
+}
+
+/**
+ * Apply migration statements atomically and record in _schema_version.
+ *
+ * Wraps all statements in a transaction. On success, records the migration
+ * with success=1. On failure, rolls back and records with success=0.
+ *
+ * @param adapter - Database adapter
+ * @param statements - SQL statements to execute
+ * @param beforeVersion - Spec version before migration
+ * @param afterVersion - Spec version after migration
+ * @returns Migration record with success status
+ */
+export function recordMigration(
+  adapter: import('../data/database-adapter').DatabaseAdapter,
+  statements: string[],
+  beforeVersion: number,
+  afterVersion: number
+): MigrationRecord {
+  const id = generateMigrationId();
+  const statementsJson = JSON.stringify(statements);
+
+  if (statements.length === 0) {
+    // No statements to apply — record empty migration
+    adapter.run(
+      `INSERT INTO _schema_version (id, before_version, after_version, applied_statements, success) VALUES (?, ?, ?, ?, ?)`,
+      [id, beforeVersion, afterVersion, statementsJson, 1]
+    );
+    return {
+      id,
+      before_version: beforeVersion,
+      after_version: afterVersion,
+      applied_statements: statements,
+      success: true,
+    };
+  }
+
+  let success = false;
+
+  try {
+    adapter.transaction(() => {
+      for (const stmt of statements) {
+        adapter.run(stmt);
+      }
+      success = true;
+    });
+  } catch (error) {
+    // Transaction rolled back — record failure
+    success = false;
+  }
+
+  // Record migration result
+  adapter.run(
+    `INSERT INTO _schema_version (id, before_version, after_version, applied_statements, success) VALUES (?, ?, ?, ?, ?)`,
+    [id, beforeVersion, afterVersion, statementsJson, success ? 1 : 0]
+  );
+
+  return {
+    id,
+    before_version: beforeVersion,
+    after_version: afterVersion,
+    applied_statements: statements,
+    success,
+  };
+}
+
+/**
+ * Get migration history from _schema_version.
+ */
+export function getMigrationHistory(
+  adapter: import('../data/database-adapter').DatabaseAdapter,
+  limit: number = 20
+): MigrationRecord[] {
+  const rows = adapter.getAll<{
+    id: string;
+    before_version: number;
+    after_version: number;
+    applied_statements: string;
+    success: number;
+    applied_at: string;
+  }>(
+    `SELECT * FROM _schema_version ORDER BY applied_at DESC LIMIT ?`,
+    [limit]
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    before_version: row.before_version,
+    after_version: row.after_version,
+    applied_statements: JSON.parse(row.applied_statements),
+    success: row.success === 1,
+    applied_at: row.applied_at,
+  }));
 }

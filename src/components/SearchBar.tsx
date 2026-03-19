@@ -30,13 +30,21 @@ export default function SearchBar({ value, onChangeText, onClear, autoFocus }: S
         returnKeyType="search"
         autoCapitalize="none"
         autoCorrect={false}
+        accessibilityLabel="Search students, classes, and payments"
+        accessibilityRole="search"
+        accessibilityHint="Type to search across all your data"
         style={{
           flex: 1, fontFamily: 'Inter_400Regular', fontSize: 16,
           color: colors.clay, paddingVertical: 8,
         }}
       />
       {value.length > 0 && (
-        <Pressable onPress={onClear} className="p-1">
+        <Pressable
+          onPress={onClear}
+          className="p-1"
+          accessibilityLabel="Clear search"
+          accessibilityRole="button"
+        >
           <Text className="text-mist" style={{ fontSize: 16 }}>{'\u2715'}</Text>
         </Pressable>
       )}

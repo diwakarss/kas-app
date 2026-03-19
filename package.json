@@ -13,7 +13,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "validate:spec": "node tools/constitution-compiler/validate.js",
-    "lint:architecture": "echo 'Architecture lint not yet implemented'",
+    "lint:architecture": "depcruise --config .dependency-cruiser.cjs src",
     "check:migration-safety": "node tools/constitution-compiler/check-migration.js",
     "compile:constitution": "ts-node tools/constitution-compiler/compile.ts",
     "prepare": "husky"
@@ -52,6 +52,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^22.15.0",
     "@types/react": "~19.1.0",
+    "dependency-cruiser": "^17.3.9",
     "eslint": "^9.22.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",

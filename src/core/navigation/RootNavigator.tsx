@@ -17,6 +17,7 @@ export default function RootNavigator() {
         ...TransitionPresets.SlideFromRightIOS,
         gestureEnabled: true,
         gestureDirection: 'horizontal',
+        cardStyle: { flex: 1 },
       }}
     >
       <Stack.Screen name="Anchor" component={AnchorScreen} />
