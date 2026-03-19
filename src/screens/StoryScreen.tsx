@@ -155,6 +155,7 @@ export default function StoryScreen() {
         keyExtractor={keyExtractor}
         ListHeaderComponent={ListHeader}
         ListFooterComponent={ListFooter}
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 100 }}
       />
       <FloatingActions />

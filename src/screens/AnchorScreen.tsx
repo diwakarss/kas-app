@@ -103,6 +103,7 @@ export default function AnchorScreen() {
         ListEmptyComponent={
           <EmptyState message={anchorData.emptyMessage} action={anchorData.emptyAction} />
         }
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 100 }}
       />
       <FloatingActions />
