@@ -2,29 +2,25 @@
 
 ## Engineering
 
-### Constitution Files (Pre-Wave 1)
-**What:** Create architecture constitution files before starting Wave 1 implementation
-**Why:** Required by agentic bridge (MVP-BRIDGE-TO-AGENTIC-PATTERNS.md) to enable production-grade governance without refactoring later
-**Pros:** CI enforcement from day 1, version lineage tracking, migration safety
-**Cons:** ~15 min upfront work
-**Context:** Files to create:
+### ~~Constitution Files (Pre-Wave 1)~~ ✅ DONE
+**Status:** Completed 2026-03-19
+**Files created:**
 - `architecture/constitution/spec-contract.schema.json` — Canonical spec validator
 - `architecture/constitution/block-boundaries.yaml` — Block 2/3 dependency rules
 - `architecture/constitution/migration-policy.yaml` — Additive-only constraints
 - `architecture/constitution/agent-policy.yaml` — Change classes S/M/I/R
 - `tools/constitution-compiler/compile.ts` — Generates lint rules, validators
+- `tools/constitution-compiler/validate.js` — Runtime validator
+- `tools/constitution-compiler/check-migration.js` — Migration checker
 - `governance/taste-ledger.md` — Review comment → tooling promotion
-**Depends on:** Nothing — do before Wave 1 execution
-**Added:** 2026-03-19 via /plan-eng-review
 
-### CI Jobs (Wave 1)
-**What:** Add validate:spec and check:migration-safety CI jobs
-**Why:** Enforce spec contract and migration safety from first commit
-**Pros:** Catches spec violations early, prevents destructive migrations
-**Cons:** CI setup time (~10 min)
-**Context:** Jobs run on every PR. Block merge if validation fails.
-**Depends on:** Constitution files must exist first
-**Added:** 2026-03-19 via /plan-eng-review
+### ~~CI Jobs (Wave 1)~~ ✅ DONE
+**Status:** Completed 2026-03-19
+**Jobs configured in `.github/workflows/ci.yml`:**
+- `validate-spec` — Validates spec files against schema
+- `check-migration-safety` — Ensures additive-only migrations
+- `lint-architecture` — Block boundary enforcement (placeholder)
+**Verification:** `npm run validate:spec` and `npm run check:migration-safety` pass
 
 ## Design
 
