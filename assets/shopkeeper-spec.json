@@ -1,0 +1,719 @@
+{
+  "meta": {
+    "spec_id": "shopkeeper-ravi-001",
+    "name": "Ravi Kirana Store",
+    "version": 1,
+    "business_type": "shopkeeper",
+    "created_date": "2026-01-30T00:00:00Z",
+    "base_template": "shopkeeper-v1",
+    "source": "template",
+    "generation_confidence": 0.92,
+    "template_family": "shopkeeper",
+    "template_version": 1,
+    "spec_version": 1,
+    "version_history": [
+      {
+        "version": 1,
+        "date": "2026-01-30T00:00:00Z",
+        "source": "generated",
+        "changes": "Initial spec from shopkeeper template"
+      }
+    ],
+    "customizations": []
+  },
+
+  "entities": [
+    {
+      "name": "Customer",
+      "display_name": "Customer",
+      "display_name_plural": "Customers",
+      "icon": "👤",
+      "fields": [
+        {
+          "name": "name",
+          "display_name": "Name",
+          "type": "text",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "phone",
+          "display_name": "Phone",
+          "type": "phone",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "address",
+          "display_name": "Address",
+          "type": "text",
+          "required": false,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Transaction",
+          "type": "has_many",
+          "foreign_key": "customer_id",
+          "display_in_story": true
+        },
+        {
+          "target": "Credit",
+          "type": "has_many",
+          "foreign_key": "customer_id",
+          "display_in_story": true
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "display_name": "Product",
+      "display_name_plural": "Products",
+      "icon": "📦",
+      "fields": [
+        {
+          "name": "name",
+          "display_name": "Name",
+          "type": "text",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "price",
+          "display_name": "Price",
+          "type": "currency",
+          "required": true,
+          "prefix": "Rs.",
+          "min": 0,
+          "searchable": false
+        },
+        {
+          "name": "category",
+          "display_name": "Category",
+          "type": "choice",
+          "required": false,
+          "options": ["grocery", "dairy", "snacks", "beverages", "household", "other"],
+          "allow_custom": false,
+          "searchable": true
+        },
+        {
+          "name": "stock_quantity",
+          "display_name": "Stock Quantity",
+          "type": "number",
+          "required": false,
+          "min": 0,
+          "searchable": false
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "name": "Transaction",
+      "display_name": "Transaction",
+      "display_name_plural": "Transactions",
+      "icon": "🧾",
+      "fields": [
+        {
+          "name": "customer_id",
+          "display_name": "Customer",
+          "type": "text",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "date",
+          "display_name": "Date",
+          "type": "date",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "amount",
+          "display_name": "Amount",
+          "type": "currency",
+          "required": true,
+          "prefix": "Rs.",
+          "min": 0,
+          "searchable": false
+        },
+        {
+          "name": "items_description",
+          "display_name": "Items",
+          "type": "text",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "payment_method",
+          "display_name": "Payment Method",
+          "type": "choice",
+          "required": false,
+          "options": ["cash", "upi", "credit"],
+          "allow_custom": false,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Customer",
+          "type": "belongs_to",
+          "foreign_key": "customer_id",
+          "display_in_story": false
+        }
+      ]
+    },
+    {
+      "name": "Credit",
+      "display_name": "Credit",
+      "display_name_plural": "Credits",
+      "icon": "📋",
+      "fields": [
+        {
+          "name": "customer_id",
+          "display_name": "Customer",
+          "type": "text",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "amount",
+          "display_name": "Amount",
+          "type": "currency",
+          "required": true,
+          "prefix": "Rs.",
+          "min": 0,
+          "searchable": false
+        },
+        {
+          "name": "date",
+          "display_name": "Date",
+          "type": "date",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "reason",
+          "display_name": "Reason",
+          "type": "text",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "settled",
+          "display_name": "Settled",
+          "type": "toggle",
+          "required": false,
+          "default_value": false,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Customer",
+          "type": "belongs_to",
+          "foreign_key": "customer_id",
+          "display_in_story": false
+        }
+      ]
+    }
+  ],
+
+  "anchor": {
+    "type": "yesterday_summary",
+    "entity": "Transaction",
+    "greeting_template": "Good {time_of_day}, {user_name}",
+    "date_label": "yesterday",
+    "card_display": {
+      "title": "{customer.name}",
+      "subtitle": "Rs.{amount} - {payment_method}",
+      "time_field": "date",
+      "warning_field": "customer.outstanding_balance",
+      "warning_template": "Rs.{customer.outstanding_balance} credit pending",
+      "actions": ["edit", "delete"]
+    },
+    "empty_state": {
+      "message": "No sales yesterday",
+      "action": "Record a sale",
+      "fallback_view": "calendar"
+    },
+    "summary": {
+      "stats": [
+        {
+          "label": "Yesterday's sales",
+          "query": "yesterday_sale_count"
+        },
+        {
+          "label": "Total amount",
+          "query": "yesterday_total_amount"
+        }
+      ]
+    }
+  },
+
+  "story_events": {
+    "Customer": {
+      "events": [
+        {
+          "source": "Transaction",
+          "relationship": "customer_id",
+          "type": "purchase",
+          "display": "{items_description} — Rs.{amount} ({payment_method})",
+          "icon_color": "bloom"
+        },
+        {
+          "source": "Transaction",
+          "relationship": "customer_id",
+          "type": "purchase_cash",
+          "filter": {
+            "field": "payment_method",
+            "value": "cash"
+          },
+          "display": "{items_description} — Rs.{amount} (cash)",
+          "icon_color": "bloom"
+        },
+        {
+          "source": "Transaction",
+          "relationship": "customer_id",
+          "type": "purchase_upi",
+          "filter": {
+            "field": "payment_method",
+            "value": "upi"
+          },
+          "display": "{items_description} — Rs.{amount} (upi)",
+          "icon_color": "stream"
+        },
+        {
+          "source": "Transaction",
+          "relationship": "customer_id",
+          "type": "purchase_credit",
+          "filter": {
+            "field": "payment_method",
+            "value": "credit"
+          },
+          "display": "{items_description} — Rs.{amount} (credit)",
+          "icon_color": "mist"
+        },
+        {
+          "source": "Credit",
+          "relationship": "customer_id",
+          "type": "credit",
+          "display": "Credit: Rs.{amount} — {reason}",
+          "icon_color": "mist"
+        }
+      ],
+      "stats_card": [
+        {
+          "label": "{phone}",
+          "field": "phone"
+        },
+        {
+          "label": "{total_purchases} purchases",
+          "computed": "total_purchases"
+        },
+        {
+          "label": "Rs.{outstanding_balance} pending",
+          "computed": "outstanding_balance"
+        }
+      ],
+      "coming_up": null,
+      "origin": {
+        "display": "{created_at} - {total_purchases} transactions"
+      },
+      "context": {
+        "display": "Customer since {created_at}"
+      }
+    }
+  },
+
+  "add_flows": {
+    "Customer": {
+      "steps": [
+        {
+          "field": "name",
+          "prompt": "Customer name?",
+          "required": true,
+          "keyboard": "default"
+        },
+        {
+          "field": "phone",
+          "prompt": "Phone number?",
+          "required": false,
+          "skip_text": "skip",
+          "keyboard": "phone"
+        },
+        {
+          "field": "address",
+          "prompt": "Address?",
+          "required": false,
+          "skip_text": "skip",
+          "keyboard": "default"
+        }
+      ],
+      "after_add": {
+        "action": "suggest",
+        "text": "Record First Sale",
+        "target": "Transaction",
+        "pre_fill": {
+          "customer_id": "{id}"
+        }
+      }
+    },
+    "Transaction": {
+      "steps": [
+        {
+          "field": "customer_id",
+          "prompt": "Which customer?",
+          "required": true
+        },
+        {
+          "field": "date",
+          "prompt": "Date?",
+          "required": true
+        },
+        {
+          "field": "amount",
+          "prompt": "Total amount?",
+          "required": true,
+          "keyboard": "number",
+          "prefix": "Rs."
+        },
+        {
+          "field": "items_description",
+          "prompt": "What items?",
+          "required": true,
+          "keyboard": "default",
+          "placeholder": "e.g. Rice 5kg, Dal 1kg, Oil"
+        },
+        {
+          "field": "payment_method",
+          "prompt": "Payment method?",
+          "required": true
+        }
+      ],
+      "after_add": {
+        "action": "none"
+      }
+    },
+    "Credit": {
+      "steps": [
+        {
+          "field": "customer_id",
+          "prompt": "Credit for which customer?",
+          "required": true
+        },
+        {
+          "field": "amount",
+          "prompt": "Credit amount?",
+          "required": true,
+          "keyboard": "number",
+          "prefix": "Rs."
+        },
+        {
+          "field": "date",
+          "prompt": "Date?",
+          "required": true
+        },
+        {
+          "field": "reason",
+          "prompt": "Reason for credit?",
+          "required": true,
+          "keyboard": "default",
+          "placeholder": "e.g. Monthly groceries, Emergency purchase"
+        }
+      ],
+      "after_add": {
+        "action": "none"
+      }
+    },
+    "Product": {
+      "steps": [
+        {
+          "field": "name",
+          "prompt": "Product name?",
+          "required": true,
+          "keyboard": "default"
+        },
+        {
+          "field": "price",
+          "prompt": "Price?",
+          "required": true,
+          "keyboard": "number",
+          "prefix": "Rs."
+        },
+        {
+          "field": "category",
+          "prompt": "Category?",
+          "required": false,
+          "skip_text": "skip"
+        },
+        {
+          "field": "stock_quantity",
+          "prompt": "Stock quantity?",
+          "required": false,
+          "skip_text": "skip",
+          "keyboard": "number"
+        }
+      ],
+      "after_add": {
+        "action": "none"
+      }
+    }
+  },
+
+  "search": {
+    "entities": ["Customer", "Product"],
+    "display": {
+      "Customer": "{name} - {phone}",
+      "Product": "{name} - Rs.{price} - {category}"
+    }
+  },
+
+  "calendar": {
+    "entity": "Transaction",
+    "date_field": "date",
+    "display": "{customer.name} - Rs.{amount}",
+    "color_field": "payment_method"
+  },
+
+  "chat_commands": [
+    {
+      "pattern": "add customer {name}",
+      "aliases": ["new customer {name}", "create customer {name}"],
+      "action": {
+        "type": "start_add_flow",
+        "entity": "Customer",
+        "pre_fill": {
+          "name": "{name}"
+        }
+      },
+      "variables": {
+        "name": {
+          "type": "text"
+        }
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "new sale",
+      "aliases": ["add sale", "record sale", "add transaction"],
+      "action": {
+        "type": "start_add_flow",
+        "entity": "Transaction"
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "credit list",
+      "aliases": ["show credits", "pending credits", "who owes", "udhar list"],
+      "action": {
+        "type": "query",
+        "name": "unsettled_credits",
+        "description": "All customers with unsettled credit"
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "today sales",
+      "aliases": ["today's sales", "sales today", "aaj ki sale"],
+      "action": {
+        "type": "query",
+        "name": "today_transactions",
+        "description": "All transactions recorded today"
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "show {name}",
+      "aliases": ["open {name}", "{name}'s story", "find {name}"],
+      "action": {
+        "type": "navigate_to_story",
+        "entity": "Customer",
+        "lookup_field": "name"
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Customer",
+          "field": "name"
+        }
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "record sale {amount} from {name}",
+      "aliases": ["{name} bought {amount}", "sale from {name} {amount}"],
+      "action": {
+        "type": "record",
+        "entity": "Transaction",
+        "fields": {
+          "customer_id": "{name}",
+          "amount": "{amount}",
+          "date": "{today}"
+        }
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Customer",
+          "field": "name"
+        },
+        "amount": {
+          "type": "number"
+        }
+      },
+      "requires_confirmation": true,
+      "confirmation_template": "Record Rs.{amount} sale from {name}?"
+    },
+    {
+      "pattern": "add credit {amount} for {name}",
+      "aliases": ["{name} credit {amount}", "udhar {amount} for {name}"],
+      "action": {
+        "type": "record",
+        "entity": "Credit",
+        "fields": {
+          "customer_id": "{name}",
+          "amount": "{amount}",
+          "date": "{today}"
+        }
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Customer",
+          "field": "name"
+        },
+        "amount": {
+          "type": "number"
+        }
+      },
+      "requires_confirmation": true,
+      "confirmation_template": "Add Rs.{amount} credit for {name}?"
+    }
+  ],
+
+  "business_rules": [
+    {
+      "id": "high_credit",
+      "name": "High credit pending",
+      "entity": "Customer",
+      "condition": {
+        "type": "computed_field_exceeds",
+        "field": "outstanding_balance",
+        "value": 500
+      },
+      "warning": {
+        "message": "Rs.{outstanding_balance} credit pending for {name}",
+        "severity": "warning",
+        "show_in": ["card", "story", "anchor"]
+      },
+      "threshold": {
+        "field": "outstanding_balance",
+        "default_value": 500,
+        "label": "Warn when credit exceeds (Rs.)",
+        "user_adjustable": true
+      }
+    },
+    {
+      "id": "inactive_customer",
+      "name": "Inactive customer",
+      "entity": "Customer",
+      "condition": {
+        "type": "computed_field_exceeds",
+        "field": "days_since_last_visit",
+        "value": 30
+      },
+      "warning": {
+        "message": "{name} hasn't visited in {days_since_last_visit} days",
+        "severity": "info",
+        "show_in": ["story"]
+      },
+      "threshold": {
+        "field": "days_since_last_visit",
+        "default_value": 30,
+        "label": "Warn after inactive (days)",
+        "user_adjustable": true
+      }
+    }
+  ],
+
+  "computed_fields": {
+    "Customer": [
+      {
+        "name": "total_purchases",
+        "display_name": "Total Purchases",
+        "type": "count",
+        "source_entity": "Transaction",
+        "relationship": "customer_id",
+        "format": "number"
+      },
+      {
+        "name": "total_spent",
+        "display_name": "Total Spent",
+        "type": "sum",
+        "source_entity": "Transaction",
+        "source_field": "amount",
+        "relationship": "customer_id",
+        "format": "currency",
+        "prefix": "Rs."
+      },
+      {
+        "name": "total_credit",
+        "display_name": "Total Credit (Unsettled)",
+        "type": "sum",
+        "source_entity": "Credit",
+        "source_field": "amount",
+        "relationship": "customer_id",
+        "filter": {
+          "field": "settled",
+          "condition": "equals",
+          "value": "0"
+        },
+        "format": "currency",
+        "prefix": "Rs."
+      },
+      {
+        "name": "total_settled",
+        "display_name": "Total Settled",
+        "type": "sum",
+        "source_entity": "Credit",
+        "source_field": "amount",
+        "relationship": "customer_id",
+        "filter": {
+          "field": "settled",
+          "condition": "equals",
+          "value": "1"
+        },
+        "format": "currency",
+        "prefix": "Rs."
+      },
+      {
+        "name": "outstanding_balance",
+        "display_name": "Outstanding Balance",
+        "type": "formula",
+        "formula": "total_credit - total_settled",
+        "format": "currency",
+        "prefix": "Rs."
+      },
+      {
+        "name": "days_since_last_visit",
+        "display_name": "Days Since Last Visit",
+        "type": "days_since",
+        "source_entity": "Transaction",
+        "relationship": "customer_id",
+        "date_field": "date",
+        "format": "number",
+        "suffix": "days"
+      },
+      {
+        "name": "last_visit_date",
+        "display_name": "Last Visit",
+        "type": "latest",
+        "source_entity": "Transaction",
+        "relationship": "customer_id",
+        "date_field": "date",
+        "format": "date"
+      }
+    ]
+  }
+}

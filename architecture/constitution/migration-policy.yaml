@@ -1,0 +1,87 @@
+# Migration Policy — KAS App Architecture Constitution
+# Defines constraints for schema evolution
+# Enforced by check:migration-safety CI job
+
+version: 1
+created: 2026-03-19
+description: |
+  All spec.json schema changes must be additive-only.
+  Existing specs must continue to work after updates.
+  This enables backwards compatibility without versioned parsers.
+
+principles:
+  - name: additive_only
+    description: New fields may be added, existing fields never removed
+    enforcement: ci_blocking
+
+  - name: no_type_changes
+    description: Field types cannot change (text → number breaks clients)
+    enforcement: ci_blocking
+
+  - name: optional_new_fields
+    description: New fields must have defaults or be optional
+    enforcement: ci_blocking
+
+  - name: deprecation_before_removal
+    description: Mark deprecated for 2 versions before removal consideration
+    enforcement: warning_only
+
+# Change classification for migrations
+change_classes:
+  safe:
+    description: Always allowed, no review needed
+    examples:
+      - Add new optional field with default
+      - Add new entity type
+      - Add new enum value to choice field
+      - Add new story_event type
+      - Add new computed_field definition
+    ci_action: auto_approve
+
+  review_required:
+    description: Allowed but needs human review
+    examples:
+      - Add new required field (must have migration backfill)
+      - Change field validation constraints (min/max)
+      - Add new relationship type
+      - Modify anchor type behavior
+    ci_action: request_review
+
+  forbidden:
+    description: Never allowed in production
+    examples:
+      - Remove existing field
+      - Rename existing field
+      - Change field type
+      - Remove entity
+      - Remove enum value from choice
+    ci_action: block_merge
+
+# Spec evolution tracking
+versioning:
+  strategy: semantic_within_spec
+  fields:
+    - meta.version           # Increments on every mutation
+    - meta.spec_version      # Major version for breaking changes (manual)
+    - meta.template_version  # Template lineage tracking
+
+# Migration scripts
+migrations:
+  location: migrations/
+  naming_convention: "YYYYMMDD_description.ts"
+  required_exports:
+    - up: "Forward migration function"
+    - down: "Rollback function (optional but recommended)"
+    - validate: "Verification function"
+
+# CI job configuration
+ci_job:
+  name: check:migration-safety
+  triggers:
+    - spec-contract.schema.json changes
+    - Any file in specs/ directory
+    - Any file in migrations/ directory
+  checks:
+    - schema_diff_analysis
+    - backwards_compatibility_test
+    - migration_script_validation

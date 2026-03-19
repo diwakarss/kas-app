@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kas-app.com/schemas/spec-contract.v1.json",
+  "title": "KAS App Spec Contract",
+  "description": "Canonical schema for KAS App spec.json files. Validated in CI via validate:spec job.",
+  "type": "object",
+  "required": ["meta", "entities", "anchor", "story_events", "add_flows", "search"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["spec_id", "name", "version", "business_type", "created_date"],
+      "properties": {
+        "spec_id": {
+          "type": "string",
+          "pattern": "^[a-z]+-[a-z]+-[0-9]+$",
+          "description": "Unique ID: 'tutor-lakshmi-001'"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "User-facing app name"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Increments on every mutation"
+        },
+        "business_type": {
+          "type": "string",
+          "description": "Category: tutor, shopkeeper, event_organizer"
+        },
+        "created_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "base_template": {
+          "type": ["string", "null"],
+          "description": "Template ID this was derived from"
+        },
+        "source": {
+          "type": "string",
+          "enum": ["template", "adapted", "fresh"]
+        },
+        "generation_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "template_family": {
+          "type": "string",
+          "description": "Template family ID for version lineage"
+        },
+        "template_version": {
+          "type": "integer",
+          "description": "Template version number"
+        },
+        "spec_version": {
+          "type": "integer",
+          "description": "Spec version within this app instance"
+        },
+        "version_history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["version", "date", "source", "changes"],
+            "properties": {
+              "version": { "type": "integer" },
+              "date": { "type": "string", "format": "date-time" },
+              "source": { "type": "string", "enum": ["generated", "user", "platform"] },
+              "changes": { "type": "string" }
+            }
+          }
+        },
+        "customizations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "date"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["add_field", "remove_field", "rename_field", "add_entity", "change_anchor", "add_story_event", "change_rule"]
+              },
+              "entity": { "type": "string" },
+              "field": { "type": "string" },
+              "date": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "display_name", "display_name_plural", "fields"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Z][a-zA-Z]*$",
+            "description": "PascalCase entity name"
+          },
+          "display_name": { "type": "string" },
+          "display_name_plural": { "type": "string" },
+          "icon": { "type": "string" },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "display_name", "type", "required"],
+              "properties": {
+                "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+                "display_name": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["text", "number", "currency", "phone", "email", "choice", "date", "datetime", "time", "toggle", "duration", "note", "image"]
+                },
+                "required": { "type": "boolean" },
+                "default_value": {},
+                "prefix": { "type": "string" },
+                "suffix": { "type": "string" },
+                "options": { "type": "array", "items": { "type": "string" } },
+                "allow_custom": { "type": "boolean" },
+                "min": { "type": "number" },
+                "max": { "type": "number" },
+                "searchable": { "type": "boolean" },
+                "added_by": { "type": "string", "enum": ["generated", "user", "platform"] },
+                "added_date": { "type": "string" },
+                "visible": { "type": "boolean" }
+              }
+            }
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["target", "type", "foreign_key"],
+              "properties": {
+                "target": { "type": "string" },
+                "type": { "type": "string", "enum": ["belongs_to", "has_many"] },
+                "foreign_key": { "type": "string" },
+                "display_in_story": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "required": ["type", "entity", "card_display", "empty_state"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["day_schedule", "yesterday_summary", "upcoming_project", "active_list"]
+        },
+        "entity": { "type": "string" },
+        "greeting_template": { "type": "string" },
+        "date_label": { "type": "string" },
+        "card_display": {
+          "type": "object",
+          "required": ["title"],
+          "properties": {
+            "title": { "type": "string" },
+            "subtitle": { "type": "string" },
+            "time_field": { "type": "string" },
+            "warning_field": { "type": "string" },
+            "warning_template": { "type": "string" },
+            "actions": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "empty_state": {
+          "type": "object",
+          "required": ["message"],
+          "properties": {
+            "message": { "type": "string" },
+            "action": { "type": "string" },
+            "fallback_view": { "type": "string" }
+          }
+        },
+        "summary": { "type": "object" }
+      }
+    },
+    "story_events": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "events": { "type": "array" },
+          "stats_card": { "type": "array" },
+          "coming_up": { "type": ["object", "null"] },
+          "origin": { "type": "object" },
+          "context": { "type": "object" }
+        }
+      }
+    },
+    "add_flows": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["steps"],
+        "properties": {
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["field", "prompt", "required"],
+              "properties": {
+                "field": { "type": "string" },
+                "prompt": { "type": "string" },
+                "required": { "type": "boolean" },
+                "keyboard": { "type": "string" },
+                "skip_text": { "type": "string" },
+                "prefix": { "type": "string" },
+                "suffix": { "type": "string" },
+                "placeholder": { "type": "string" }
+              }
+            }
+          },
+          "after_add": {
+            "type": "object",
+            "properties": {
+              "action": { "type": "string", "enum": ["suggest", "navigate", "none"] },
+              "text": { "type": "string" },
+              "target": { "type": "string" },
+              "pre_fill": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "search": {
+      "type": "object",
+      "required": ["entities"],
+      "properties": {
+        "entities": { "type": "array", "items": { "type": "string" } },
+        "display": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "calendar": {
+      "type": "object",
+      "properties": {
+        "entity": { "type": "string" },
+        "date_field": { "type": "string" },
+        "display": { "type": "string" },
+        "color_field": { "type": "string" }
+      }
+    },
+    "chat_commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "action"],
+        "properties": {
+          "pattern": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "action": { "type": "object" },
+          "variables": { "type": "object" },
+          "requires_confirmation": { "type": "boolean" },
+          "confirmation_template": { "type": "string" }
+        }
+      }
+    },
+    "business_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "entity", "condition", "warning"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "entity": { "type": "string" },
+          "condition": { "type": "object" },
+          "warning": { "type": "object" },
+          "threshold": { "type": "object" }
+        }
+      }
+    },
+    "computed_fields": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["name", "display_name", "type"],
+          "properties": {
+            "name": { "type": "string" },
+            "display_name": { "type": "string" },
+            "type": { "type": "string", "enum": ["count", "sum", "formula", "days_since", "latest"] },
+            "source_entity": { "type": "string" },
+            "source_field": { "type": "string" },
+            "relationship": { "type": "string" },
+            "filter": { "type": "object" },
+            "formula": { "type": "string" },
+            "format": { "type": "string" },
+            "prefix": { "type": "string" },
+            "suffix": { "type": "string" },
+            "date_field": { "type": "string" }
+          }
+        }
+      }
+    },
+    "design": {
+      "type": "object",
+      "description": "Optional color/typography overrides"
+    }
+  }
+}

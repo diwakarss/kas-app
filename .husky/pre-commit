@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Atomic commit warning - flag if too many files
+FILE_COUNT=$(git diff --cached --name-only | wc -l | tr -d ' ')
+if [ "$FILE_COUNT" -gt 15 ]; then
+  echo ""
+  echo "⚠️  Warning: $FILE_COUNT files staged."
+  echo "   Consider splitting into smaller atomic commits."
+  echo ""
+fi
+
+# Run typecheck
+npm run typecheck
+
+# Run tests
+npm test

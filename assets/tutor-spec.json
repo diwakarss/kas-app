@@ -1,0 +1,893 @@
+{
+  "meta": {
+    "spec_id": "tutor-lakshmi-001",
+    "name": "Lakshmi Music Academy",
+    "version": 1,
+    "business_type": "tutor",
+    "created_date": "2026-01-29T00:00:00Z",
+    "base_template": "tutor-v1",
+    "source": "template",
+    "generation_confidence": 0.92,
+    "template_family": "tutor",
+    "template_version": 1,
+    "spec_version": 1,
+    "version_history": [
+      {
+        "version": 1,
+        "date": "2026-01-29T00:00:00Z",
+        "source": "generated",
+        "changes": "Initial spec from tutor template"
+      }
+    ],
+    "customizations": []
+  },
+
+  "entities": [
+    {
+      "name": "Student",
+      "display_name": "Student",
+      "display_name_plural": "Students",
+      "icon": "🎓",
+      "fields": [
+        {
+          "name": "name",
+          "display_name": "Name",
+          "type": "text",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "hourly_fee",
+          "display_name": "Hourly Fee",
+          "type": "currency",
+          "required": true,
+          "prefix": "Rs.",
+          "min": 0,
+          "searchable": false
+        },
+        {
+          "name": "phone",
+          "display_name": "Phone",
+          "type": "phone",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "email",
+          "display_name": "Email",
+          "type": "email",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "grade",
+          "display_name": "Grade",
+          "type": "text",
+          "required": false,
+          "searchable": true
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Class",
+          "type": "has_many",
+          "foreign_key": "student_id",
+          "display_in_story": true
+        },
+        {
+          "target": "Payment",
+          "type": "has_many",
+          "foreign_key": "student_id",
+          "display_in_story": true
+        },
+        {
+          "target": "Note",
+          "type": "has_many",
+          "foreign_key": "student_id",
+          "display_in_story": true
+        }
+      ]
+    },
+    {
+      "name": "Class",
+      "display_name": "Class",
+      "display_name_plural": "Classes",
+      "icon": "📚",
+      "fields": [
+        {
+          "name": "student_id",
+          "display_name": "Student",
+          "type": "text",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "datetime",
+          "display_name": "Date & Time",
+          "type": "datetime",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "duration",
+          "display_name": "Duration",
+          "type": "duration",
+          "required": true,
+          "default_value": 60,
+          "searchable": false
+        },
+        {
+          "name": "topic",
+          "display_name": "Topic",
+          "type": "text",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "status",
+          "display_name": "Status",
+          "type": "choice",
+          "required": true,
+          "default_value": "scheduled",
+          "options": ["scheduled", "completed", "rescheduled", "cancelled"],
+          "allow_custom": false,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Student",
+          "type": "belongs_to",
+          "foreign_key": "student_id",
+          "display_in_story": false
+        },
+        {
+          "target": "Note",
+          "type": "has_many",
+          "foreign_key": "class_id",
+          "display_in_story": true
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "display_name": "Payment",
+      "display_name_plural": "Payments",
+      "icon": "💰",
+      "fields": [
+        {
+          "name": "student_id",
+          "display_name": "Student",
+          "type": "text",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "amount",
+          "display_name": "Amount",
+          "type": "currency",
+          "required": true,
+          "prefix": "Rs.",
+          "min": 0,
+          "searchable": false
+        },
+        {
+          "name": "date",
+          "display_name": "Date",
+          "type": "date",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "for_classes",
+          "display_name": "For Classes",
+          "type": "number",
+          "required": false,
+          "min": 1,
+          "searchable": false
+        },
+        {
+          "name": "method",
+          "display_name": "Payment Method",
+          "type": "choice",
+          "required": false,
+          "options": ["Cash", "UPI", "Bank Transfer"],
+          "allow_custom": true,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Student",
+          "type": "belongs_to",
+          "foreign_key": "student_id",
+          "display_in_story": false
+        }
+      ]
+    },
+    {
+      "name": "Note",
+      "display_name": "Note",
+      "display_name_plural": "Notes",
+      "icon": "📝",
+      "fields": [
+        {
+          "name": "student_id",
+          "display_name": "Student",
+          "type": "text",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "class_id",
+          "display_name": "Class",
+          "type": "text",
+          "required": false,
+          "searchable": false
+        },
+        {
+          "name": "date",
+          "display_name": "Date",
+          "type": "date",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "content",
+          "display_name": "Note",
+          "type": "note",
+          "required": true,
+          "searchable": true
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Student",
+          "type": "belongs_to",
+          "foreign_key": "student_id",
+          "display_in_story": false
+        },
+        {
+          "target": "Class",
+          "type": "belongs_to",
+          "foreign_key": "class_id",
+          "display_in_story": false
+        }
+      ]
+    }
+  ],
+
+  "anchor": {
+    "type": "day_schedule",
+    "entity": "Class",
+    "greeting_template": "Good {time_of_day}, {user_name}",
+    "date_label": "today",
+    "card_display": {
+      "title": "{student.name}",
+      "subtitle": "{student.grade} - {topic}",
+      "time_field": "datetime",
+      "warning_field": "student.due_amount",
+      "warning_template": "Rs.{student.due_amount} due",
+      "actions": ["reschedule", "edit", "delete"]
+    },
+    "empty_state": {
+      "message": "No classes today",
+      "action": "Schedule a class",
+      "fallback_view": "calendar"
+    },
+    "summary": {
+      "stats": [
+        {
+          "label": "Today's classes",
+          "query": "today_class_count"
+        },
+        {
+          "label": "This week",
+          "query": "week_class_count"
+        }
+      ]
+    }
+  },
+
+  "story_events": {
+    "Student": {
+      "events": [
+        {
+          "source": "Class",
+          "relationship": "student_id",
+          "type": "completed",
+          "filter": {
+            "field": "status",
+            "value": "completed"
+          },
+          "display": "{datetime} - Completed - {topic}",
+          "icon_color": "bloom"
+        },
+        {
+          "source": "Class",
+          "relationship": "student_id",
+          "type": "rescheduled",
+          "filter": {
+            "field": "status",
+            "value": "rescheduled"
+          },
+          "display": "{datetime} - Rescheduled",
+          "icon_color": "stream"
+        },
+        {
+          "source": "Class",
+          "relationship": "student_id",
+          "type": "cancelled",
+          "filter": {
+            "field": "status",
+            "value": "cancelled"
+          },
+          "display": "{datetime} - Cancelled",
+          "icon_color": "mist"
+        },
+        {
+          "source": "Payment",
+          "relationship": "student_id",
+          "type": "received",
+          "display": "{date} - Rs.{amount} received ({for_classes} classes)",
+          "icon_color": "bloom"
+        },
+        {
+          "source": "Note",
+          "relationship": "student_id",
+          "type": "note",
+          "display": "Note: \"{content}\"",
+          "icon_color": "stream"
+        }
+      ],
+      "stats_card": [
+        {
+          "label": "Rs.{hourly_fee}/hr",
+          "field": "hourly_fee"
+        },
+        {
+          "label": "{grade}",
+          "field": "grade"
+        },
+        {
+          "label": "Rs.{due_amount} due",
+          "computed": "due_amount"
+        }
+      ],
+      "coming_up": {
+        "source": "Class",
+        "relationship": "student_id",
+        "filter": "future",
+        "sort": "asc",
+        "display": "{datetime} - {topic}"
+      },
+      "origin": {
+        "display": "Started {created_at} - {total_classes} classes"
+      },
+      "context": {
+        "display": "Learning since {created_at}"
+      }
+    },
+    "Class": {
+      "events": [
+        {
+          "source": "Note",
+          "relationship": "class_id",
+          "type": "note",
+          "display": "Note: \"{content}\"",
+          "icon_color": "stream"
+        }
+      ],
+      "stats_card": [
+        {
+          "label": "{student.name}",
+          "field": "student.name"
+        },
+        {
+          "label": "{duration}m",
+          "field": "duration"
+        },
+        {
+          "label": "{status}",
+          "field": "status"
+        }
+      ],
+      "coming_up": null,
+      "origin": {
+        "display": "Scheduled {created_at}"
+      },
+      "context": {
+        "display": "{student.name} - {topic}"
+      }
+    }
+  },
+
+  "add_flows": {
+    "Student": {
+      "steps": [
+        {
+          "field": "name",
+          "prompt": "Name?",
+          "required": true,
+          "keyboard": "default"
+        },
+        {
+          "field": "hourly_fee",
+          "prompt": "How much per hour?",
+          "required": true,
+          "keyboard": "number",
+          "prefix": "Rs."
+        },
+        {
+          "field": "phone",
+          "prompt": "Phone number?",
+          "required": false,
+          "skip_text": "skip, add later",
+          "keyboard": "phone"
+        },
+        {
+          "field": "grade",
+          "prompt": "Current grade/level?",
+          "required": false,
+          "skip_text": "skip, add later",
+          "keyboard": "default",
+          "placeholder": "e.g. Grade 4, Beginner, Advanced"
+        }
+      ],
+      "after_add": {
+        "action": "suggest",
+        "text": "Schedule First Class",
+        "target": "Class",
+        "pre_fill": {
+          "student_id": "{id}"
+        }
+      }
+    },
+    "Class": {
+      "steps": [
+        {
+          "field": "student_id",
+          "prompt": "Which student?",
+          "required": true
+        },
+        {
+          "field": "datetime",
+          "prompt": "When?",
+          "required": true
+        },
+        {
+          "field": "duration",
+          "prompt": "How long?",
+          "required": true,
+          "keyboard": "number",
+          "suffix": "minutes",
+          "placeholder": "60"
+        },
+        {
+          "field": "topic",
+          "prompt": "What topic?",
+          "required": false,
+          "skip_text": "skip, add later",
+          "keyboard": "default",
+          "placeholder": "e.g. Scales, Arpeggios, Theory"
+        }
+      ],
+      "after_add": {
+        "action": "none"
+      }
+    },
+    "Payment": {
+      "steps": [
+        {
+          "field": "student_id",
+          "prompt": "Payment from?",
+          "required": true
+        },
+        {
+          "field": "amount",
+          "prompt": "How much?",
+          "required": true,
+          "keyboard": "number",
+          "prefix": "Rs."
+        },
+        {
+          "field": "date",
+          "prompt": "When?",
+          "required": true
+        },
+        {
+          "field": "for_classes",
+          "prompt": "For how many classes?",
+          "required": false,
+          "skip_text": "skip",
+          "keyboard": "number"
+        },
+        {
+          "field": "method",
+          "prompt": "Payment method?",
+          "required": false,
+          "skip_text": "skip"
+        }
+      ],
+      "after_add": {
+        "action": "navigate",
+        "text": "View Student",
+        "target": "Student"
+      }
+    },
+    "Note": {
+      "steps": [
+        {
+          "field": "student_id",
+          "prompt": "Note for?",
+          "required": true
+        },
+        {
+          "field": "content",
+          "prompt": "What's the note?",
+          "required": true,
+          "keyboard": "default",
+          "placeholder": "e.g. Left hand weak on transitions"
+        }
+      ],
+      "after_add": {
+        "action": "none"
+      }
+    }
+  },
+
+  "search": {
+    "entities": ["Student", "Class", "Payment"],
+    "display": {
+      "Student": "{name} - {grade} - {due_warning}",
+      "Class": "{student.name} - {datetime} - {topic}",
+      "Payment": "{student.name} - Rs.{amount} - {date}"
+    }
+  },
+
+  "calendar": {
+    "entity": "Class",
+    "date_field": "datetime",
+    "display": "{time} - {student.name} - {topic}",
+    "color_field": "status"
+  },
+
+  "chat_commands": [
+    {
+      "pattern": "add student {name}",
+      "aliases": ["new student {name}", "create student {name}"],
+      "action": {
+        "type": "start_add_flow",
+        "entity": "Student",
+        "pre_fill": {
+          "name": "{name}"
+        }
+      },
+      "variables": {
+        "name": {
+          "type": "text"
+        }
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "show {name}",
+      "aliases": ["open {name}", "{name}'s story", "find {name}"],
+      "action": {
+        "type": "navigate_to_story",
+        "entity": "Student",
+        "lookup_field": "name"
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Student",
+          "field": "name"
+        }
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "reschedule {name} to {time}",
+      "aliases": ["move {name}'s class to {time}", "change {name} to {time}"],
+      "action": {
+        "type": "update_field",
+        "entity": "Class",
+        "lookup_field": "student.name",
+        "target_field": "datetime"
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Student",
+          "field": "name"
+        },
+        "time": {
+          "type": "datetime"
+        }
+      },
+      "requires_confirmation": true,
+      "confirmation_template": "Reschedule {name}'s class to {time}?"
+    },
+    {
+      "pattern": "who owes money",
+      "aliases": ["outstanding payments", "dues", "who hasn't paid", "pending payments"],
+      "action": {
+        "type": "query",
+        "name": "overdue_students",
+        "description": "Students with due_amount > 0"
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "record payment {amount} from {name}",
+      "aliases": ["{name} paid {amount}", "payment from {name} {amount}"],
+      "action": {
+        "type": "record",
+        "entity": "Payment",
+        "fields": {
+          "student_id": "{name}",
+          "amount": "{amount}",
+          "date": "{today}"
+        }
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Student",
+          "field": "name"
+        },
+        "amount": {
+          "type": "number"
+        }
+      },
+      "requires_confirmation": true,
+      "confirmation_template": "Record Rs.{amount} payment from {name}?"
+    },
+    {
+      "pattern": "add note for {name}: {text}",
+      "aliases": ["note for {name}: {text}", "{name} note: {text}"],
+      "action": {
+        "type": "record",
+        "entity": "Note",
+        "fields": {
+          "student_id": "{name}",
+          "content": "{text}",
+          "date": "{today}"
+        }
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Student",
+          "field": "name"
+        },
+        "text": {
+          "type": "text"
+        }
+      },
+      "requires_confirmation": true,
+      "confirmation_template": "Add note for {name}: \"{text}\"?"
+    },
+    {
+      "pattern": "schedule class for {name} on {time}",
+      "aliases": ["add class for {name} {time}", "book {name} for {time}"],
+      "action": {
+        "type": "start_add_flow",
+        "entity": "Class",
+        "pre_fill": {
+          "student_id": "{name}",
+          "datetime": "{time}"
+        }
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Student",
+          "field": "name"
+        },
+        "time": {
+          "type": "datetime"
+        }
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "next week's classes",
+      "aliases": ["classes next week", "schedule next week", "what's next week"],
+      "action": {
+        "type": "query",
+        "name": "next_week_classes",
+        "description": "All classes scheduled for next week"
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "how much did {name} pay this month",
+      "aliases": ["{name}'s payments this month", "{name} payment history"],
+      "action": {
+        "type": "query",
+        "name": "student_payments_this_month",
+        "description": "Total payments from a student this month"
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Student",
+          "field": "name"
+        }
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "mark {name}'s class as completed",
+      "aliases": ["{name} class done", "complete {name}'s class"],
+      "action": {
+        "type": "update_field",
+        "entity": "Class",
+        "lookup_field": "student.name",
+        "target_field": "status"
+      },
+      "variables": {
+        "name": {
+          "type": "field_value",
+          "entity": "Student",
+          "field": "name"
+        }
+      },
+      "requires_confirmation": true,
+      "confirmation_template": "Mark {name}'s class as completed?"
+    }
+  ],
+
+  "business_rules": [
+    {
+      "id": "overdue_payment",
+      "name": "Payment overdue",
+      "entity": "Student",
+      "condition": {
+        "type": "computed_field_exceeds",
+        "field": "days_since_last_payment",
+        "value": 30
+      },
+      "warning": {
+        "message": "Rs.{due_amount} overdue for {name}",
+        "severity": "warning",
+        "show_in": ["card", "story", "anchor"]
+      },
+      "threshold": {
+        "field": "days_since_last_payment",
+        "default_value": 30,
+        "label": "Warn after (days)",
+        "user_adjustable": true
+      }
+    },
+    {
+      "id": "large_due_amount",
+      "name": "Large outstanding amount",
+      "entity": "Student",
+      "condition": {
+        "type": "computed_field_exceeds",
+        "field": "due_amount",
+        "value": 5000
+      },
+      "warning": {
+        "message": "Rs.{due_amount} outstanding — consider sending a reminder",
+        "severity": "urgent",
+        "show_in": ["story", "notification"]
+      },
+      "threshold": {
+        "field": "due_amount",
+        "default_value": 5000,
+        "label": "Alert when owed more than (Rs.)",
+        "user_adjustable": true
+      }
+    },
+    {
+      "id": "no_classes_scheduled",
+      "name": "No upcoming classes",
+      "entity": "Student",
+      "condition": {
+        "type": "count_below",
+        "field": "upcoming_class_count",
+        "value": 1
+      },
+      "warning": {
+        "message": "No upcoming classes scheduled",
+        "severity": "info",
+        "show_in": ["story"]
+      }
+    }
+  ],
+
+  "computed_fields": {
+    "Student": [
+      {
+        "name": "total_classes",
+        "display_name": "Total Classes",
+        "type": "count",
+        "source_entity": "Class",
+        "relationship": "student_id",
+        "filter": {
+          "field": "status",
+          "condition": "equals",
+          "value": "completed"
+        },
+        "format": "number"
+      },
+      {
+        "name": "total_paid",
+        "display_name": "Total Paid",
+        "type": "sum",
+        "source_entity": "Payment",
+        "source_field": "amount",
+        "relationship": "student_id",
+        "format": "currency",
+        "prefix": "Rs."
+      },
+      {
+        "name": "total_earned",
+        "display_name": "Total Earned",
+        "type": "formula",
+        "formula": "total_classes * hourly_fee",
+        "format": "currency",
+        "prefix": "Rs."
+      },
+      {
+        "name": "due_amount",
+        "display_name": "Amount Due",
+        "type": "formula",
+        "formula": "total_earned - total_paid",
+        "format": "currency",
+        "prefix": "Rs."
+      },
+      {
+        "name": "days_since_last_payment",
+        "display_name": "Days Since Last Payment",
+        "type": "days_since",
+        "source_entity": "Payment",
+        "relationship": "student_id",
+        "date_field": "date",
+        "format": "number",
+        "suffix": "days"
+      },
+      {
+        "name": "upcoming_class_count",
+        "display_name": "Upcoming Classes",
+        "type": "count",
+        "source_entity": "Class",
+        "relationship": "student_id",
+        "filter": {
+          "field": "status",
+          "condition": "equals",
+          "value": "scheduled"
+        },
+        "format": "number"
+      },
+      {
+        "name": "last_class_date",
+        "display_name": "Last Class",
+        "type": "latest",
+        "source_entity": "Class",
+        "relationship": "student_id",
+        "date_field": "datetime",
+        "filter": {
+          "field": "status",
+          "condition": "equals",
+          "value": "completed"
+        },
+        "format": "date"
+      }
+    ],
+    "Class": [
+      {
+        "name": "earnings",
+        "display_name": "Class Earnings",
+        "type": "formula",
+        "formula": "(duration / 60) * student.hourly_fee",
+        "format": "currency",
+        "prefix": "Rs."
+      }
+    ]
+  }
+}

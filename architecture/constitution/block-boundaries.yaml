@@ -1,0 +1,90 @@
+# Block Boundaries — KAS App Architecture Constitution
+# Defines allowed dependency edges between blocks
+# Enforced by lint:architecture CI job
+
+version: 1
+created: 2026-03-19
+description: |
+  Defines which blocks can depend on which other blocks.
+  Violations are flagged in CI.
+
+blocks:
+  block-1-website:
+    description: Public landing page and web preview
+    allowed_dependencies:
+      - block-2-spec-engine  # Request spec generation
+      - block-3-expo-app     # Embed Expo Web preview
+      - block-7-server       # Auth and spec storage API
+    forbidden_dependencies:
+      - block-5-improvement  # Website doesn't do customization
+      - block-8-integrations # Website doesn't trigger integrations
+
+  block-2-spec-engine:
+    description: Intent → spec.json generation
+    allowed_dependencies:
+      - block-7-server       # Store generated specs
+    forbidden_dependencies:
+      - block-3-expo-app     # Spec engine doesn't render
+      - block-5-improvement  # Generation != customization
+      - block-8-integrations # No integrations at generation time
+
+  block-3-expo-app:
+    description: Shell runtime that renders spec.json
+    allowed_dependencies:
+      - block-7-server       # Auth, spec loading, sync
+      - block-8-integrations # Trigger integration actions
+    forbidden_dependencies:
+      - block-2-spec-engine  # App doesn't generate specs
+      - block-1-website      # App doesn't call website
+
+  block-5-improvement:
+    description: Customization and spec evolution
+    allowed_dependencies:
+      - block-2-spec-engine  # Complex changes go through spec engine
+      - block-7-server       # Store spec mutations
+    forbidden_dependencies:
+      - block-3-expo-app     # Improvement engine doesn't render
+      - block-8-integrations # Customization doesn't trigger integrations
+
+  block-7-server:
+    description: Platform server backbone
+    allowed_dependencies: []  # Server is a leaf — no outbound dependencies
+    forbidden_dependencies:
+      - block-1-website
+      - block-2-spec-engine
+      - block-3-expo-app
+      - block-5-improvement
+      - block-8-integrations
+
+  block-8-integrations:
+    description: External service plugins
+    allowed_dependencies:
+      - block-7-server       # Credentials, scheduling, queue
+    forbidden_dependencies:
+      - block-3-expo-app     # Integrations don't call app
+      - block-2-spec-engine  # Integrations don't generate specs
+
+# Internal boundaries within Block 3
+block-3-internal:
+  runtime-core:
+    description: Protected core — boot, nav, auth, sync, policy
+    can_import_from:
+      - external_packages    # React, Expo, etc.
+    cannot_import_from:
+      - spec-runtime         # Core doesn't depend on screens
+      - engines              # Core doesn't depend on engines directly
+
+  spec-runtime:
+    description: Extensible screens and components
+    can_import_from:
+      - runtime-core         # Use core services
+      - engines              # Use data engines
+      - external_packages
+
+  engines:
+    description: Pure logic — schema, CRUD, computed, search
+    can_import_from:
+      - external_packages
+    cannot_import_from:
+      - runtime-core         # Engines are pure, no UI dependencies
+      - spec-runtime

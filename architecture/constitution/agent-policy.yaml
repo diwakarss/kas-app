@@ -1,0 +1,183 @@
+# Agent Policy — KAS App Architecture Constitution
+# Defines change classes and required gates for agentic development
+# Enforced by CI and agent tooling
+
+version: 1
+created: 2026-03-19
+description: |
+  Classifies changes by risk level and defines required gates.
+  Agents must declare change class before executing.
+  Higher risk changes require more verification.
+
+# Change class definitions (S/M/I/R)
+change_classes:
+  S:
+    name: Simple
+    description: Low-risk, localized changes
+    examples:
+      - Fix typo in UI string
+      - Update color token value
+      - Add logging statement
+      - Update documentation
+      - Add test for existing behavior
+    required_gates:
+      - lint_pass
+      - type_check_pass
+    optional_gates:
+      - single_test_pass
+    auto_merge: true
+    max_files_changed: 3
+
+  M:
+    name: Medium
+    description: Standard feature work within established patterns
+    examples:
+      - Add new field to existing entity
+      - Implement new component following existing pattern
+      - Add new story_event handler
+      - Create new computed_field
+      - Add new add_flow step
+    required_gates:
+      - lint_pass
+      - type_check_pass
+      - related_tests_pass
+      - spec_validation_pass
+    optional_gates:
+      - full_test_suite
+    auto_merge: false
+    review_required: automated
+    max_files_changed: 10
+
+  I:
+    name: Invasive
+    description: Cross-cutting changes affecting multiple modules
+    examples:
+      - Add new entity type
+      - Modify navigation structure
+      - Change data sync behavior
+      - Add new screen type
+      - Modify business_rules engine
+    required_gates:
+      - lint_pass
+      - type_check_pass
+      - full_test_suite_pass
+      - spec_validation_pass
+      - block_boundary_check
+      - migration_safety_check
+    optional_gates:
+      - performance_benchmark
+    auto_merge: false
+    review_required: human
+    max_files_changed: 25
+
+  R:
+    name: Radical
+    description: Architectural changes requiring explicit approval
+    examples:
+      - New block creation
+      - Constitution file modification
+      - Core runtime changes
+      - Database schema changes
+      - Authentication flow changes
+      - New integration engine
+    required_gates:
+      - lint_pass
+      - type_check_pass
+      - full_test_suite_pass
+      - spec_validation_pass
+      - block_boundary_check
+      - migration_safety_check
+      - architecture_review
+      - ceo_signoff  # For product-impacting changes
+    auto_merge: false
+    review_required: human_senior
+    requires_rfc: true
+
+# Gate definitions
+gates:
+  lint_pass:
+    command: npm run lint
+    timeout: 60s
+    blocking: true
+
+  type_check_pass:
+    command: npm run typecheck
+    timeout: 120s
+    blocking: true
+
+  related_tests_pass:
+    command: npm run test -- --related
+    timeout: 300s
+    blocking: true
+
+  full_test_suite_pass:
+    command: npm run test
+    timeout: 600s
+    blocking: true
+
+  spec_validation_pass:
+    command: npm run validate:spec
+    timeout: 60s
+    blocking: true
+
+  block_boundary_check:
+    command: npm run lint:architecture
+    timeout: 60s
+    blocking: true
+
+  migration_safety_check:
+    command: npm run check:migration-safety
+    timeout: 120s
+    blocking: true
+
+  architecture_review:
+    type: human_review
+    reviewers:
+      - architecture_team
+    blocking: true
+
+  ceo_signoff:
+    type: human_approval
+    approvers:
+      - product_owner
+    blocking: true
+
+  performance_benchmark:
+    command: npm run benchmark
+    timeout: 300s
+    blocking: false
+
+# Agent behavior rules
+agent_rules:
+  - name: declare_before_execute
+    description: Agent must classify change before making modifications
+    enforcement: tooling
+
+  - name: escalate_on_uncertainty
+    description: If change class unclear, assume higher risk level
+    enforcement: policy
+
+  - name: atomic_commits
+    description: Each change class gets its own commit
+    enforcement: tooling
+
+  - name: rollback_capability
+    description: All changes must be reversible
+    enforcement: policy
+
+  - name: test_before_ship
+    description: Tests must pass before PR creation
+    enforcement: ci_blocking
+
+# Escape hatches (require justification)
+escape_hatches:
+  skip_tests:
+    requires: written_justification
+    approval: human_senior
+    logged: true
+
+  emergency_hotfix:
+    requires: incident_reference
+    approval: on_call_engineer
+    logged: true
+    post_incident_review: required
