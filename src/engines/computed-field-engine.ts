@@ -13,24 +13,11 @@
 
 import { KASAppSpec, ComputedField, Entity } from "../core/types/spec";
 import { DatabaseAdapter } from "../data/database-adapter";
+import { toTableName, q } from "../data/query-builder";
 import { parse, evaluate, extractFieldRefs, FormulaContext } from "./formula-parser";
 
 // Re-export for external use
 export { FormulaContext };
-
-// ===== Table Name Helpers =====
-
-function toTableName(entityName: string): string {
-  return entityName
-    .replace(/([A-Z])/g, (match, p1, offset) =>
-      offset > 0 ? `_${p1.toLowerCase()}` : p1.toLowerCase()
-    );
-}
-
-/** Double-quote a table name to avoid SQLite reserved word collisions. */
-function q(name: string): string {
-  return `"${name}"`;
-}
 
 // ===== Dependency Resolution =====
 

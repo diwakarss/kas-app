@@ -33,8 +33,15 @@ export interface BuiltQuery {
 // Table name helpers
 // ──────────────────────────────────────────
 
+/**
+ * Convert entity name to snake_case table name.
+ * Examples: "Student" → "student", "PaymentRecord" → "payment_record"
+ */
 export function toTableName(entityName: string): string {
-  return entityName.toLowerCase();
+  return entityName
+    .replace(/([A-Z])/g, (match, p1, offset) =>
+      offset > 0 ? `_${p1.toLowerCase()}` : p1.toLowerCase()
+    );
 }
 
 /** Double-quote a table name to avoid SQLite reserved word collisions. */
