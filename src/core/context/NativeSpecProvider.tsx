@@ -1,7 +1,14 @@
+/**
+ * Native Spec Provider
+ *
+ * Uses expo-sqlite for database on native platforms.
+ */
+
 import React, { useState, useEffect, ReactNode } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { ExpoDatabaseAdapter } from '../../data/expo-database-adapter';
-import { initializeSpec, SpecContextValue, SpecContext } from './SpecContext';
+import { initializeSpec } from '../../engines/spec-initializer';
+import { SpecContextValue, SpecContext } from './SpecContext';
 
 interface NativeSpecProviderProps {
   children: ReactNode;

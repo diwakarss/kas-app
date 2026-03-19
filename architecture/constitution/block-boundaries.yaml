@@ -73,6 +73,13 @@ block-3-internal:
     cannot_import_from:
       - spec-runtime         # Core doesn't depend on screens
       - engines              # Core doesn't depend on engines directly
+    exceptions:
+      # Providers (NativeSpecProvider, WebSpecProvider) may import from
+      # engines/spec-initializer.ts for one-time initialization.
+      # SpecContext.tsx itself must NOT import from engines.
+      - file: core/context/*SpecProvider.tsx
+        may_import: engines/spec-initializer.ts
+        reason: Providers orchestrate initialization at app boot
 
   spec-runtime:
     description: Extensible screens and components

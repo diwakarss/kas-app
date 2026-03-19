@@ -1,6 +1,13 @@
+/**
+ * Web Spec Provider
+ *
+ * Uses sql.js (WebAssembly) for in-memory database on web platform.
+ */
+
 import React, { useState, useEffect, ReactNode } from 'react';
 import { createInMemoryAdapter } from '../../data/in-memory-database-adapter';
-import { initializeSpec, SpecContextValue, SpecContext } from './SpecContext';
+import { initializeSpec } from '../../engines/spec-initializer';
+import { SpecContextValue, SpecContext } from './SpecContext';
 
 interface WebSpecProviderProps {
   children: ReactNode;
