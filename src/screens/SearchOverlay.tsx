@@ -28,7 +28,11 @@ export default function SearchOverlay({ visible, onClose }: SearchOverlayProps) 
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
       <SafeAreaView className="flex-1 bg-dawn">
         <View className="flex-row items-center px-5 py-2">
-          <Pressable onPress={() => { search.clear(); onClose(); }}>
+          <Pressable
+            onPress={() => { search.clear(); onClose(); }}
+            accessibilityLabel="Close search"
+            accessibilityRole="button"
+          >
             <Text className="font-inter-medium text-base text-stream">{'\u2715'} Close</Text>
           </Pressable>
         </View>
@@ -55,6 +59,9 @@ export default function SearchOverlay({ visible, onClose }: SearchOverlayProps) 
                   onPress={() => handleResultPress(result.entityType, result.id)}
                   className="px-5 py-3"
                   style={{ borderBottomWidth: 1, borderBottomColor: colors.mist + '15' }}
+                  accessibilityLabel={`${result.display}, ${group.displayName}`}
+                  accessibilityRole="button"
+                  accessibilityHint="Tap to view details"
                 >
                   <Text className="font-inter text-sm text-clay">{result.display}</Text>
                 </Pressable>
