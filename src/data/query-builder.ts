@@ -109,6 +109,21 @@ export function buildGetByIdQuery(tableName: string, id: number): BuiltQuery {
 }
 
 /**
+ * Build a SELECT by multiple IDs query (batch fetch).
+ * Returns empty result if ids array is empty.
+ */
+export function buildGetByIdsQuery(tableName: string, ids: number[]): BuiltQuery {
+  if (ids.length === 0) {
+    return { sql: `SELECT * FROM ${q(tableName)} WHERE 1 = 0`, params: [] };
+  }
+  const placeholders = ids.map(() => '?').join(', ');
+  return {
+    sql: `SELECT * FROM ${q(tableName)} WHERE id IN (${placeholders})`,
+    params: ids,
+  };
+}
+
+/**
  * Build an INSERT statement from a data record.
  * Returns the SQL and the ordered parameter array.
  */

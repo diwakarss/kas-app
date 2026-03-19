@@ -18,6 +18,7 @@ import {
   toTableName,
   buildListQuery,
   buildGetByIdQuery,
+  buildGetByIdsQuery,
   buildInsertQuery,
   buildUpdateQuery,
   buildArchiveQuery,
@@ -64,6 +65,24 @@ export class CrudService {
     const tableName = toTableName(entityType);
     const query = buildGetByIdQuery(tableName, id);
     return this.db.getFirst(query.sql, query.params);
+  }
+
+  /**
+   * Read multiple entities by IDs (batch fetch).
+   * Returns a Map for O(1) lookup by ID.
+   */
+  readMany(entityType: string, ids: number[]): Map<number, Record<string, any>> {
+    const result = new Map<number, Record<string, any>>();
+    if (ids.length === 0) return result;
+
+    const tableName = toTableName(entityType);
+    const query = buildGetByIdsQuery(tableName, ids);
+    const rows = this.db.getAll<Record<string, any>>(query.sql, query.params);
+
+    for (const row of rows) {
+      result.set(row.id, row);
+    }
+    return result;
   }
 
   /**

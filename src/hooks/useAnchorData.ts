@@ -109,12 +109,22 @@ export function useAnchorData(): AnchorData | null {
       }
     }
 
+    // Batch fetch all related entities to avoid N+1 queries
+    let relatedEntitiesMap = new Map<number, Record<string, any>>();
+    if (belongsTo) {
+      const fkIds = rawEntities
+        .map((e) => e[belongsTo.foreign_key])
+        .filter((id): id is number => id != null);
+      const uniqueFkIds = [...new Set(fkIds)];
+      relatedEntitiesMap = crud.readMany(belongsTo.target, uniqueFkIds);
+    }
+
     // Build cards
     const cards: AnchorCard[] = rawEntities.map((entity) => {
-      // Build related data for template resolution
+      // Build related data for template resolution (using pre-fetched batch)
       const relatedMap: Record<string, Record<string, any>> = {};
       if (belongsTo && entity[belongsTo.foreign_key]) {
-        const relatedEntity = crud.read(belongsTo.target, entity[belongsTo.foreign_key]);
+        const relatedEntity = relatedEntitiesMap.get(entity[belongsTo.foreign_key]);
         if (relatedEntity) {
           relatedMap[belongsTo.target.toLowerCase()] = relatedEntity;
         }

@@ -101,6 +101,60 @@ describe('CrudService — Read', () => {
   });
 });
 
+describe('CrudService — ReadMany (Batch)', () => {
+  test('batch reads multiple entities by IDs', () => {
+    const db = createMockDb();
+    // Override getAll to return mock student data
+    db.getAll = jest.fn().mockReturnValue([
+      { id: 1, name: 'Anu' },
+      { id: 2, name: 'Priya' },
+    ]);
+    const crud = new CrudService(db, spec);
+
+    const result = crud.readMany('Student', [1, 2]);
+
+    expect(result.size).toBe(2);
+    expect(result.get(1)?.name).toBe('Anu');
+    expect(result.get(2)?.name).toBe('Priya');
+  });
+
+  test('readMany uses IN clause for batch fetch', () => {
+    const db = createMockDb();
+    const crud = new CrudService(db, spec);
+
+    crud.readMany('Student', [1, 2, 3]);
+
+    const batchCall = db.calls.find(
+      (c) => c.method === 'getAll' && c.args[0].includes('IN')
+    );
+    expect(batchCall).toBeDefined();
+    expect(batchCall!.args[0]).toContain('IN (?, ?, ?)');
+    expect(batchCall!.args[1]).toEqual([1, 2, 3]);
+  });
+
+  test('readMany returns empty Map for empty IDs', () => {
+    const db = createMockDb();
+    const crud = new CrudService(db, spec);
+
+    const result = crud.readMany('Student', []);
+
+    expect(result.size).toBe(0);
+  });
+
+  test('readMany deduplicates returned results by ID', () => {
+    const db = createMockDb();
+    db.getAll = jest.fn().mockReturnValue([
+      { id: 1, name: 'Anu' },
+    ]);
+    const crud = new CrudService(db, spec);
+
+    const result = crud.readMany('Student', [1, 1, 1]);
+
+    expect(result.size).toBe(1);
+    expect(result.get(1)?.name).toBe('Anu');
+  });
+});
+
 describe('CrudService — List', () => {
   test('lists entities with default options (excludes archived)', () => {
     const db = createMockDb();

@@ -7,6 +7,7 @@
 import {
   buildListQuery,
   buildGetByIdQuery,
+  buildGetByIdsQuery,
   buildInsertQuery,
   buildUpdateQuery,
   buildArchiveQuery,
@@ -69,6 +70,26 @@ describe('Query Builder — buildGetByIdQuery', () => {
     const q = buildGetByIdQuery('student', 42);
     expect(q.sql).toBe('SELECT * FROM "student" WHERE id = ?');
     expect(q.params).toEqual([42]);
+  });
+});
+
+describe('Query Builder — buildGetByIdsQuery (Batch)', () => {
+  test('generates SELECT with IN clause for multiple IDs', () => {
+    const q = buildGetByIdsQuery('student', [1, 2, 3]);
+    expect(q.sql).toBe('SELECT * FROM "student" WHERE id IN (?, ?, ?)');
+    expect(q.params).toEqual([1, 2, 3]);
+  });
+
+  test('handles single ID', () => {
+    const q = buildGetByIdsQuery('student', [42]);
+    expect(q.sql).toBe('SELECT * FROM "student" WHERE id IN (?)');
+    expect(q.params).toEqual([42]);
+  });
+
+  test('returns no-match query for empty IDs array', () => {
+    const q = buildGetByIdsQuery('student', []);
+    expect(q.sql).toBe('SELECT * FROM "student" WHERE 1 = 0');
+    expect(q.params).toEqual([]);
   });
 });
 
