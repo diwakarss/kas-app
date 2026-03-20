@@ -1,0 +1,486 @@
+{
+  "meta": {
+    "name": "Spice Garden Indian Cuisine",
+    "business_type": "restaurant",
+    "version": 1,
+    "spec_id": "restaurant-spice-garden-indian-cuisine-mmyna6e2",
+    "created_date": "2026-03-20T08:36:17.498Z",
+    "customizations": [],
+    "version_history": [
+      {
+        "version": 1,
+        "date": "2026-03-20T08:36:17.499Z",
+        "source": "generated",
+        "changes": "Generated for Spice Garden Indian Cuisine"
+      }
+    ]
+  },
+  "entities": [
+    {
+      "name": "Customer",
+      "display_name": "Customer",
+      "display_name_plural": "Customers",
+      "icon": "👤",
+      "fields": [
+        {
+          "name": "name",
+          "display_name": "Name",
+          "type": "text",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "phone",
+          "display_name": "Phone",
+          "type": "phone",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "email",
+          "display_name": "Email",
+          "type": "email",
+          "required": false,
+          "searchable": true
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "name": "Reservation",
+      "display_name": "Reservation",
+      "display_name_plural": "Reservations",
+      "icon": "📅",
+      "fields": [
+        {
+          "name": "date",
+          "display_name": "Date",
+          "type": "datetime",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "party_size",
+          "display_name": "Party Size",
+          "type": "number",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "status",
+          "display_name": "Status",
+          "type": "choice",
+          "required": true,
+          "searchable": true,
+          "choices": [
+            "confirmed",
+            "pending",
+            "cancelled",
+            "completed"
+          ]
+        },
+        {
+          "name": "special_requests",
+          "display_name": "Special Requests",
+          "type": "note",
+          "required": false,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Customer",
+          "type": "belongs_to",
+          "foreign_key": "customer_id",
+          "display_in_story": true
+        },
+        {
+          "target": "Table",
+          "type": "belongs_to",
+          "foreign_key": "table_id",
+          "display_in_story": true
+        }
+      ]
+    },
+    {
+      "name": "Table",
+      "display_name": "Table",
+      "display_name_plural": "Tables",
+      "icon": "🪑",
+      "fields": [
+        {
+          "name": "table_number",
+          "display_name": "Table Number",
+          "type": "text",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "capacity",
+          "display_name": "Capacity",
+          "type": "number",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "status",
+          "display_name": "Status",
+          "type": "choice",
+          "required": true,
+          "searchable": false,
+          "choices": [
+            "available",
+            "occupied",
+            "reserved",
+            "maintenance"
+          ]
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "name": "MenuItem",
+      "display_name": "Menu Item",
+      "display_name_plural": "Menu Items",
+      "icon": "🍛",
+      "fields": [
+        {
+          "name": "name",
+          "display_name": "Name",
+          "type": "text",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "description",
+          "display_name": "Description",
+          "type": "note",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "price",
+          "display_name": "Price",
+          "type": "currency",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "category",
+          "display_name": "Category",
+          "type": "choice",
+          "required": true,
+          "searchable": true,
+          "choices": [
+            "appetizer",
+            "main_course",
+            "dessert",
+            "beverage",
+            "special"
+          ]
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "name": "Order",
+      "display_name": "Order",
+      "display_name_plural": "Orders",
+      "icon": "🧾",
+      "fields": [
+        {
+          "name": "order_date",
+          "display_name": "Order Date",
+          "type": "datetime",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "total_amount",
+          "display_name": "Total Amount",
+          "type": "currency",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "order_type",
+          "display_name": "Order Type",
+          "type": "choice",
+          "required": true,
+          "searchable": true,
+          "choices": [
+            "dine_in",
+            "takeout",
+            "delivery"
+          ]
+        },
+        {
+          "name": "status",
+          "display_name": "Status",
+          "type": "choice",
+          "required": true,
+          "searchable": true,
+          "choices": [
+            "received",
+            "preparing",
+            "ready",
+            "delivered",
+            "completed",
+            "cancelled"
+          ]
+        },
+        {
+          "name": "delivery_address",
+          "display_name": "Delivery Address",
+          "type": "text",
+          "required": false,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Customer",
+          "type": "belongs_to",
+          "foreign_key": "customer_id",
+          "display_in_story": true
+        },
+        {
+          "target": "Reservation",
+          "type": "belongs_to",
+          "foreign_key": "reservation_id",
+          "display_in_story": false
+        }
+      ]
+    }
+  ],
+  "anchor": {
+    "entity": "Reservation",
+    "type": "day_schedule",
+    "greeting_template": "Good {time_of_day}",
+    "date_label": "today",
+    "card_display": {
+      "title": "{customer.name}",
+      "subtitle": "Party of {party_size} • Table {table.table_number}",
+      "time_field": "date",
+      "actions": ["edit", "delete"]
+    },
+    "empty_state": {
+      "message": "No reservations today",
+      "action": "Add a reservation",
+      "fallback_view": "calendar"
+    },
+    "summary": {
+      "stats": [
+        { "label": "Today", "query": "today_class_count" },
+        { "label": "This Week", "query": "week_class_count" }
+      ]
+    }
+  },
+  "story_events": {
+    "Reservation": {
+      "events": [
+        {
+          "source": "Reservation",
+          "trigger": "created",
+          "template": "New reservation for {customer.name} on {date}"
+        }
+      ]
+    },
+    "Order": {
+      "events": [
+        {
+          "source": "Order",
+          "trigger": "created",
+          "template": "New {order_type} order from {customer.name}"
+        }
+      ]
+    }
+  },
+  "add_flows": {
+    "Reservation": {
+      "steps": [
+        {
+          "fields": [
+            "customer_id",
+            "date",
+            "party_size",
+            "table_id",
+            "special_requests",
+            "status"
+          ]
+        }
+      ]
+    },
+    "Order": {
+      "steps": [
+        {
+          "fields": [
+            "customer_id",
+            "order_date",
+            "order_type",
+            "total_amount",
+            "status",
+            "delivery_address"
+          ]
+        }
+      ]
+    },
+    "Customer": {
+      "steps": [
+        {
+          "fields": [
+            "name",
+            "phone",
+            "email"
+          ]
+        }
+      ]
+    },
+    "MenuItem": {
+      "steps": [
+        {
+          "fields": [
+            "name",
+            "description",
+            "price",
+            "category"
+          ]
+        }
+      ]
+    },
+    "Table": {
+      "steps": [
+        {
+          "fields": [
+            "table_number",
+            "capacity",
+            "status"
+          ]
+        }
+      ]
+    }
+  },
+  "search": {
+    "entities": [
+      "Customer",
+      "Reservation",
+      "Order",
+      "MenuItem"
+    ],
+    "default_entity": "Reservation"
+  },
+  "calendar": {
+    "entity": "Reservation",
+    "date_field": "date"
+  },
+  "chat_commands": [
+    {
+      "pattern": "add reservation",
+      "action": {
+        "type": "add",
+        "entity": "Reservation"
+      }
+    },
+    {
+      "pattern": "add order",
+      "action": {
+        "type": "add",
+        "entity": "Order"
+      }
+    },
+    {
+      "pattern": "add customer",
+      "action": {
+        "type": "add",
+        "entity": "Customer"
+      }
+    }
+  ],
+  "business_rules": [
+    {
+      "id": "reservation_customer_required",
+      "name": "Customer Required for Reservation",
+      "entity": "Reservation",
+      "condition": {
+        "type": "field_empty",
+        "field": "customer_id"
+      },
+      "warning": {
+        "message": "Reservation must be linked to a customer",
+        "severity": "error",
+        "show_in": [
+          "form"
+        ]
+      }
+    },
+    {
+      "id": "order_customer_required",
+      "name": "Customer Required for Order",
+      "entity": "Order",
+      "condition": {
+        "type": "field_empty",
+        "field": "customer_id"
+      },
+      "warning": {
+        "message": "Order must be linked to a customer",
+        "severity": "error",
+        "show_in": [
+          "form"
+        ]
+      }
+    },
+    {
+      "id": "delivery_address_required",
+      "name": "Delivery Address Required",
+      "entity": "Order",
+      "condition": {
+        "type": "and",
+        "conditions": [
+          {
+            "type": "field_value",
+            "field": "order_type",
+            "value": "delivery"
+          },
+          {
+            "type": "field_empty",
+            "field": "delivery_address"
+          }
+        ]
+      },
+      "warning": {
+        "message": "Delivery orders require an address",
+        "severity": "error",
+        "show_in": [
+          "form"
+        ]
+      }
+    }
+  ],
+  "computed_fields": {
+    "Customer": [
+      {
+        "name": "reservation_count",
+        "display_name": "Reservations",
+        "type": "count",
+        "source_entity": "Reservation",
+        "relationship": "customer_id"
+      },
+      {
+        "name": "order_count",
+        "display_name": "Orders",
+        "type": "count",
+        "source_entity": "Order",
+        "relationship": "customer_id"
+      }
+    ],
+    "Table": [
+      {
+        "name": "reservation_count",
+        "display_name": "Reservations",
+        "type": "count",
+        "source_entity": "Reservation",
+        "relationship": "table_id"
+      }
+    ]
+  }
+}

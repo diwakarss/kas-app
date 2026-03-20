@@ -83,7 +83,7 @@ export function useCalendarData(): CalendarData | null {
         if (related) relatedMap[belongsTo.target.toLowerCase()] = related;
       }
 
-      const display = resolveTemplate(calConfig.display, row, relatedMap);
+      const display = resolveTemplate(calConfig.display || '{name}', row, relatedMap);
 
       const statusVal = calConfig.color_field ? row[calConfig.color_field] : null;
       const statusColor = statusVal ? (STATUS_COLOR_MAP[statusVal] || 'stream') : 'stream';

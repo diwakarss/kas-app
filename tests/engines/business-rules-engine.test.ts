@@ -7,7 +7,7 @@
 
 import { evaluateRules, filterWarningsByLocation, Warning } from '../../src/engines/business-rules-engine';
 import type { KASAppSpec } from '../../src/core/types/spec';
-import tutorSpec from '../../assets/tutor-spec.json';
+import tutorSpec from '../../assets/templates/tutor.json';
 
 const spec = tutorSpec as unknown as KASAppSpec;
 

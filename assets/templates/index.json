@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "tutor",
+      "name": "Private Tutor",
+      "description": "For tutors, coaches, and private instructors managing students, classes, and payments",
+      "keywords": ["tutor", "teacher", "coach", "instructor", "lesson", "class", "student", "tuition", "coaching", "teaching", "academy"],
+      "category": "education"
+    },
+    {
+      "id": "shopkeeper",
+      "name": "Small Shop",
+      "description": "For small retail shops managing inventory, sales, and customers",
+      "keywords": ["shop", "store", "retail", "inventory", "sales", "merchant", "vendor", "grocery", "kirana"],
+      "category": "retail"
+    },
+    {
+      "id": "doctor",
+      "name": "Doctor/Clinic",
+      "description": "For doctors and small clinics managing patients, appointments, and prescriptions",
+      "keywords": ["doctor", "clinic", "hospital", "patient", "appointment", "medical", "healthcare", "physician", "dental", "dentist", "practice"],
+      "category": "healthcare"
+    }
+  ]
+}

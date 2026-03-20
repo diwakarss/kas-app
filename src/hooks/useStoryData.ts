@@ -51,8 +51,9 @@ export function useStoryData(entityType: string, entityId: number, page: number 
     const entity = crud.read(entityType, entityId);
     if (!entity) return null;
 
-    const storyConfig = spec.story_events[entityType];
-    if (!storyConfig) return null;
+    const storyConfig = spec.story_events?.[entityType];
+    // If no story config exists, create a minimal view with just entity data
+    const hasStoryConfig = !!storyConfig;
 
     // Related data for template resolution
     const relatedMap: Record<string, Record<string, any>> = {};
@@ -67,15 +68,15 @@ export function useStoryData(entityType: string, entityId: number, page: number 
     const computed = evaluateComputedFields(entityType, entityId, spec, db, entity);
     const combinedData = { ...entity, ...computed };
 
-    // Stats card
-    const statsCard = storyConfig.stats_card.map(item => {
+    // Stats card (default to entity name if no config)
+    const statsCard = (storyConfig?.stats_card || [{ label: '{name}' }]).map(item => {
       const label = resolveTemplate(item.label, combinedData, relatedMap);
       return { label, value: label };
     });
 
     // Coming up
     const comingUp: { display: string; id: number; sortDate: string }[] = [];
-    if (storyConfig.coming_up) {
+    if (storyConfig?.coming_up) {
       const cu = storyConfig.coming_up;
       const now = new Date().toISOString();
       const cuEntityDef0 = spec.entities.find(e => e.name === cu.source);
@@ -108,8 +109,12 @@ export function useStoryData(entityType: string, entityId: number, page: number 
       }
     }
 
-    // Story events (paginated)
-    const sources: StoryEventSource[] = storyConfig.events.map(ev => {
+    // Story events (paginated) - use empty array if no config
+    // Filter out malformed event configs that are missing required fields
+    const storyEvents = (storyConfig?.events || []).filter(
+      ev => ev.source && ev.relationship && ev.type
+    );
+    const sources: StoryEventSource[] = storyEvents.map(ev => {
       const srcDef = spec.entities.find(e => e.name === ev.source);
       const srcDateField = srcDef?.fields.find(f => f.type === 'datetime' || f.type === 'date')?.name ?? 'datetime';
       return {
@@ -123,7 +128,7 @@ export function useStoryData(entityType: string, entityId: number, page: number 
 
     const rawEvents = crud.storyEvents(sources, entityId, PAGE_SIZE * (page + 1), 0);
     const events: TimelineEventData[] = rawEvents.map(row => {
-      const eventConfig = storyConfig.events.find(
+      const eventConfig = storyEvents.find(
         ev => toTableName(ev.source) === row._source_entity && ev.type === row._event_type
       );
 
@@ -154,9 +159,11 @@ export function useStoryData(entityType: string, entityId: number, page: number 
       };
     });
 
-    // Origin + Context
-    const origin = resolveTemplate(storyConfig.origin.display, combinedData, relatedMap);
-    const context = resolveTemplate(storyConfig.context.display, combinedData, relatedMap);
+    // Origin + Context (provide defaults if no config)
+    const originTemplate = storyConfig?.origin?.display || storyConfig?.origin || 'Created on {created_at}';
+    const contextTemplate = storyConfig?.context?.display || storyConfig?.context || entityDef.display_name;
+    const origin = resolveTemplate(typeof originTemplate === 'string' ? originTemplate : '', combinedData, relatedMap);
+    const context = resolveTemplate(typeof contextTemplate === 'string' ? contextTemplate : '', combinedData, relatedMap);
 
     // Warnings
     let warnings = evaluateRules(entityType, entity, computed, spec, relatedMap);

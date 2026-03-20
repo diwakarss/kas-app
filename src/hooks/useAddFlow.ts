@@ -46,7 +46,31 @@ export function useAddFlow(entityType: string, preFill?: Record<string, any>): A
     [spec, entityType]
   );
 
-  const steps = flowConfig?.steps ?? [];
+  // Normalize steps: convert legacy {fields: [...]} format to {field: ...} format
+  // and filter out any malformed steps that don't have a valid field
+  const steps = useMemo(() => {
+    const rawSteps = flowConfig?.steps ?? [];
+    const normalizedSteps: AddFlowStep[] = [];
+
+    for (const step of rawSteps) {
+      if (step.field) {
+        // Correct format: single field per step
+        normalizedSteps.push(step);
+      } else if (Array.isArray((step as any).fields)) {
+        // Legacy format: expand fields array into individual steps
+        for (const fieldName of (step as any).fields) {
+          normalizedSteps.push({
+            field: fieldName,
+            prompt: `Enter ${fieldName.replace(/_/g, ' ')}`,
+            required: false, // Default to optional since we don't have per-field info
+          });
+        }
+      }
+      // Skip malformed steps that have neither field nor fields
+    }
+
+    return normalizedSteps;
+  }, [flowConfig]);
   const afterAdd = flowConfig?.after_add ?? null;
   const totalSteps = steps.length;
   const currentStepDef = steps[currentStep] ?? null;

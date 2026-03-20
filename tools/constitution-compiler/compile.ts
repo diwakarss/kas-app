@@ -6,7 +6,7 @@
  * 1. spec-contract.schema.json exists
  * 2. block-boundaries.yaml exists
  * 3. migration-policy.yaml exists
- * 4. Validates tutor-spec.json against schema
+ * 4. Validates tutor.json against schema
  *
  * Usage:
  *   npx ts-node tools/constitution-compiler/compile.ts
@@ -18,7 +18,7 @@ const path = require('path');
 const yaml = require('yaml');
 
 const CONSTITUTION_DIR = path.resolve(__dirname, '../../architecture/constitution');
-const SPECS_DIR = path.resolve(__dirname, '../../assets');
+const SPECS_DIR = path.resolve(__dirname, '../../assets/templates');
 
 interface ValidationResult {
   success: boolean;
@@ -159,9 +159,18 @@ async function validate(): Promise<ValidationResult> {
     return result;
   }
 
-  // Validate spec files
+  // Validate spec files (load from index.json)
   console.log('\nValidating spec files...');
-  const specFiles = ['tutor-spec.json', 'shopkeeper-spec.json'];
+  const indexPath = path.join(SPECS_DIR, 'index.json');
+  let specFiles = ['tutor.json', 'shopkeeper.json']; // fallback
+  if (fs.existsSync(indexPath)) {
+    try {
+      const index = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+      specFiles = index.templates.map((t: any) => `${t.id}.json`);
+    } catch (e) {
+      console.log(`  Warning: Could not parse index.json, using fallback list`);
+    }
+  }
 
   for (const specFile of specFiles) {
     const specPath = path.join(SPECS_DIR, specFile);

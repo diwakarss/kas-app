@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 const CONSTITUTION_DIR = path.resolve(__dirname, '../../architecture/constitution');
-const SPECS_DIR = path.resolve(__dirname, '../../assets');
+const SPECS_DIR = path.resolve(__dirname, '../../assets/templates');
 
 /**
  * Validate a spec file against basic requirements
@@ -111,9 +111,18 @@ function validate() {
     }
   }
 
-  // Validate spec files
+  // Validate spec files (load from index.json)
   console.log('\nValidating spec files...');
-  const specFiles = ['tutor-spec.json', 'shopkeeper-spec.json'];
+  const indexPath = path.join(SPECS_DIR, 'index.json');
+  let specFiles = ['tutor.json', 'shopkeeper.json']; // fallback
+  if (fs.existsSync(indexPath)) {
+    try {
+      const index = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+      specFiles = index.templates.map(t => `${t.id}.json`);
+    } catch (e) {
+      console.log(`  Warning: Could not parse index.json, using fallback list`);
+    }
+  }
 
   for (const specFile of specFiles) {
     const specPath = path.join(SPECS_DIR, specFile);

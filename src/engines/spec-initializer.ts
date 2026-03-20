@@ -30,10 +30,14 @@ export interface InitializedSpec {
 function loadActiveSpec(): any {
   switch (ACTIVE_SPEC) {
     case 'shopkeeper':
-      return require('../../assets/shopkeeper-spec.json');
+      return require('../../assets/templates/shopkeeper.json');
+    case 'restaurant':
+      return require('../../assets/templates/restaurant.json');
+    case 'doctor':
+      return require('../../assets/templates/doctor.json');
     case 'tutor':
     default:
-      return require('../../assets/tutor-spec.json');
+      return require('../../assets/templates/tutor.json');
   }
 }
 
@@ -90,12 +94,21 @@ export function initializeSpec(adapter: DatabaseAdapter): InitializedSpec {
   );
   console.log(`[SpecInitializer] ${firstTable} count:`, count?.cnt);
   if (count && count.cnt === 0) {
-    if (ACTIVE_SPEC === 'tutor') {
-      seedTutorData(crudService);
-    } else if (ACTIVE_SPEC === 'shopkeeper') {
-      seedShopkeeperData(crudService);
+    try {
+      if (ACTIVE_SPEC === 'tutor') {
+        seedTutorData(crudService);
+      } else if (ACTIVE_SPEC === 'shopkeeper') {
+        seedShopkeeperData(crudService);
+      } else if (ACTIVE_SPEC === 'restaurant') {
+        seedRestaurantData(crudService);
+      } else if (ACTIVE_SPEC === 'doctor') {
+        seedDoctorData(crudService);
+      }
+      console.log('[SpecInitializer] Seed data inserted');
+    } catch (seedErr: any) {
+      console.log('[SpecInitializer] Seed error:', seedErr?.message || seedErr);
+      throw seedErr;
     }
-    console.log('[SpecInitializer] Seed data inserted');
   }
 
   console.log('[SpecInitializer] Initialization complete');
@@ -183,6 +196,68 @@ function seedTutorData(crud: CrudService): void {
   crud.create('Note', { student_id: rahulId, content: 'Needs more practice on reading notation. Recommend daily 15min sight-reading.', date: today });
 }
 
+function seedRestaurantData(crud: CrudService): void {
+  const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  // Customers
+  const rahulId = crud.create('Customer', { name: 'Rahul Sharma', phone: '9876543210', email: 'rahul@example.com' });
+  const priyaId = crud.create('Customer', { name: 'Priya Patel', phone: '9876543211', email: 'priya@example.com' });
+  const vikramId = crud.create('Customer', { name: 'Vikram Singh', phone: '9876543212' });
+  const ananyaId = crud.create('Customer', { name: 'Ananya Reddy', phone: '9876543213', email: 'ananya@example.com' });
+
+  // Tables
+  const table1 = crud.create('Table', { table_number: 'T1', capacity: 2, status: 'available' });
+  const table2 = crud.create('Table', { table_number: 'T2', capacity: 4, status: 'available' });
+  const table3 = crud.create('Table', { table_number: 'T3', capacity: 4, status: 'occupied' });
+  const table4 = crud.create('Table', { table_number: 'T4', capacity: 6, status: 'reserved' });
+  const table5 = crud.create('Table', { table_number: 'T5', capacity: 8, status: 'available' });
+
+  // Menu Items
+  crud.create('MenuItem', { name: 'Paneer Tikka', description: 'Marinated cottage cheese grilled to perfection', price: 280, category: 'appetizer' });
+  crud.create('MenuItem', { name: 'Samosa', description: 'Crispy pastry with spiced potato filling', price: 80, category: 'appetizer' });
+  crud.create('MenuItem', { name: 'Butter Chicken', description: 'Tender chicken in creamy tomato gravy', price: 350, category: 'main_course' });
+  crud.create('MenuItem', { name: 'Dal Makhani', description: 'Slow-cooked black lentils in butter', price: 220, category: 'main_course' });
+  crud.create('MenuItem', { name: 'Biryani', description: 'Fragrant rice with spices and vegetables', price: 300, category: 'main_course' });
+  crud.create('MenuItem', { name: 'Gulab Jamun', description: 'Soft milk dumplings in sugar syrup', price: 120, category: 'dessert' });
+  crud.create('MenuItem', { name: 'Mango Lassi', description: 'Refreshing yogurt drink with mango', price: 90, category: 'beverage' });
+  crud.create('MenuItem', { name: 'Masala Chai', description: 'Spiced Indian tea', price: 50, category: 'beverage' });
+
+  // Today's reservations
+  crud.create('Reservation', { customer_id: rahulId, table_id: table2, date: `${today}T18:00:00`, party_size: 4, status: 'confirmed', special_requests: 'Birthday celebration - need cake' });
+  crud.create('Reservation', { customer_id: priyaId, table_id: table4, date: `${today}T19:30:00`, party_size: 6, status: 'confirmed', special_requests: 'Vegetarian only' });
+  crud.create('Reservation', { customer_id: vikramId, table_id: table3, date: `${today}T20:00:00`, party_size: 2, status: 'pending' });
+
+  // Tomorrow's reservations
+  crud.create('Reservation', { customer_id: ananyaId, table_id: table5, date: `${tomorrowStr}T19:00:00`, party_size: 8, status: 'confirmed', special_requests: 'Corporate dinner' });
+  crud.create('Reservation', { customer_id: rahulId, table_id: table1, date: `${tomorrowStr}T20:30:00`, party_size: 2, status: 'confirmed' });
+
+  // Orders
+  crud.create('Order', { customer_id: rahulId, order_date: `${today}T12:30:00`, total_amount: 850, order_type: 'dine_in', status: 'completed' });
+  crud.create('Order', { customer_id: priyaId, order_date: `${today}T13:00:00`, total_amount: 540, order_type: 'takeout', status: 'ready' });
+  crud.create('Order', { customer_id: vikramId, order_date: `${today}T13:15:00`, total_amount: 720, order_type: 'delivery', status: 'preparing', delivery_address: '42 MG Road, Bangalore' });
+  crud.create('Order', { customer_id: ananyaId, order_date: `${today}T11:45:00`, total_amount: 1200, order_type: 'dine_in', status: 'completed' });
+
+  // Past orders for history
+  for (let i = 1; i <= 5; i++) {
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - i);
+    const orderData: Record<string, any> = {
+      customer_id: rahulId,
+      order_date: pastDate.toISOString(),
+      total_amount: 400 + i * 100,
+      order_type: i % 2 === 0 ? 'dine_in' : 'delivery',
+      status: 'completed',
+    };
+    if (i % 2 !== 0) {
+      orderData.delivery_address = '15 Brigade Road, Bangalore';
+    }
+    crud.create('Order', orderData);
+  }
+}
+
 function seedShopkeeperData(crud: CrudService): void {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -222,4 +297,61 @@ function seedShopkeeperData(crud: CrudService): void {
   // Credits
   crud.create('Credit', { customer_id: priyaId, amount: 600, date: yesterdayStr, reason: 'Monthly groceries - will pay next week' });
   crud.create('Credit', { customer_id: sureshId, amount: 200, date: today, reason: 'Short on cash, pending UPI transfer' });
+}
+
+function seedDoctorData(crud: CrudService): void {
+  const today = new Date();
+  const todayStr = today.toISOString();
+
+  // Patients
+  const rahulId = crud.create('Patient', { name: 'Rahul Sharma', phone: '9876543210', blood_group: 'O+', allergies: 'Penicillin' });
+  const priyaId = crud.create('Patient', { name: 'Priya Mehta', phone: '9876543211', blood_group: 'A+' });
+  const anilId = crud.create('Patient', { name: 'Anil Kumar', phone: '9876543212', blood_group: 'B+', allergies: 'Dust, Pollen' });
+
+  // Today's appointments
+  const apt1Time = new Date(today);
+  apt1Time.setHours(10, 0, 0, 0);
+  crud.create('Appointment', { patient_id: rahulId, datetime: apt1Time.toISOString(), reason: 'Follow-up checkup', status: 'scheduled' });
+
+  const apt2Time = new Date(today);
+  apt2Time.setHours(11, 30, 0, 0);
+  crud.create('Appointment', { patient_id: priyaId, datetime: apt2Time.toISOString(), reason: 'Fever and cold', status: 'scheduled' });
+
+  const apt3Time = new Date(today);
+  apt3Time.setHours(14, 0, 0, 0);
+  crud.create('Appointment', { patient_id: anilId, datetime: apt3Time.toISOString(), reason: 'Annual checkup', status: 'scheduled' });
+
+  // Past appointments for timeline
+  for (let i = 1; i <= 5; i++) {
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - i * 7);
+    pastDate.setHours(10, 0, 0, 0);
+    crud.create('Appointment', {
+      patient_id: rahulId,
+      datetime: pastDate.toISOString(),
+      reason: 'Regular checkup',
+      status: 'completed',
+    });
+  }
+
+  // Prescriptions
+  const todayDate = today.toISOString().split('T')[0];
+  crud.create('Prescription', {
+    patient_id: rahulId,
+    date: todayDate,
+    diagnosis: 'Mild hypertension',
+    medications: 'Amlodipine 5mg - Once daily',
+    instructions: 'Reduce salt intake, exercise regularly',
+  });
+
+  crud.create('Prescription', {
+    patient_id: priyaId,
+    date: todayDate,
+    diagnosis: 'Viral fever',
+    medications: 'Paracetamol 500mg - As needed, Vitamin C',
+    instructions: 'Rest and hydration',
+  });
+
+  // Notes
+  crud.create('Note', { patient_id: rahulId, content: 'Patient reports feeling better. BP: 130/85', date: todayDate });
 }
