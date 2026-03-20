@@ -12,8 +12,8 @@ import { SpecContextValue, SpecContext } from './SpecContext';
 import { usePreview } from './PreviewContext';
 import type { KASAppSpec } from '../types/spec';
 
-// Backend API base URL - configurable via env
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7131';
+// InsForge backend API URL - configurable via env
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7130';
 
 interface WebSpecProviderProps {
   children: ReactNode;
@@ -23,16 +23,16 @@ interface PreviewApiResponse {
   success: boolean;
   data?: {
     spec: KASAppSpec;
-    sampleRecords: Record<string, any[]>;
+    sampleRecords?: Record<string, any[]>;
   };
   error?: string;
 }
 
 /**
- * Fetch preview data from backend API
+ * Fetch preview data from InsForge backend API
  */
 async function fetchPreviewSpec(specId: string): Promise<PreviewApiResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/preview/${specId}`);
+  const response = await fetch(`${API_BASE_URL}/functions/get-spec?id=${specId}`);
   if (!response.ok) {
     const errorText = await response.text();
     return { success: false, error: errorText || `HTTP ${response.status}` };
