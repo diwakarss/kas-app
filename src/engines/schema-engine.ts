@@ -14,11 +14,7 @@
  */
 
 import type { KASAppSpec, Entity, FieldType } from '../core/types/spec';
-
-/** Double-quote a table name to avoid SQLite reserved word collisions. */
-function q(name: string): string {
-  return `"${name}"`;
-}
+import { toTableName, q } from '../data/query-builder';
 
 // ───────────────────────────────────────────────
 // Type mapping
@@ -106,10 +102,10 @@ function sortEntitiesByDependency(entities: Entity[]): Entity[] {
  * Collect the set of field names that are foreign keys (from belongs_to relationships).
  */
 function getForeignKeyFields(entity: Entity): Map<string, string> {
-  const fkMap = new Map<string, string>(); // field_name -> target_entity
+  const fkMap = new Map<string, string>(); // field_name -> target_table
   for (const rel of entity.relationships) {
     if (rel.type === 'belongs_to') {
-      fkMap.set(rel.foreign_key, rel.target.toLowerCase());
+      fkMap.set(rel.foreign_key, toTableName(rel.target));
     }
   }
   return fkMap;
@@ -128,13 +124,16 @@ export function generateDDL(spec: KASAppSpec): string[] {
   const sorted = sortEntitiesByDependency(spec.entities);
 
   for (const entity of sorted) {
-    const tableName = entity.name.toLowerCase();
+    const tableName = toTableName(entity.name);
     const fkFields = getForeignKeyFields(entity);
 
     // ── CREATE TABLE ──
     const columns: string[] = [
       'id INTEGER PRIMARY KEY AUTOINCREMENT',
     ];
+
+    // Track which FK fields are already in entity.fields
+    const fieldsInSpec = new Set(entity.fields.map((f) => f.name));
 
     for (const field of entity.fields) {
       if (fkFields.has(field.name)) {
@@ -143,6 +142,14 @@ export function generateDDL(spec: KASAppSpec): string[] {
         columns.push(`${field.name} INTEGER REFERENCES ${q(target)}(id)`);
       } else {
         columns.push(`${field.name} ${mapFieldType(field.type)}`);
+      }
+    }
+
+    // Add FK columns from relationships that aren't in fields array
+    // (LLM-generated specs may define FKs only in relationships)
+    for (const [fkField, target] of fkFields) {
+      if (!fieldsInSpec.has(fkField)) {
+        columns.push(`${fkField} INTEGER REFERENCES ${q(target)}(id)`);
       }
     }
 
