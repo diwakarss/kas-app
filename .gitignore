@@ -63,3 +63,4 @@ backend/insforge-data/
 # Screenshots (but not assets)
 wave1-*.png
 .gstack/
+backend/insforge-repo/
