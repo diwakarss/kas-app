@@ -10,6 +10,7 @@ import type { LLMProvider } from '../types/providers';
 import { LLMAdaptationLayer, createDefaultAdaptationLayer } from './llm-adaptation';
 import { SpecValidator, getAllErrors } from './spec-validator';
 import { BusinessIdentityService } from './business-identity';
+import { normalizeSpec } from './spec-normalizer';
 import type { BusinessIdentity } from '../types/generation';
 import { calculateCost, logGenerationMetrics, createMetrics, type CostBreakdown } from './cost-tracker';
 
@@ -87,8 +88,12 @@ export class FreshGenerator {
         features
       );
 
-      // Validate the generated spec
-      const validation = SpecValidator.validate(result.spec);
+      // Normalize the spec to fill in missing defaults
+      const normalizedSpec = normalizeSpec(result.spec);
+      console.log('[FreshGenerator] Spec normalized with defaults');
+
+      // Validate the normalized spec
+      const validation = SpecValidator.validate(normalizedSpec);
 
       if (!validation.valid) {
         return {
@@ -104,7 +109,7 @@ export class FreshGenerator {
       }
 
       // Apply business identity
-      const finalSpec = BusinessIdentityService.inject(result.spec, identity);
+      const finalSpec = BusinessIdentityService.inject(normalizedSpec, identity);
 
       // Get provider info for metadata and cost calculation
       const providerInfo = this.adapter.getProviderInfo();
