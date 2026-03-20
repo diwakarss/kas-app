@@ -11,6 +11,7 @@ import { LLMAdaptationLayer, createDefaultAdaptationLayer } from './llm-adaptati
 import { SpecValidator, getAllErrors } from './spec-validator';
 import { BusinessIdentityService } from './business-identity';
 import type { BusinessIdentity } from '../types/generation';
+import { calculateCost, logGenerationMetrics, createMetrics, type CostBreakdown } from './cost-tracker';
 
 /**
  * Result of fresh generation.
@@ -25,6 +26,10 @@ export interface FreshGenerationResult {
       input: number;
       output: number;
     };
+    /** Cost in USD for this generation */
+    cost_usd: number;
+    /** Full cost breakdown */
+    cost_breakdown: CostBreakdown;
     provider: string;
     model: string;
   };
@@ -101,8 +106,20 @@ export class FreshGenerator {
       // Apply business identity
       const finalSpec = BusinessIdentityService.inject(result.spec, identity);
 
-      // Get provider info for metadata
+      // Get provider info for metadata and cost calculation
       const providerInfo = this.adapter.getProviderInfo();
+      const costBreakdown = calculateCost(result.usage, providerInfo);
+
+      // Log metrics for tracking
+      logGenerationMetrics(
+        createMetrics(
+          businessType,
+          result.usage,
+          result.latency_ms,
+          providerInfo,
+          true
+        )
+      );
 
       return {
         success: true,
@@ -113,6 +130,8 @@ export class FreshGenerator {
             input: result.usage.input_tokens,
             output: result.usage.output_tokens,
           },
+          cost_usd: costBreakdown.total_cost_usd,
+          cost_breakdown: costBreakdown,
           provider: providerInfo.provider,
           model: providerInfo.model_id,
         },
@@ -124,6 +143,23 @@ export class FreshGenerator {
         : error.message?.includes('LLM') || error.message?.includes('API')
         ? 'provider'
         : 'validation';
+
+      // Log failed generation metrics (with zero cost if we don't have usage info)
+      try {
+        const providerInfo = this.adapter.getProviderInfo();
+        logGenerationMetrics(
+          createMetrics(
+            businessType,
+            { input_tokens: 0, output_tokens: 0 },
+            0,
+            providerInfo,
+            false,
+            error.message
+          )
+        );
+      } catch {
+        // Ignore logging errors
+      }
 
       return {
         success: false,
