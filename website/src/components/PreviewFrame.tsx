@@ -236,11 +236,15 @@ export function PreviewFrame({ specId, spec, isLoading }: PreviewFrameProps) {
       .replace('{{time_of_day}}', getTimeOfDay())
       .replace('{{user_name}}', meta?.name || 'there');
 
+    // Find first text field for default title template
+    const firstTextField = anchorEntity.fields?.find(f => f.type === 'text')?.name;
+    const firstTimeField = anchorEntity.fields?.find(f => f.type === 'time' || f.type === 'datetime')?.name;
+
     // Generate cards from seed data
     const cardDisplay = anchor?.card_display || {
-      title: '{{name}}',
+      title: firstTextField ? `{{${firstTextField}}}` : '',
       subtitle: '',
-      time_field: 'datetime',
+      time_field: firstTimeField || 'time',
     };
 
     const cards = seedData.map((item, idx) => {
@@ -259,9 +263,13 @@ export function PreviewFrame({ specId, spec, isLoading }: PreviewFrameProps) {
         }
       }
 
-      const title = resolveTemplate(cardDisplay.title || '{{name}}', item, relatedMap);
+      let title = resolveTemplate(cardDisplay.title || '', item, relatedMap);
+      // Fallback to entity name + id if title is empty
+      if (!title.trim()) {
+        title = `${anchorEntity.display_name || anchorEntity.name} ${idx + 1}`;
+      }
       const subtitle = resolveTemplate(cardDisplay.subtitle || '', item, relatedMap);
-      const timeField = cardDisplay.time_field || 'datetime';
+      const timeField = cardDisplay.time_field || 'time';
       const time = formatTime(String(item[timeField] || ''));
 
       return { id: idx, title, subtitle, time };

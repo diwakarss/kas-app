@@ -1,78 +1,192 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { colors } from '@/lib/tokens';
 
+// Types matching the spec structure
+interface Field {
+  name: string;
+  display_name: string;
+  type: string;
+  options?: string[];
+}
+
 interface Entity {
   name: string;
-  fields?: Array<{
-    name: string;
+  display_name: string;
+  fields: Field[];
+  relationships: Array<{
+    target: string;
     type: string;
-    required?: boolean;
-    choices?: string[];
+    foreign_key: string;
   }>;
-  relationships?: Array<{
-    type: string;
-    target?: string;
-    entity?: string;
-  }>;
+}
+
+interface Anchor {
+  type: string;
+  entity: string;
+  greeting_template: string;
+  date_label: string;
+  card_display: {
+    title: string;
+    subtitle: string;
+    time_field?: string;
+    warning_field?: string;
+    warning_template?: string;
+  };
+  summary: {
+    stats: Array<{ label: string; query: string }>;
+  };
+  empty_state: {
+    message: string;
+    action?: string;
+  };
 }
 
 interface Spec {
-  meta: {
-    spec_id: string;
-    name: string;
-    version: number;
-  };
-  entities: Entity[];
-  anchor?: { entity: string };
+  meta?: { name?: string };
+  entities?: Entity[];
+  anchor?: Anchor;
 }
 
-// Generate sample data for an entity
-function generateSampleData(entity: Entity, count: number = 3) {
-  const items = [];
+/**
+ * Generate seed data for an entity based on its fields
+ */
+function generateSeedData(entity: Entity, count: number = 5) {
+  const items: Record<string, unknown>[] = [];
+
   for (let i = 1; i <= count; i++) {
     const item: Record<string, unknown> = { id: i };
-    entity.fields?.forEach((field) => {
+
+    for (const field of entity.fields || []) {
       switch (field.type) {
         case 'text':
-          item[field.name] = `${field.name} ${i}`;
-          break;
-        case 'email':
-          item[field.name] = `user${i}@example.com`;
-          break;
-        case 'phone':
-          item[field.name] = `555-000${i}`;
+          if (field.name.toLowerCase().includes('name')) {
+            item[field.name] = `${entity.display_name || entity.name} ${i}`;
+          } else {
+            item[field.name] = `Sample ${field.display_name || field.name}`;
+          }
           break;
         case 'number':
-          item[field.name] = i * 10;
-          break;
         case 'currency':
-          item[field.name] = `$${(i * 25).toFixed(2)}`;
+          item[field.name] = 25 * i;
           break;
-        case 'date':
-          item[field.name] = new Date(2024, i - 1, i * 5).toLocaleDateString();
+        case 'phone':
+          item[field.name] = `555-010${i}`;
+          break;
+        case 'email':
+          item[field.name] = `sample${i}@example.com`;
           break;
         case 'datetime':
-          item[field.name] = new Date(2024, i - 1, i * 5, 10 + i, 0).toLocaleString();
+        case 'time': {
+          const hour = 9 + i;
+          item[field.name] = `${hour.toString().padStart(2, '0')}:00`;
           break;
+        }
+        case 'date': {
+          const date = new Date();
+          item[field.name] = date.toISOString().split('T')[0];
+          break;
+        }
         case 'choice':
-          item[field.name] = field.choices?.[i % (field.choices?.length || 1)] || 'Option';
+          item[field.name] = field.options?.[i % (field.options?.length || 1)] || 'Option';
           break;
         case 'toggle':
           item[field.name] = i % 2 === 0;
           break;
-        case 'note':
-          item[field.name] = `Sample note for item ${i}...`;
+        case 'duration':
+          item[field.name] = 30 + (i * 15);
           break;
         default:
-          item[field.name] = `${field.name} ${i}`;
+          item[field.name] = '';
       }
-    });
+    }
+
+    // Add foreign keys for relationships
+    for (const rel of entity.relationships || []) {
+      if (rel.type === 'belongs_to') {
+        item[rel.foreign_key] = i;
+      }
+    }
+
     items.push(item);
   }
+
   return items;
+}
+
+/**
+ * Generate related entity data for template resolution
+ */
+function generateRelatedData(entities: Entity[], anchorEntity: Entity) {
+  const relatedData: Record<string, Record<string, unknown>[]> = {};
+
+  for (const rel of anchorEntity.relationships || []) {
+    if (rel.type === 'belongs_to') {
+      const relatedEntity = entities.find(e => e.name === rel.target);
+      if (relatedEntity) {
+        relatedData[rel.target.toLowerCase()] = generateSeedData(relatedEntity);
+      }
+    }
+  }
+
+  return relatedData;
+}
+
+/**
+ * Resolve template strings like "{{entity.field}}" with actual data
+ */
+function resolveTemplate(
+  template: string,
+  entity: Record<string, unknown>,
+  related: Record<string, Record<string, unknown>>
+): string {
+  return template.replace(/\{\{([^}]+)\}\}/g, (_, path) => {
+    const parts = path.trim().split('.');
+
+    if (parts.length === 1) {
+      return String(entity[parts[0]] ?? '');
+    }
+
+    if (parts.length === 2) {
+      const [entityName, fieldName] = parts;
+      const relatedEntity = related[entityName.toLowerCase()];
+      if (relatedEntity) {
+        return String(relatedEntity[fieldName] ?? '');
+      }
+      return String(entity[fieldName] ?? '');
+    }
+
+    return '';
+  });
+}
+
+/**
+ * Get time of day for greeting
+ */
+function getTimeOfDay(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
+}
+
+/**
+ * Format time for display
+ */
+function formatTime(time: string): string {
+  if (!time) return '';
+
+  // Handle HH:MM format
+  if (/^\d{1,2}:\d{2}$/.test(time)) {
+    const [h, m] = time.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
+  }
+
+  return time;
 }
 
 export default function PreviewPage() {
@@ -82,14 +196,10 @@ export default function PreviewPage() {
   const [spec, setSpec] = useState<Spec | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeEntity, setActiveEntity] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<Record<string, unknown> | null>(null);
-  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     async function loadSpec() {
       try {
-        // Fetch spec from API
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7130';
         const response = await fetch(`${apiUrl}/functions/get-spec?id=${specId}`);
 
@@ -109,13 +219,7 @@ export default function PreviewPage() {
           return;
         }
 
-        const specData = result.data.spec;
-        setSpec(specData);
-
-        // Set first entity as active
-        if (specData.entities?.length > 0) {
-          setActiveEntity(specData.entities[0].name);
-        }
+        setSpec(result.data.spec);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to load app');
       } finally {
@@ -128,16 +232,123 @@ export default function PreviewPage() {
     }
   }, [specId]);
 
+  // Parse spec data for story cards
+  const previewData = useMemo(() => {
+    if (!spec) return null;
+
+    const anchor = spec.anchor;
+    const entities = spec.entities || [];
+    const meta = spec.meta;
+
+    // Handle case where anchor is missing - show entity-based preview
+    const anchorEntity = anchor?.entity
+      ? entities.find(e => e.name === anchor.entity)
+      : entities[0];
+
+    if (!anchorEntity) {
+      // Fallback to simple entity list preview
+      return {
+        appName: meta?.name || 'Your App',
+        greeting: `Good ${getTimeOfDay()}!`,
+        dateLabel: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+        stats: [{ label: 'Entities', value: entities.length }],
+        cards: entities.slice(0, 5).map((e, i) => ({
+          id: i,
+          title: e.display_name || e.name,
+          subtitle: `${e.fields?.length || 0} fields`,
+          time: '',
+        })),
+        emptyMessage: 'No data yet',
+      };
+    }
+
+    // Generate seed data
+    const seedData = generateSeedData(anchorEntity);
+    const relatedData = generateRelatedData(entities, anchorEntity);
+
+    // Resolve greeting with safe fallback
+    const greetingTemplate = anchor?.greeting_template || 'Good {{time_of_day}}!';
+    const greeting = greetingTemplate
+      .replace('{{time_of_day}}', getTimeOfDay())
+      .replace('{{user_name}}', meta?.name || 'there');
+
+    // Find first text field for default title template
+    const firstTextField = anchorEntity.fields?.find(f => f.type === 'text')?.name;
+    const firstTimeField = anchorEntity.fields?.find(f => f.type === 'time' || f.type === 'datetime')?.name;
+
+    // Generate cards from seed data
+    const cardDisplay = anchor?.card_display || {
+      title: firstTextField ? `{{${firstTextField}}}` : '',
+      subtitle: '',
+      time_field: firstTimeField || 'time',
+    };
+
+    const cards = seedData.map((item, idx) => {
+      // Get related entity for this item
+      const belongsTo = anchorEntity.relationships?.find(r => r.type === 'belongs_to');
+      const relatedMap: Record<string, Record<string, unknown>> = {};
+
+      if (belongsTo) {
+        const fkValue = item[belongsTo.foreign_key] as number;
+        const relatedItems = relatedData[belongsTo.target.toLowerCase()];
+        if (relatedItems) {
+          const relatedItem = relatedItems.find(r => r.id === fkValue);
+          if (relatedItem) {
+            relatedMap[belongsTo.target.toLowerCase()] = relatedItem;
+          }
+        }
+      }
+
+      let title = resolveTemplate(cardDisplay.title || '', item, relatedMap);
+      // Fallback to entity name + id if title is empty
+      if (!title.trim()) {
+        title = `${anchorEntity.display_name || anchorEntity.name} ${idx + 1}`;
+      }
+      const subtitle = resolveTemplate(cardDisplay.subtitle || '', item, relatedMap);
+      const timeField = cardDisplay.time_field || 'time';
+      const time = formatTime(String(item[timeField] || ''));
+
+      return { id: idx, title, subtitle, time };
+    });
+
+    // Generate stats with safe fallback
+    const anchorStats = anchor?.summary?.stats || [];
+    const stats = anchorStats.length > 0
+      ? anchorStats.map(stat => ({
+          label: stat.label,
+          value: stat.query?.includes('count') ? seedData.length :
+                 stat.query?.includes('total') ? `Rs.${seedData.length * 25}` : 0,
+        }))
+      : [
+          { label: 'Today', value: seedData.length },
+          { label: 'This Week', value: seedData.length * 3 },
+        ];
+
+    // Date label with fallback
+    const dateLabel = anchor?.date_label ||
+      new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+    return {
+      appName: meta?.name || 'Your App',
+      greeting,
+      dateLabel,
+      stats,
+      cards,
+      emptyMessage: anchor?.empty_state?.message || 'No items yet. Tap + to add your first one!',
+    };
+  }, [spec]);
+
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner} />
         <p style={styles.loadingText}>Loading your app...</p>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
-  if (error || !spec) {
+  if (error || !spec || !previewData) {
     return (
       <div style={styles.errorContainer}>
         <h2 style={styles.errorTitle}>Unable to load app</h2>
@@ -147,149 +358,62 @@ export default function PreviewPage() {
     );
   }
 
-  const activeEntityData = spec.entities.find((e) => e.name === activeEntity);
-  const sampleData = activeEntityData ? generateSampleData(activeEntityData) : [];
-
   return (
     <div style={styles.container}>
-      {/* App Header */}
-      <header style={styles.header}>
-        <h1 style={styles.appName}>{spec.meta.name}</h1>
-        <a href="/" style={styles.newAppLink}>+ New App</a>
-      </header>
+      {/* Status Bar */}
+      <div style={styles.statusBar}>
+        <span style={styles.statusTime}>9:41</span>
+        <div style={styles.statusIcons}>
+          <span>📶</span>
+          <span>🔋</span>
+        </div>
+      </div>
 
-      {/* Navigation Tabs */}
-      <nav style={styles.nav}>
-        {spec.entities.map((entity) => (
-          <button
-            key={entity.name}
-            onClick={() => {
-              setActiveEntity(entity.name);
-              setSelectedItem(null);
-              setShowForm(false);
-            }}
-            style={{
-              ...styles.navTab,
-              ...(activeEntity === entity.name ? styles.navTabActive : {}),
-            }}
-          >
-            {entity.name}
-          </button>
-        ))}
-      </nav>
+      {/* Greeting Section */}
+      <div style={styles.greetingSection}>
+        <h1 style={styles.greeting}>{previewData.greeting}</h1>
+        <p style={styles.dateLabel}>{previewData.dateLabel}</p>
+      </div>
 
-      {/* Main Content */}
-      <main style={styles.main}>
-        {selectedItem ? (
-          // Detail View
-          <div style={styles.detailView}>
-            <button
-              onClick={() => setSelectedItem(null)}
-              style={styles.backButton}
+      {/* Stats Card */}
+      {previewData.stats.length > 0 && (
+        <div style={styles.statsCard}>
+          {previewData.stats.map((stat, idx) => (
+            <div
+              key={stat.label}
+              style={{
+                ...styles.statItem,
+                ...(idx > 0 ? styles.statItemBorder : {}),
+              }}
             >
-              ← Back to list
-            </button>
-            <h2 style={styles.detailTitle}>
-              {String(selectedItem[activeEntityData?.fields?.[0]?.name || 'id'] || `${activeEntity} Details`)}
-            </h2>
-            <div style={styles.detailFields}>
-              {activeEntityData?.fields?.map((field) => (
-                <div key={field.name} style={styles.detailField}>
-                  <label style={styles.fieldLabel}>{field.name}</label>
-                  <div style={styles.fieldValue}>
-                    {String(selectedItem[field.name] ?? '-')}
-                  </div>
-                </div>
-              ))}
+              <span style={styles.statValue}>{stat.value}</span>
+              <span style={styles.statLabel}>{stat.label}</span>
             </div>
-            <div style={styles.detailActions}>
-              <button style={styles.editButton}>Edit</button>
-              <button style={styles.deleteButton}>Delete</button>
-            </div>
-          </div>
-        ) : showForm ? (
-          // Add/Edit Form
-          <div style={styles.formView}>
-            <button
-              onClick={() => setShowForm(false)}
-              style={styles.backButton}
-            >
-              ← Cancel
-            </button>
-            <h2 style={styles.formTitle}>Add {activeEntity}</h2>
-            <form style={styles.form} onSubmit={(e) => { e.preventDefault(); setShowForm(false); }}>
-              {activeEntityData?.fields?.map((field) => (
-                <div key={field.name} style={styles.formField}>
-                  <label style={styles.formLabel}>
-                    {field.name}
-                    {field.required && <span style={styles.required}>*</span>}
-                  </label>
-                  {field.type === 'choice' ? (
-                    <select style={styles.formSelect}>
-                      <option value="">Select...</option>
-                      {field.choices?.map((choice) => (
-                        <option key={choice} value={choice}>{choice}</option>
-                      ))}
-                    </select>
-                  ) : field.type === 'note' ? (
-                    <textarea style={styles.formTextarea} rows={3} />
-                  ) : field.type === 'toggle' ? (
-                    <input type="checkbox" style={styles.formCheckbox} />
-                  ) : (
-                    <input
-                      type={field.type === 'email' ? 'email' : field.type === 'number' || field.type === 'currency' ? 'number' : 'text'}
-                      style={styles.formInput}
-                      placeholder={`Enter ${field.name.toLowerCase()}`}
-                    />
-                  )}
-                </div>
-              ))}
-              <button type="submit" style={styles.submitButton}>
-                Save {activeEntity}
-              </button>
-            </form>
-          </div>
-        ) : (
-          // List View
-          <div style={styles.listView}>
-            <div style={styles.listHeader}>
-              <h2 style={styles.listTitle}>{activeEntity}</h2>
-              <span style={styles.listCount}>{sampleData.length} items</span>
-            </div>
-            <div style={styles.list}>
-              {sampleData.map((item) => (
-                <div
-                  key={item.id as number}
-                  style={styles.listItem}
-                  onClick={() => setSelectedItem(item)}
-                >
-                  <div style={styles.listItemContent}>
-                    <div style={styles.listItemTitle}>
-                      {String(item[activeEntityData?.fields?.[0]?.name || 'id'])}
-                    </div>
-                    {activeEntityData?.fields?.[1] && (
-                      <div style={styles.listItemSubtitle}>
-                        {String(item[activeEntityData.fields[1].name])}
-                      </div>
-                    )}
-                  </div>
-                  <div style={styles.listItemChevron}>›</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* FAB */}
-      {!selectedItem && !showForm && (
-        <button
-          style={styles.fab}
-          onClick={() => setShowForm(true)}
-        >
-          +
-        </button>
+          ))}
+        </div>
       )}
+
+      {/* Story Cards */}
+      <div style={styles.cardsContainer}>
+        {previewData.cards.map((card) => (
+          <div key={card.id} style={styles.card}>
+            <div style={styles.cardContent}>
+              <div style={styles.cardMain}>
+                <span style={styles.cardTitle}>{card.title}</span>
+                {card.subtitle && (
+                  <span style={styles.cardSubtitle}>{card.subtitle}</span>
+                )}
+              </div>
+              {card.time && (
+                <span style={styles.cardTime}>{card.time}</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Floating Action Button */}
+      <div style={styles.fab}>+</div>
 
       {/* Footer */}
       <footer style={styles.footer}>
@@ -306,7 +430,8 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.dawn,
+    position: 'relative',
   },
   loadingContainer: {
     minHeight: '100vh',
@@ -315,6 +440,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '16px',
+    backgroundColor: colors.dawn,
   },
   spinner: {
     width: '40px',
@@ -337,6 +463,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
     padding: '24px',
     textAlign: 'center',
+    backgroundColor: colors.dawn,
   },
   errorTitle: {
     fontSize: '24px',
@@ -352,244 +479,114 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.stream,
     textDecoration: 'underline',
   },
-  header: {
+  statusBar: {
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '16px 20px',
-    backgroundColor: colors.stream,
-    color: colors.dawn,
+    alignItems: 'center',
+    padding: '8px 20px',
+    backgroundColor: colors.dawn,
   },
-  appName: {
-    fontSize: '18px',
-    fontWeight: 600,
-    margin: 0,
-  },
-  newAppLink: {
-    color: colors.dawn,
-    opacity: 0.9,
-    textDecoration: 'none',
+  statusTime: {
     fontSize: '14px',
+    fontWeight: 600,
+    color: colors.clay,
   },
-  nav: {
+  statusIcons: {
+    display: 'flex',
+    gap: '8px',
+    fontSize: '12px',
+  },
+  greetingSection: {
+    padding: '16px 20px',
+    paddingTop: '8px',
+  },
+  greeting: {
+    fontSize: '28px',
+    fontWeight: 600,
+    color: colors.clay,
+    margin: 0,
+    lineHeight: 1.3,
+  },
+  dateLabel: {
+    fontSize: '14px',
+    color: colors.mist,
+    marginTop: '6px',
+    textTransform: 'capitalize',
+  },
+  statsCard: {
     display: 'flex',
     backgroundColor: '#fff',
-    borderBottom: '1px solid #e0e0e0',
-    overflowX: 'auto',
-    padding: '0 8px',
+    borderRadius: '16px',
+    padding: '20px',
+    margin: '0 20px 16px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
   },
-  navTab: {
-    padding: '12px 16px',
-    fontSize: '14px',
-    fontWeight: 500,
+  statItem: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  statItemBorder: {
+    borderLeft: '1px solid rgba(0,0,0,0.08)',
+  },
+  statValue: {
+    fontSize: '32px',
+    fontWeight: 600,
+    color: colors.clay,
+  },
+  statLabel: {
+    fontSize: '13px',
     color: colors.mist,
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderBottom: '2px solid transparent',
-    cursor: 'pointer',
+    marginTop: '4px',
+  },
+  cardsContainer: {
+    flex: 1,
+    padding: '0 20px',
+    paddingBottom: '100px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: '16px',
+    padding: '16px 20px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+  },
+  cardContent: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardMain: {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
+    minWidth: 0,
+    marginRight: '12px',
+  },
+  cardTitle: {
+    fontSize: '17px',
+    fontWeight: 600,
+    color: colors.clay,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  navTabActive: {
-    color: colors.stream,
-    borderBottomColor: colors.stream,
-  },
-  main: {
-    flex: 1,
-    padding: '16px',
-    paddingBottom: '80px',
-  },
-  listView: {},
-  listHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '16px',
-  },
-  listTitle: {
-    fontSize: '20px',
-    fontWeight: 600,
-    color: colors.clay,
-    margin: 0,
-  },
-  listCount: {
+  cardSubtitle: {
     fontSize: '14px',
     color: colors.mist,
+    marginTop: '4px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
-  list: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  listItem: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '16px',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-    cursor: 'pointer',
-    transition: 'box-shadow 0.2s',
-  },
-  listItemContent: {
-    flex: 1,
-  },
-  listItemTitle: {
-    fontSize: '16px',
-    fontWeight: 500,
-    color: colors.clay,
-    marginBottom: '4px',
-  },
-  listItemSubtitle: {
-    fontSize: '14px',
-    color: colors.mist,
-  },
-  listItemChevron: {
-    fontSize: '20px',
-    color: '#ccc',
-    marginLeft: '12px',
-  },
-  detailView: {
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  },
-  backButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '8px 0',
-    fontSize: '14px',
-    color: colors.stream,
-    backgroundColor: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    marginBottom: '16px',
-  },
-  detailTitle: {
-    fontSize: '24px',
-    fontWeight: 600,
-    color: colors.clay,
-    marginBottom: '24px',
-  },
-  detailFields: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  detailField: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-  },
-  fieldLabel: {
-    fontSize: '12px',
-    fontWeight: 500,
-    color: colors.mist,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  fieldValue: {
-    fontSize: '16px',
-    color: colors.clay,
-  },
-  detailActions: {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '24px',
-    paddingTop: '24px',
-    borderTop: '1px solid #e0e0e0',
-  },
-  editButton: {
-    flex: 1,
-    padding: '12px',
+  cardTime: {
     fontSize: '14px',
     fontWeight: 500,
     color: colors.stream,
-    backgroundColor: 'transparent',
-    border: `1px solid ${colors.stream}`,
-    borderRadius: '8px',
-    cursor: 'pointer',
-  },
-  deleteButton: {
-    flex: 1,
-    padding: '12px',
-    fontSize: '14px',
-    fontWeight: 500,
-    color: colors.ember,
-    backgroundColor: 'transparent',
-    border: `1px solid ${colors.ember}`,
-    borderRadius: '8px',
-    cursor: 'pointer',
-  },
-  formView: {
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  },
-  formTitle: {
-    fontSize: '20px',
-    fontWeight: 600,
-    color: colors.clay,
-    marginBottom: '24px',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  formField: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  formLabel: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: colors.clay,
-  },
-  required: {
-    color: colors.ember,
-    marginLeft: '4px',
-  },
-  formInput: {
-    padding: '12px',
-    fontSize: '16px',
-    border: `1px solid #ddd`,
-    borderRadius: '8px',
-    outline: 'none',
-  },
-  formSelect: {
-    padding: '12px',
-    fontSize: '16px',
-    border: `1px solid #ddd`,
-    borderRadius: '8px',
-    outline: 'none',
-    backgroundColor: '#fff',
-  },
-  formTextarea: {
-    padding: '12px',
-    fontSize: '16px',
-    border: `1px solid #ddd`,
-    borderRadius: '8px',
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'inherit',
-  },
-  formCheckbox: {
-    width: '20px',
-    height: '20px',
-  },
-  submitButton: {
-    padding: '14px',
-    fontSize: '16px',
-    fontWeight: 500,
-    color: colors.dawn,
-    backgroundColor: colors.stream,
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    marginTop: '8px',
+    flexShrink: 0,
   },
   fab: {
     position: 'fixed',
@@ -600,18 +597,21 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '28px',
     backgroundColor: colors.stream,
     color: colors.dawn,
-    border: 'none',
-    fontSize: '28px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+    fontSize: '28px',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
     cursor: 'pointer',
   },
   footer: {
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: '16px',
     textAlign: 'center',
-    borderTop: '1px solid #e0e0e0',
+    borderTop: '1px solid rgba(0,0,0,0.08)',
     backgroundColor: '#fff',
   },
   footerText: {
