@@ -8,7 +8,7 @@
 import { CrudService } from '../../src/data/crud-service';
 import type { DatabaseAdapter, RunResult } from '../../src/data/database-adapter';
 import type { KASAppSpec } from '../../src/core/types/spec';
-import tutorSpec from '../../assets/tutor-spec.json';
+import tutorSpec from '../../assets/templates/tutor.json';
 import { invalidateCache } from '../../src/engines/computed-field-engine';
 
 const spec = tutorSpec as unknown as KASAppSpec;
