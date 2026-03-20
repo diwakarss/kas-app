@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "description": "Empty state illustrations for KAS App",
+  "design_system": {
+    "philosophy": "Liquid Story - warm, organic, human",
+    "colors": {
+      "dawn": "#FAF7F2",
+      "clay": "#3D3530",
+      "mist": "#B8AFA6",
+      "ember": "#D4845A",
+      "bloom": "#5A8B67",
+      "stream": "#5B8BA4"
+    }
+  },
+  "illustrations": [
+    {
+      "id": "empty-no-classes",
+      "file": "empty-no-classes.svg",
+      "usage": "Anchor screen when no classes scheduled today",
+      "message": "No classes scheduled today. Enjoy your break!",
+      "action": "Schedule a Class",
+      "elements": ["calendar", "coffee cup", "leaf"]
+    },
+    {
+      "id": "empty-no-students",
+      "file": "empty-no-students.svg",
+      "usage": "Student list when no students added yet",
+      "message": "No students yet. Add your first student to get started.",
+      "action": "Add Student",
+      "elements": ["empty chair", "graduation cap", "sparkles", "plus sign"]
+    },
+    {
+      "id": "empty-no-results",
+      "file": "empty-no-results.svg",
+      "usage": "Search results when query returns no matches",
+      "message": "No results found. Try a different search term.",
+      "action": null,
+      "elements": ["magnifying glass", "question mark", "floating dots"]
+    },
+    {
+      "id": "empty-no-payments",
+      "file": "empty-no-payments.svg",
+      "usage": "Payment history when no payments recorded",
+      "message": "No payments recorded yet. Start tracking payments.",
+      "action": "Record Payment",
+      "elements": ["open wallet", "coins", "growth arrow", "plus sign"]
+    },
+    {
+      "id": "empty-no-notes",
+      "file": "empty-no-notes.svg",
+      "usage": "Notes section when no notes for an entity",
+      "message": "No notes yet. Capture your thoughts and observations.",
+      "action": "Add Note",
+      "elements": ["notebook", "pencil", "thought bubble", "sparkle"]
+    }
+  ],
+  "usage_guide": {
+    "size": "200x200 viewBox, scale as needed",
+    "background": "Transparent, works on dawn (#FAF7F2) background",
+    "accessibility": "Decorative only, use aria-hidden='true'",
+    "loading": "Use as inline SVG or img src for optimal rendering"
+  }
+}

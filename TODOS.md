@@ -62,11 +62,15 @@
 
 ## Design
 
-### Empty State Illustrations
-**What:** Create warm, human illustrations for empty states (no classes today, no students yet, no search results)
-**Why:** Empty states are features, not afterthoughts. Illustrations make the app feel human, not clinical.
-**Pros:** Differentiates from generic SaaS, supports "Liquid Story" philosophy, improves first-time user experience
-**Cons:** Requires illustration work (can use AI-generated or simple line art for MVP)
-**Context:** DESIGN.md specifies empty state structure (illustration + message + action + context) but doesn't have actual illustrations yet
-**Depends on:** None — can be done in parallel with Wave 1 implementation
-**Added:** 2026-03-19 via /plan-design-review
+### ~~Empty State Illustrations~~ ✅ DONE
+**Status:** Completed 2026-03-20
+**Files created:** `assets/illustrations/`
+- `empty-no-classes.svg` — Calendar + coffee cup for "enjoy your break"
+- `empty-no-students.svg` — Empty chair + graduation cap for first student
+- `empty-no-results.svg` — Magnifying glass + question mark for search
+- `empty-no-payments.svg` — Open wallet + coins for payment tracking
+- `empty-no-notes.svg` — Notebook + pencil for note-taking
+- `index.json` — Usage guide with messages and actions
+
+**Design tokens used:** dawn, clay, mist, ember, bloom, stream
+**Style:** Warm line-art, "Liquid Story" philosophy, 200x200 viewBox

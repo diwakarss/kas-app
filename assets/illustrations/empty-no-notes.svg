@@ -1,0 +1,54 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Empty State: No Notes Yet -->
+  <!-- Style: Creative, inviting journaling/documentation -->
+
+  <!-- Soft background circle -->
+  <circle cx="100" cy="100" r="80" fill="#FAF7F2" stroke="#B8AFA6" stroke-width="2" stroke-dasharray="8 4"/>
+
+  <!-- Notebook -->
+  <g transform="translate(55, 45)">
+    <!-- Notebook pages -->
+    <rect x="5" y="5" width="75" height="100" rx="4" fill="#B8AFA6" opacity="0.2"/>
+    <rect x="2" y="2" width="75" height="100" rx="4" fill="#B8AFA6" opacity="0.3"/>
+    <rect x="0" y="0" width="75" height="100" rx="4" fill="white" stroke="#B8AFA6" stroke-width="2"/>
+    <!-- Spiral binding -->
+    <g fill="#3D3530" opacity="0.4">
+      <circle cx="-3" cy="15" r="3"/>
+      <circle cx="-3" cy="30" r="3"/>
+      <circle cx="-3" cy="45" r="3"/>
+      <circle cx="-3" cy="60" r="3"/>
+      <circle cx="-3" cy="75" r="3"/>
+      <circle cx="-3" cy="90" r="3"/>
+    </g>
+    <!-- Empty lines (waiting for content) -->
+    <line x1="15" y1="25" x2="65" y2="25" stroke="#B8AFA6" stroke-width="1" opacity="0.5" stroke-dasharray="4 2"/>
+    <line x1="15" y1="40" x2="60" y2="40" stroke="#B8AFA6" stroke-width="1" opacity="0.4" stroke-dasharray="4 2"/>
+    <line x1="15" y1="55" x2="55" y2="55" stroke="#B8AFA6" stroke-width="1" opacity="0.3" stroke-dasharray="4 2"/>
+    <line x1="15" y1="70" x2="50" y2="70" stroke="#B8AFA6" stroke-width="1" opacity="0.2" stroke-dasharray="4 2"/>
+  </g>
+
+  <!-- Pencil -->
+  <g transform="translate(140, 80) rotate(30)">
+    <!-- Pencil body -->
+    <rect x="0" y="0" width="12" height="50" rx="1" fill="#D4845A"/>
+    <!-- Pencil tip -->
+    <polygon points="0,50 6,65 12,50" fill="#3D3530" opacity="0.6"/>
+    <polygon points="3,55 6,62 9,55" fill="#D4845A" opacity="0.8"/>
+    <!-- Eraser -->
+    <rect x="0" y="-8" width="12" height="8" rx="1" fill="#B8AFA6"/>
+    <!-- Metal band -->
+    <rect x="0" y="0" width="12" height="3" fill="#B8AFA6" opacity="0.5"/>
+  </g>
+
+  <!-- Thought bubble (ideas waiting) -->
+  <g transform="translate(45, 130)" opacity="0.4">
+    <circle cx="0" cy="0" r="4" fill="#5B8BA4"/>
+    <circle cx="8" cy="-5" r="3" fill="#5B8BA4"/>
+    <circle cx="14" cy="-12" r="2" fill="#5B8BA4"/>
+  </g>
+
+  <!-- Sparkle (inspiration) -->
+  <g transform="translate(160, 55)" fill="#5A8B67" opacity="0.5">
+    <polygon points="0,-6 1.5,-1.5 6,0 1.5,1.5 0,6 -1.5,1.5 -6,0 -1.5,-1.5"/>
+  </g>
+</svg>
