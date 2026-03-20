@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.2.0] - 2026-03-20
+
+### Added
+- `restaurant` and `doctor` spec types with seed data functions
+- Defensive handling for malformed story events in `useStoryData`
+- Legacy add_flow format normalization (`{fields: [...]}` → `{field: ...}`)
+- Default display templates for calendar and search when config is missing
+- FK column generation from relationships not declared in fields array
+
+### Changed
+- Spec templates moved from `assets/*.json` to `assets/templates/*.json`
+- `useSearch` uses optional chaining for display config
+- Constitution compiler reads template list from `index.json`
+
+### Fixed
+- Missing semicolon in schema-engine.ts
+
 ## [0.0.1.0] - 2026-03-20
 
 ### Added

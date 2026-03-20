@@ -31,6 +31,33 @@
 **Depends on:** None
 **Added:** 2026-03-19 via /plan-eng-review (Wave 2)
 
+### Prompt Engineering Guidelines (Wave 3)
+**What:** Document prompt engineering guidelines for future template authors
+**Why:** As new templates are added, authors need guidance on prompt structure, expected outputs, and testing
+**Pros:** Consistency across templates, faster onboarding for contributors, reduces prompt debugging
+**Cons:** Needs maintenance as LLM capabilities evolve
+**Context:** Wave 3 introduces LLM-powered spec generation. Prompts are code, and like code need documentation
+**Depends on:** Wave 3 completion (prompts must exist first)
+**Added:** 2026-03-20 via /plan-eng-review (Wave 3)
+
+### LLM Cost Tracking (Wave 3)
+**What:** Add LLM cost tracking/monitoring for generation API
+**Why:** Understanding API costs is critical as usage grows; enables budgeting and optimization
+**Pros:** Visibility into per-generation costs, enables cost optimization, supports usage-based pricing
+**Cons:** Adds logging overhead, requires cost calculation per provider
+**Context:** Wave 3 introduces LLM API calls. Each call has associated token costs that should be tracked
+**Depends on:** Wave 3 completion (generation API must exist first)
+**Added:** 2026-03-20 via /plan-eng-review (Wave 3)
+
+### LLM Latency Benchmarks (Wave 3)
+**What:** Performance benchmark for LLM generation (baseline latency tracking)
+**Why:** Track generation latency over time to detect regressions and optimize
+**Pros:** Regression detection, optimization targets, SLA documentation
+**Cons:** Requires baseline establishment, adds CI time for benchmark runs
+**Context:** Wave 3 generation has P2 gate (<30s). Tracking actual latency over time helps identify drift
+**Depends on:** Wave 3 completion (generation must exist first)
+**Added:** 2026-03-20 via /plan-eng-review (Wave 3)
+
 ## Design
 
 ### Empty State Illustrations
