@@ -1,0 +1,639 @@
+{
+  "meta": {
+    "spec_id": "doctor-clinic-001",
+    "name": "Dr. Sharma's Clinic",
+    "version": 1,
+    "business_type": "doctor",
+    "created_date": "2026-03-20T00:00:00Z",
+    "base_template": "doctor-v1",
+    "source": "template",
+    "generation_confidence": 0.90,
+    "template_family": "doctor",
+    "template_version": 1,
+    "spec_version": 1,
+    "policy_version": 1,
+    "version_history": [
+      {
+        "version": 1,
+        "date": "2026-03-20T00:00:00Z",
+        "source": "generated",
+        "changes": "Initial spec from doctor template"
+      }
+    ],
+    "customizations": []
+  },
+
+  "entities": [
+    {
+      "name": "Patient",
+      "display_name": "Patient",
+      "display_name_plural": "Patients",
+      "icon": "👤",
+      "fields": [
+        {
+          "name": "name",
+          "display_name": "Name",
+          "type": "text",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "phone",
+          "display_name": "Phone",
+          "type": "phone",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "email",
+          "display_name": "Email",
+          "type": "email",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "date_of_birth",
+          "display_name": "Date of Birth",
+          "type": "date",
+          "required": false,
+          "searchable": false
+        },
+        {
+          "name": "blood_group",
+          "display_name": "Blood Group",
+          "type": "choice",
+          "required": false,
+          "searchable": false,
+          "options": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]
+        },
+        {
+          "name": "allergies",
+          "display_name": "Allergies",
+          "type": "note",
+          "required": false,
+          "searchable": true,
+          "placeholder": "List known allergies..."
+        },
+        {
+          "name": "address",
+          "display_name": "Address",
+          "type": "text",
+          "required": false,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Appointment",
+          "type": "has_many",
+          "foreign_key": "patient_id",
+          "display_in_story": true
+        },
+        {
+          "target": "Prescription",
+          "type": "has_many",
+          "foreign_key": "patient_id",
+          "display_in_story": true
+        },
+        {
+          "target": "Note",
+          "type": "has_many",
+          "foreign_key": "patient_id",
+          "display_in_story": true
+        }
+      ]
+    },
+    {
+      "name": "Appointment",
+      "display_name": "Appointment",
+      "display_name_plural": "Appointments",
+      "icon": "📅",
+      "fields": [
+        {
+          "name": "patient_id",
+          "display_name": "Patient",
+          "type": "number",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "datetime",
+          "display_name": "Date & Time",
+          "type": "datetime",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "duration",
+          "display_name": "Duration (min)",
+          "type": "duration",
+          "required": true,
+          "searchable": false,
+          "default_value": 15
+        },
+        {
+          "name": "reason",
+          "display_name": "Reason for Visit",
+          "type": "text",
+          "required": false,
+          "searchable": true,
+          "placeholder": "Checkup, follow-up, etc."
+        },
+        {
+          "name": "status",
+          "display_name": "Status",
+          "type": "choice",
+          "required": true,
+          "searchable": false,
+          "options": ["scheduled", "completed", "cancelled", "no-show"],
+          "default_value": "scheduled"
+        },
+        {
+          "name": "fee",
+          "display_name": "Consultation Fee",
+          "type": "currency",
+          "required": false,
+          "searchable": false,
+          "prefix": "Rs."
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Patient",
+          "type": "belongs_to",
+          "foreign_key": "patient_id",
+          "display_in_story": false
+        }
+      ]
+    },
+    {
+      "name": "Prescription",
+      "display_name": "Prescription",
+      "display_name_plural": "Prescriptions",
+      "icon": "💊",
+      "fields": [
+        {
+          "name": "patient_id",
+          "display_name": "Patient",
+          "type": "number",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "date",
+          "display_name": "Date",
+          "type": "date",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "diagnosis",
+          "display_name": "Diagnosis",
+          "type": "text",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "medications",
+          "display_name": "Medications",
+          "type": "note",
+          "required": true,
+          "searchable": true,
+          "placeholder": "List medications with dosage..."
+        },
+        {
+          "name": "instructions",
+          "display_name": "Instructions",
+          "type": "note",
+          "required": false,
+          "searchable": false,
+          "placeholder": "Diet, rest, follow-up instructions..."
+        },
+        {
+          "name": "follow_up_date",
+          "display_name": "Follow-up Date",
+          "type": "date",
+          "required": false,
+          "searchable": false
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Patient",
+          "type": "belongs_to",
+          "foreign_key": "patient_id",
+          "display_in_story": false
+        }
+      ]
+    },
+    {
+      "name": "Note",
+      "display_name": "Note",
+      "display_name_plural": "Notes",
+      "icon": "📝",
+      "fields": [
+        {
+          "name": "patient_id",
+          "display_name": "Patient",
+          "type": "number",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "date",
+          "display_name": "Date",
+          "type": "date",
+          "required": true,
+          "searchable": false
+        },
+        {
+          "name": "content",
+          "display_name": "Note",
+          "type": "note",
+          "required": true,
+          "searchable": true,
+          "placeholder": "Clinical observations, patient history..."
+        }
+      ],
+      "relationships": [
+        {
+          "target": "Patient",
+          "type": "belongs_to",
+          "foreign_key": "patient_id",
+          "display_in_story": false
+        }
+      ]
+    }
+  ],
+
+  "anchor": {
+    "type": "day_schedule",
+    "entity": "Appointment",
+    "greeting_template": "Good {time_of_day}! Here's your schedule",
+    "date_label": "Today",
+    "card_display": {
+      "title": "{Patient.name}",
+      "subtitle": "{reason}",
+      "time_field": "datetime",
+      "warning_field": "status",
+      "warning_template": "Status: {status}",
+      "actions": ["view_patient", "mark_completed", "reschedule"]
+    },
+    "empty_state": {
+      "message": "No appointments scheduled",
+      "action": "Schedule Appointment",
+      "fallback_view": "patient_list"
+    },
+    "summary": {
+      "stats": [
+        { "label": "Today", "query": "COUNT(*) WHERE DATE(datetime) = DATE('now')" },
+        { "label": "This Week", "query": "COUNT(*) WHERE datetime >= DATE('now', 'weekday 0', '-6 days')" }
+      ]
+    }
+  },
+
+  "story_events": {
+    "Patient": {
+      "events": [
+        {
+          "source": "Appointment",
+          "relationship": "patient_id",
+          "type": "appointment",
+          "display": "{datetime} - {reason}",
+          "icon_color": "#4CAF50"
+        },
+        {
+          "source": "Prescription",
+          "relationship": "patient_id",
+          "type": "prescription",
+          "display": "{date} - {diagnosis}",
+          "icon_color": "#2196F3"
+        },
+        {
+          "source": "Note",
+          "relationship": "patient_id",
+          "type": "note",
+          "display": "{date} - {content}",
+          "icon_color": "#FF9800"
+        }
+      ],
+      "stats_card": [
+        { "label": "Total Visits", "computed": "total_visits" },
+        { "label": "Last Visit", "computed": "last_visit" },
+        { "label": "Next Appointment", "computed": "next_appointment" }
+      ],
+      "coming_up": {
+        "source": "Appointment",
+        "relationship": "patient_id",
+        "filter": "datetime > datetime('now') AND status = 'scheduled'",
+        "sort": "datetime ASC",
+        "display": "{datetime} - {reason}"
+      },
+      "origin": {
+        "display": "Patient since {created_at}"
+      },
+      "context": {
+        "display": "{phone}"
+      }
+    }
+  },
+
+  "add_flows": {
+    "Patient": {
+      "steps": [
+        {
+          "field": "name",
+          "prompt": "Patient's full name",
+          "required": true,
+          "keyboard": "default"
+        },
+        {
+          "field": "phone",
+          "prompt": "Phone number",
+          "required": true,
+          "keyboard": "phone-pad"
+        },
+        {
+          "field": "date_of_birth",
+          "prompt": "Date of birth (optional)",
+          "required": false,
+          "skip_text": "Skip"
+        },
+        {
+          "field": "blood_group",
+          "prompt": "Blood group (optional)",
+          "required": false,
+          "skip_text": "Skip"
+        }
+      ],
+      "after_add": {
+        "action": "suggest",
+        "text": "Schedule first appointment?",
+        "target": "Appointment",
+        "pre_fill": { "patient_id": "{id}" }
+      }
+    },
+    "Appointment": {
+      "steps": [
+        {
+          "field": "patient_id",
+          "prompt": "Select patient",
+          "required": true
+        },
+        {
+          "field": "datetime",
+          "prompt": "Appointment date and time",
+          "required": true
+        },
+        {
+          "field": "duration",
+          "prompt": "Duration in minutes",
+          "required": true
+        },
+        {
+          "field": "reason",
+          "prompt": "Reason for visit (optional)",
+          "required": false,
+          "skip_text": "Skip"
+        },
+        {
+          "field": "fee",
+          "prompt": "Consultation fee",
+          "required": false,
+          "prefix": "Rs.",
+          "skip_text": "Skip"
+        }
+      ],
+      "after_add": {
+        "action": "none"
+      }
+    },
+    "Prescription": {
+      "steps": [
+        {
+          "field": "patient_id",
+          "prompt": "Select patient",
+          "required": true
+        },
+        {
+          "field": "diagnosis",
+          "prompt": "Diagnosis",
+          "required": true
+        },
+        {
+          "field": "medications",
+          "prompt": "Medications and dosage",
+          "required": true
+        },
+        {
+          "field": "instructions",
+          "prompt": "Instructions (optional)",
+          "required": false,
+          "skip_text": "Skip"
+        },
+        {
+          "field": "follow_up_date",
+          "prompt": "Follow-up date (optional)",
+          "required": false,
+          "skip_text": "Skip"
+        }
+      ],
+      "after_add": {
+        "action": "none"
+      }
+    },
+    "Note": {
+      "steps": [
+        {
+          "field": "patient_id",
+          "prompt": "Select patient",
+          "required": true
+        },
+        {
+          "field": "content",
+          "prompt": "Note content",
+          "required": true
+        }
+      ],
+      "after_add": {
+        "action": "none"
+      }
+    }
+  },
+
+  "search": {
+    "entities": ["Patient", "Prescription"],
+    "display": {
+      "Patient": "{name} - {phone}",
+      "Prescription": "{Patient.name} - {diagnosis}"
+    }
+  },
+
+  "calendar": {
+    "entity": "Appointment",
+    "date_field": "datetime",
+    "display": "{Patient.name} - {reason}",
+    "color_field": "status"
+  },
+
+  "chat_commands": [
+    {
+      "pattern": "add patient {name}",
+      "aliases": ["new patient", "register patient"],
+      "action": {
+        "type": "create",
+        "entity": "Patient",
+        "fields": { "name": "{name}" }
+      },
+      "variables": {
+        "name": { "type": "text" }
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "schedule {patient_name} {datetime}",
+      "aliases": ["book appointment", "add appointment"],
+      "action": {
+        "type": "create_related",
+        "entity": "Appointment",
+        "lookup_field": "name",
+        "target_field": "patient_id",
+        "pre_fill": { "datetime": "{datetime}", "status": "scheduled" }
+      },
+      "variables": {
+        "patient_name": { "type": "entity", "entity": "Patient", "field": "name" },
+        "datetime": { "type": "datetime" }
+      },
+      "requires_confirmation": true,
+      "confirmation_template": "Schedule {patient_name} for {datetime}?"
+    },
+    {
+      "pattern": "today's patients",
+      "aliases": ["today appointments", "schedule today"],
+      "action": {
+        "type": "query",
+        "entity": "Appointment",
+        "name": "today_appointments",
+        "description": "Show all appointments for today"
+      },
+      "requires_confirmation": false
+    },
+    {
+      "pattern": "prescribe {patient_name}",
+      "aliases": ["new prescription", "write prescription"],
+      "action": {
+        "type": "create_related",
+        "entity": "Prescription",
+        "lookup_field": "name",
+        "target_field": "patient_id"
+      },
+      "variables": {
+        "patient_name": { "type": "entity", "entity": "Patient", "field": "name" }
+      },
+      "requires_confirmation": false
+    }
+  ],
+
+  "business_rules": [
+    {
+      "id": "missed_followup",
+      "name": "Missed Follow-up",
+      "entity": "Patient",
+      "condition": {
+        "type": "computed_field_exceeds",
+        "field": "days_since_last_visit",
+        "value": 90
+      },
+      "warning": {
+        "message": "No visit in {days_since_last_visit} days",
+        "severity": "warning",
+        "show_in": ["story", "search"]
+      },
+      "threshold": {
+        "field": "days_since_last_visit",
+        "default_value": 90,
+        "label": "Days without visit",
+        "user_adjustable": true
+      }
+    },
+    {
+      "id": "upcoming_followup",
+      "name": "Upcoming Follow-up",
+      "entity": "Prescription",
+      "condition": {
+        "type": "date_passed",
+        "field": "follow_up_date"
+      },
+      "warning": {
+        "message": "Follow-up due",
+        "severity": "info",
+        "show_in": ["story"]
+      }
+    }
+  ],
+
+  "computed_fields": {
+    "Patient": [
+      {
+        "name": "total_visits",
+        "display_name": "Total Visits",
+        "type": "count",
+        "source_entity": "Appointment",
+        "relationship": "patient_id",
+        "filter": {
+          "field": "status",
+          "condition": "=",
+          "value": "completed"
+        }
+      },
+      {
+        "name": "last_visit",
+        "display_name": "Last Visit",
+        "type": "latest",
+        "source_entity": "Appointment",
+        "relationship": "patient_id",
+        "date_field": "datetime",
+        "filter": {
+          "field": "status",
+          "condition": "=",
+          "value": "completed"
+        },
+        "format": "relative"
+      },
+      {
+        "name": "days_since_last_visit",
+        "display_name": "Days Since Last Visit",
+        "type": "days_since",
+        "source_entity": "Appointment",
+        "relationship": "patient_id",
+        "date_field": "datetime",
+        "filter": {
+          "field": "status",
+          "condition": "=",
+          "value": "completed"
+        }
+      },
+      {
+        "name": "next_appointment",
+        "display_name": "Next Appointment",
+        "type": "latest",
+        "source_entity": "Appointment",
+        "relationship": "patient_id",
+        "date_field": "datetime",
+        "filter": {
+          "field": "status",
+          "condition": "=",
+          "value": "scheduled"
+        },
+        "format": "relative"
+      },
+      {
+        "name": "total_prescriptions",
+        "display_name": "Total Prescriptions",
+        "type": "count",
+        "source_entity": "Prescription",
+        "relationship": "patient_id"
+      }
+    ]
+  }
+}

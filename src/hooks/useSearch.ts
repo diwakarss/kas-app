@@ -70,7 +70,7 @@ export function useSearch(): SearchState {
 
       if (rawResults.length === 0) continue;
 
-      const displayTemplate = searchConfig.display[entityName] || '{name}';
+      const displayTemplate = searchConfig.display?.[entityName] || '{name}';
 
       const results: SearchResult[] = rawResults.map(row => {
         const relatedMap: Record<string, Record<string, any>> = {};

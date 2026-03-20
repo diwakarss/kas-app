@@ -1,0 +1,386 @@
+{
+  "version": 1,
+  "extracted_from": [
+    "tutor",
+    "shopkeeper",
+    "doctor"
+  ],
+  "entity_patterns": [
+    {
+      "name": "person",
+      "common_fields": [],
+      "common_relationships": [],
+      "examples": [
+        "Student",
+        "Customer",
+        "Patient"
+      ]
+    },
+    {
+      "name": "appointment",
+      "common_fields": [],
+      "common_relationships": [],
+      "examples": [
+        "Class",
+        "Appointment"
+      ]
+    },
+    {
+      "name": "transaction",
+      "common_fields": [],
+      "common_relationships": [],
+      "examples": [
+        "Payment",
+        "Transaction"
+      ]
+    },
+    {
+      "name": "document",
+      "common_fields": [],
+      "common_relationships": [],
+      "examples": [
+        "Note",
+        "Prescription"
+      ]
+    },
+    {
+      "name": "product",
+      "common_fields": [],
+      "common_relationships": [],
+      "examples": [
+        "Product"
+      ]
+    },
+    {
+      "name": "other",
+      "common_fields": [],
+      "common_relationships": [],
+      "examples": [
+        "Credit"
+      ]
+    }
+  ],
+  "field_patterns": [
+    {
+      "name": "date",
+      "type": "date",
+      "typically_required": true,
+      "typically_searchable": false,
+      "occurrences": 6
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "typically_required": true,
+      "typically_searchable": true,
+      "occurrences": 4
+    },
+    {
+      "name": "phone",
+      "type": "phone",
+      "typically_required": false,
+      "typically_searchable": true,
+      "occurrences": 3
+    },
+    {
+      "name": "amount",
+      "type": "currency",
+      "typically_required": true,
+      "typically_searchable": false,
+      "occurrences": 3
+    },
+    {
+      "name": "email",
+      "type": "email",
+      "typically_required": false,
+      "typically_searchable": true,
+      "occurrences": 2
+    },
+    {
+      "name": "datetime",
+      "type": "datetime",
+      "typically_required": true,
+      "typically_searchable": false,
+      "occurrences": 2
+    },
+    {
+      "name": "duration",
+      "type": "duration",
+      "typically_required": true,
+      "typically_searchable": false,
+      "occurrences": 2
+    },
+    {
+      "name": "status",
+      "type": "choice",
+      "typically_required": true,
+      "typically_searchable": false,
+      "occurrences": 2
+    },
+    {
+      "name": "content",
+      "type": "note",
+      "typically_required": true,
+      "typically_searchable": true,
+      "occurrences": 2
+    },
+    {
+      "name": "address",
+      "type": "text",
+      "typically_required": false,
+      "typically_searchable": false,
+      "occurrences": 2
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "typically_required": false,
+      "typically_searchable": true,
+      "occurrences": 2
+    },
+    {
+      "name": "hourly_fee",
+      "type": "currency",
+      "typically_required": true,
+      "typically_searchable": false,
+      "occurrences": 1
+    },
+    {
+      "name": "grade",
+      "type": "text",
+      "typically_required": false,
+      "typically_searchable": true,
+      "occurrences": 1
+    },
+    {
+      "name": "topic",
+      "type": "text",
+      "typically_required": false,
+      "typically_searchable": true,
+      "occurrences": 1
+    },
+    {
+      "name": "for_classes",
+      "type": "number",
+      "typically_required": false,
+      "typically_searchable": false,
+      "occurrences": 1
+    },
+    {
+      "name": "method",
+      "type": "choice",
+      "typically_required": false,
+      "typically_searchable": false,
+      "occurrences": 1
+    },
+    {
+      "name": "price",
+      "type": "currency",
+      "typically_required": true,
+      "typically_searchable": false,
+      "occurrences": 1
+    },
+    {
+      "name": "category",
+      "type": "choice",
+      "typically_required": false,
+      "typically_searchable": true,
+      "occurrences": 1
+    },
+    {
+      "name": "stock_quantity",
+      "type": "number",
+      "typically_required": false,
+      "typically_searchable": false,
+      "occurrences": 1
+    },
+    {
+      "name": "items_description",
+      "type": "text",
+      "typically_required": false,
+      "typically_searchable": true,
+      "occurrences": 1
+    }
+  ],
+  "computed_patterns": [
+    {
+      "name": "days_since_last_visit",
+      "type": "days_since",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 2
+    },
+    {
+      "name": "total_classes",
+      "type": "count",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "total_paid",
+      "type": "sum",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "total_earned",
+      "type": "formula",
+      "requires": {
+        "source_entity": false
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "due_amount",
+      "type": "formula",
+      "requires": {
+        "source_entity": false
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "days_since_last_payment",
+      "type": "days_since",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "upcoming_class_count",
+      "type": "count",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "last_class_date",
+      "type": "latest",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "earnings",
+      "type": "formula",
+      "requires": {
+        "source_entity": false
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "total_purchases",
+      "type": "count",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "total_spent",
+      "type": "sum",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "total_credit",
+      "type": "sum",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "total_settled",
+      "type": "sum",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "outstanding_balance",
+      "type": "formula",
+      "requires": {
+        "source_entity": false
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "last_visit_date",
+      "type": "latest",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "total_visits",
+      "type": "count",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "last_visit",
+      "type": "latest",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "next_appointment",
+      "type": "latest",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    },
+    {
+      "name": "total_prescriptions",
+      "type": "count",
+      "requires": {
+        "source_entity": true
+      },
+      "occurrences": 1
+    }
+  ],
+  "rule_patterns": [
+    {
+      "category": "person",
+      "condition_type": "computed_field_exceeds",
+      "occurrences": 2
+    },
+    {
+      "category": "person",
+      "condition_type": "count_below",
+      "occurrences": 1
+    },
+    {
+      "category": "person",
+      "condition_type": "computed_field_exceeds",
+      "occurrences": 2
+    },
+    {
+      "category": "person",
+      "condition_type": "computed_field_exceeds",
+      "occurrences": 1
+    },
+    {
+      "category": "document",
+      "condition_type": "date_passed",
+      "occurrences": 1
+    }
+  ]
+}
