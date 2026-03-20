@@ -59,7 +59,21 @@ export async function generateSpec({
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || `HTTP ${response.status}`);
+      // Parse error message from JSON if possible
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error === 'Function timeout') {
+          errorMessage = 'Generation timed out. Please try again.';
+        } else if (errorJson.error) {
+          errorMessage = errorJson.error;
+        } else if (errorJson.message) {
+          errorMessage = errorJson.message;
+        }
+      } catch {
+        if (errorText) errorMessage = errorText;
+      }
+      throw new Error(errorMessage);
     }
 
     const contentType = response.headers.get('content-type');
