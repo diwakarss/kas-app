@@ -8,7 +8,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { KASAppSpec } from '../core/types/spec';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7131';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7130';
 
 // Storage keys
 const CACHED_SPEC_KEY = '@kas_cached_spec';
@@ -40,6 +40,8 @@ export interface CloudSpecLoaderResult {
 
 /**
  * Fetch user's specs from the cloud
+ * NOTE: Currently returns empty - requires user_id on app_instance records
+ * TODO: Update generate-spec to set user_id when user is authenticated
  */
 export async function fetchUserSpecs(token: string): Promise<{
   success: boolean;
@@ -47,7 +49,9 @@ export async function fetchUserSpecs(token: string): Promise<{
   error?: string;
 }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/specs`, {
+    // Query app_instance table for user's specs
+    // This requires the app_instance to have user_id set during generation
+    const response = await fetch(`${API_BASE_URL}/api/database/records/app_instance`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -60,8 +64,18 @@ export async function fetchUserSpecs(token: string): Promise<{
       return { success: false, error: `HTTP ${response.status}` };
     }
 
-    const data = await response.json();
-    return { success: true, specs: data.data || [] };
+    const records = await response.json();
+
+    // Transform to SpecListItem format
+    const specs: SpecListItem[] = (records || []).map((record: any) => ({
+      id: record.id,
+      name: record.name,
+      businessType: record.business_type || '',
+      version: record.current_version || 1,
+      updatedAt: record.updated_at,
+    }));
+
+    return { success: true, specs };
   } catch (error: any) {
     console.error('[CloudSpecLoader] Fetch specs error:', error);
     return { success: false, error: error.message || 'Network error' };
@@ -70,22 +84,17 @@ export async function fetchUserSpecs(token: string): Promise<{
 
 /**
  * Fetch a specific spec from the cloud
+ * Uses the public get-spec endpoint (no auth required)
  */
 export async function fetchSpec(
   specId: string,
-  token: string
+  token?: string // Token is optional - endpoint is public
 ): Promise<CloudSpecLoaderResult> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/specs/${specId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    // Use the InsForge edge function endpoint
+    const response = await fetch(`${API_BASE_URL}/functions/get-spec?id=${specId}`);
 
     if (!response.ok) {
-      if (response.status === 401) {
-        return { success: false, error: 'Session expired' };
-      }
       if (response.status === 404) {
         return { success: false, error: 'Spec not found' };
       }
@@ -93,12 +102,17 @@ export async function fetchSpec(
     }
 
     const data = await response.json();
+
+    if (!data.success || !data.data) {
+      return { success: false, error: data.error || 'Invalid response' };
+    }
+
     const cloudSpec: CloudSpec = {
       id: data.data.id,
       name: data.data.name,
-      version: data.data.current_version,
+      version: data.data.version || 1,
       spec: data.data.spec,
-      updatedAt: data.data.updated_at,
+      updatedAt: data.data.updatedAt || data.data.createdAt,
     };
 
     // Cache the spec locally
@@ -124,21 +138,18 @@ export async function fetchSpec(
 export async function checkForUpdate(
   specId: string,
   currentVersion: number,
-  token: string
+  _token?: string // Token not required for public endpoint
 ): Promise<{ hasUpdate: boolean; newVersion?: number }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/specs/${specId}/version`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    // Fetch the spec to get current version
+    const response = await fetch(`${API_BASE_URL}/functions/get-spec?id=${specId}`);
 
     if (!response.ok) {
       return { hasUpdate: false };
     }
 
     const data = await response.json();
-    const serverVersion = data.version || 0;
+    const serverVersion = data.data?.version || 0;
 
     return {
       hasUpdate: serverVersion > currentVersion,

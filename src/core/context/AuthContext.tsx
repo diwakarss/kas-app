@@ -15,8 +15,8 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// API base URL - configurable via env
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7131';
+// API base URL - configurable via env (InsForge backend)
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7130';
 
 // Storage keys
 const TOKEN_KEY = '@kas_auth_token';
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -137,15 +137,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        return { success: false, error: data.error || 'Invalid credentials' };
+        return { success: false, error: data.message || data.error || 'Invalid credentials' };
       }
 
-      const { token, refresh_token, user } = data;
-      await saveAuth(token, refresh_token, user);
+      // InsForge returns accessToken (not token) and no refresh_token
+      const { accessToken, user } = data;
+      await saveAuth(accessToken, '', user);
 
       setState({
         user,
-        token,
+        token: accessToken,
         isLoading: false,
         isAuthenticated: true,
       });
@@ -159,7 +160,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signUp = useCallback(async (email: string, password: string, name?: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),
@@ -168,15 +169,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        return { success: false, error: data.error || 'Registration failed' };
+        return { success: false, error: data.message || data.error || 'Registration failed' };
       }
 
-      const { token, refresh_token, user } = data;
-      await saveAuth(token, refresh_token, user);
+      // InsForge returns accessToken (not token) and no refresh_token
+      const { accessToken, user } = data;
+      await saveAuth(accessToken, '', user);
 
       setState({
         user,
-        token,
+        token: accessToken,
         isLoading: false,
         isAuthenticated: true,
       });
@@ -189,37 +191,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const signOut = useCallback(async () => {
-    try {
-      // Call logout endpoint (optional, for server-side cleanup)
-      if (state.token) {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${state.token}` },
-        }).catch(() => {}); // Ignore errors
-      }
-    } finally {
-      await clearAuth();
-      setState({
-        user: null,
-        token: null,
-        isLoading: false,
-        isAuthenticated: false,
-      });
-    }
-  }, [state.token]);
+    // InsForge doesn't require server-side logout - just clear local state
+    await clearAuth();
+    setState({
+      user: null,
+      token: null,
+      isLoading: false,
+      isAuthenticated: false,
+    });
+  }, []);
 
   const refreshAuth = useCallback(async () => {
+    // InsForge doesn't have refresh tokens - validate current token instead
     try {
-      const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
-      if (!refreshToken) return false;
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) return false;
 
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken }),
+      // Check if token is still valid by calling current session endpoint
+      const response = await fetch(`${API_BASE_URL}/api/auth/sessions/current`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
+        // Token expired or invalid - clear auth
         await clearAuth();
         setState({
           user: null,
@@ -230,16 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return false;
       }
 
-      const data = await response.json();
-      await saveAuth(data.token, data.refresh_token, data.user);
-
-      setState({
-        user: data.user,
-        token: data.token,
-        isLoading: false,
-        isAuthenticated: true,
-      });
-
+      // Token is still valid
       return true;
     } catch (error) {
       console.error('[AuthContext] Refresh error:', error);

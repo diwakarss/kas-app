@@ -3,7 +3,8 @@
  * Handles spec generation with SSE streaming
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7131';
+// InsForge backend URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7130';
 
 export interface GenerateProgressEvent {
   type: 'progress';
@@ -44,7 +45,7 @@ export async function generateSpec({
   onError,
 }: GenerateOptions): Promise<void> {
   try {
-    const response = await fetch(`${API_URL}/api/specs/generate`, {
+    const response = await fetch(`${API_URL}/functions/generate-spec`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

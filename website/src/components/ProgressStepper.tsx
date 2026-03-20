@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/lib/tokens';
 
 export interface ProgressStep {
@@ -16,18 +17,59 @@ export const PROGRESS_STEPS: ProgressStep[] = [
   { step: 5, message: 'Complete!', subtitle: 'Your app is ready' },
 ];
 
+// Minimum time to show each step (in ms)
+const STEP_MIN_DURATION = 1500;
+
 interface ProgressStepperProps {
   currentStep: number;
   error?: string | null;
 }
 
 export function ProgressStepper({ currentStep, error }: ProgressStepperProps) {
+  const [displayedStep, setDisplayedStep] = useState(1);
+  const animationRef = useRef<NodeJS.Timeout | null>(null);
+  const targetStepRef = useRef(currentStep);
+
+  useEffect(() => {
+    targetStepRef.current = currentStep;
+
+    // If target is ahead of displayed, animate towards it
+    if (currentStep > displayedStep) {
+      const animateToTarget = () => {
+        setDisplayedStep((prev) => {
+          const next = prev + 1;
+          // If we haven't reached the target, schedule next animation
+          if (next < targetStepRef.current) {
+            animationRef.current = setTimeout(animateToTarget, STEP_MIN_DURATION);
+          }
+          return next;
+        });
+      };
+
+      // Clear any existing animation
+      if (animationRef.current) {
+        clearTimeout(animationRef.current);
+      }
+
+      // Start animation after current step has been shown for minimum duration
+      animationRef.current = setTimeout(animateToTarget, STEP_MIN_DURATION);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        clearTimeout(animationRef.current);
+      }
+    };
+  }, [currentStep, displayedStep]);
+
+  // Use displayedStep for rendering instead of currentStep
+  const visibleStep = displayedStep;
   return (
     <div style={styles.container}>
       {PROGRESS_STEPS.map((step, index) => {
-        const isComplete = currentStep > step.step;
-        const isCurrent = currentStep === step.step;
-        const isPending = currentStep < step.step;
+        const isComplete = visibleStep > step.step;
+        const isCurrent = visibleStep === step.step;
+        const isPending = visibleStep < step.step;
         const isError = error && isCurrent;
 
         return (

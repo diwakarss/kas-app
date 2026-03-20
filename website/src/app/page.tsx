@@ -14,6 +14,7 @@ export default function Home() {
   const [state, setState] = useState<AppState>('idle');
   const [currentStep, setCurrentStep] = useState(0);
   const [specId, setSpecId] = useState<string | null>(null);
+  const [spec, setSpec] = useState<Record<string, unknown> | null>(null);
   const [businessName, setBusinessName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -33,6 +34,8 @@ export default function Home() {
         onComplete: (event: GenerateCompleteEvent) => {
           setCurrentStep(5);
           setSpecId(event.specId);
+          setSpec(event.spec);
+          // Spec is now stored in the database by the backend
           setState('complete');
         },
         onError: (errorMsg: string) => {
@@ -48,6 +51,7 @@ export default function Home() {
     setState('idle');
     setCurrentStep(0);
     setSpecId(null);
+    setSpec(null);
     setBusinessName('');
     setError(null);
   };
@@ -98,7 +102,7 @@ export default function Home() {
                 <p style={styles.ctaNote}>
                   Or{' '}
                   <a
-                    href={`${process.env.NEXT_PUBLIC_PREVIEW_URL}?spec_id=${specId}`}
+                    href={`/preview/${specId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={styles.link}
@@ -122,6 +126,7 @@ export default function Home() {
           >
             <PreviewFrame
               specId={specId}
+              spec={spec}
               isLoading={state === 'generating'}
             />
           </DeviceMockup>
