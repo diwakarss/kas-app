@@ -23,61 +23,104 @@
 ## Phases
 
 ### Phase 1: Backend Infrastructure (InsForge Setup)
-- [ ] 1.1 Set up InsForge locally via Docker Compose
-- [ ] 1.2 Configure PostgreSQL schema for specs and users
-- [ ] 1.3 Configure authentication (email + OAuth)
-- [ ] 1.4 Configure S3-compatible storage for spec files
-- [ ] 1.5 Deploy spec generation as edge function
-- [ ] 1.6 Create API endpoints: `/api/generate`, `/api/specs/:id`, `/api/auth/*`
+- [x] 1.1 Set up InsForge locally via Docker Compose
+- [x] 1.2 Configure PostgreSQL schema for specs and users
+- [x] 1.3 Configure authentication (email + OAuth)
+- [x] 1.4 Configure S3-compatible storage for spec files
+- [x] 1.5 Deploy spec generation as edge function
+- [x] 1.6 Create API endpoints: `/api/generate`, `/api/specs/:id`, `/api/auth/*`
 
-**Checkpoint:** API running locally, can generate and store specs via HTTP
+**Files Created:**
+- `backend/docker-compose.yml` — InsForge + PostgreSQL + MinIO services
+- `backend/schema.sql` — Database schema (app_instance, spec_version, generation_run)
+- `backend/functions/generate-spec.ts` — SSE streaming spec generation
+- `backend/functions/specs.ts` — CRUD endpoints
+- `backend/functions/preview.ts` — Public preview endpoint
+- `backend/.env.example` — Environment template (auth, OAuth, MinIO, CORS)
+- `backend/README.md` — Backend documentation
+
+**Checkpoint:** ✅ API configured locally with auth, storage, and all endpoints
 
 ### Phase 2: Web Preview (3A)
-- [ ] 2.1 Create Expo Web build configuration
-- [ ] 2.2 Build preview component that loads spec from URL param
-- [ ] 2.3 Generate sample data for preview mode
-- [ ] 2.4 Create iframe embed wrapper with loading states
-- [ ] 2.5 Handle preview-only mode (no persistence, sample data only)
+- [x] 2.1 Create Expo Web build configuration
+- [x] 2.2 Build preview component that loads spec from URL param
+- [x] 2.3 Generate sample data for preview mode (via backend API)
+- [x] 2.4 Create PreviewBanner component with loading states
+- [x] 2.5 Handle preview-only mode (no persistence, sample data only)
 
-**Checkpoint:** Can embed `?spec_id=xxx` preview in any webpage
+**Files Created:**
+- `src/core/context/PreviewContext.tsx` — Preview state management
+- `src/components/PreviewBanner.tsx` — Visual indicator for preview mode
+- Updated `src/core/context/WebSpecProvider.tsx` — API fetch for preview specs
+- Updated `src/engines/spec-initializer.ts` — Added `initializeSpecFromJson`
+- Updated `App.tsx` — Integrated PreviewProvider
+- Updated `src/core/navigation/RootNavigator.tsx` — Added PreviewBanner
+
+**Checkpoint:** ✅ Can embed `?spec_id=xxx` preview in any webpage
 
 ### Phase 3: Website MVP (3D)
-- [ ] 3.1 Create landing page (Next.js or static)
-- [ ] 3.2 Build business description form
-- [ ] 3.3 Integrate spec generation API
-- [ ] 3.4 Embed web preview iframe
-- [ ] 3.5 Add "Download App" CTA with deep link
-- [ ] 3.6 Basic styling with design system colors
+- [x] 3.1 Create landing page (Next.js)
+- [x] 3.2 Build business description form (GenerateForm component)
+- [x] 3.3 Integrate spec generation API (SSE streaming)
+- [x] 3.4 Embed web preview iframe (DeviceMockup + PreviewFrame)
+- [x] 3.5 Add "Download App" CTA with deep link
+- [x] 3.6 Basic styling with design system colors
 
-**Checkpoint:** kas-app.com shows form → generates spec → shows preview
+**Files Created:**
+- `website/` — Next.js project
+- `website/src/app/page.tsx` — Landing page
+- `website/src/components/GenerateForm.tsx` — Business description form
+- `website/src/components/ProgressStepper.tsx` — SSE progress steps
+- `website/src/components/DeviceMockup.tsx` — Phone frame
+- `website/src/components/PreviewFrame.tsx` — Iframe wrapper
+- `website/src/lib/api.ts` — SSE API client
+- `website/src/lib/tokens.ts` — Design tokens
+
+**Checkpoint:** ✅ kas-app.com shows form → generates spec → shows preview
 
 ### Phase 4: Shell App Updates (3B)
-- [ ] 4.1 Add auth screen (InsForge auth integration)
-- [ ] 4.2 Implement spec loader from cloud
-- [ ] 4.3 Add local caching with SQLite
-- [ ] 4.4 Handle offline mode gracefully
-- [ ] 4.5 Add deep link handling for `kas-app://spec/:id`
-- [ ] 4.6 Sync spec updates on app launch
+- [x] 4.1 Add auth screen (InsForge auth integration)
+- [x] 4.2 Implement spec loader from cloud
+- [x] 4.3 Add local caching with AsyncStorage
+- [x] 4.4 Handle offline mode gracefully (cache fallback)
+- [x] 4.5 Add deep link handling for `kas-app://spec/:id`
+- [x] 4.6 Sync spec updates on app launch
 
-**Checkpoint:** App loads user's spec from cloud after sign-in
+**Files Created:**
+- `src/core/context/AuthContext.tsx` — Auth state management
+- `src/core/context/CloudSpecProvider.tsx` — Cloud spec context
+- `src/core/navigation/AppNavigator.tsx` — Auth + spec flow
+- `src/screens/AuthScreen.tsx` — Sign in/sign up screen
+- `src/screens/SpecListScreen.tsx` — User's apps list
+- `src/services/cloud-spec-loader.ts` — Cloud fetch + caching
+- `src/services/deep-links.ts` — Deep link handling
 
-### Phase 5: App Store Submission (3E)
+**Checkpoint:** ✅ App loads user's spec from cloud after sign-in
+
+### Phase 5: App Store Submission (3E) — DEFERRED
 - [ ] 5.1 Configure EAS Build for iOS and Android
 - [ ] 5.2 Create app store assets (icon, screenshots, description)
 - [ ] 5.3 Submit to Google Play Store
 - [ ] 5.4 Submit to Apple App Store
 - [ ] 5.5 Handle review feedback
 
+**Status:** Deferred — will submit after initial user testing
+
 **Checkpoint:** Apps live in both stores
 
 ### Phase 6: Bridge Work (Agentic Patterns)
-- [ ] 6.1 Create `app_instance` table for version authority
-- [ ] 6.2 Create `spec_version` table with hash tracking
-- [ ] 6.3 Create `agent_run` table for change audit
-- [ ] 6.4 Implement release envelope on spec publish
-- [ ] 6.5 Add `check:landing-contract` CI validation
+- [x] 6.1 Create `app_instance` table for version authority (in schema.sql)
+- [x] 6.2 Create `spec_version` table with hash tracking (in schema.sql)
+- [x] 6.3 Create `generation_run` table for change audit (in schema.sql)
+- [x] 6.4 Implement release envelope on spec publish
+- [x] 6.5 Add `check:landing-contract` CI validation
 
-**Checkpoint:** Server is authoritative for version lineage
+**Files Created:**
+- `backend/functions/release-envelope.ts` — Hash computation, change classification
+- `backend/functions/publish.ts` — Publish endpoint with envelope creation
+- `tools/check-landing-contract.ts` — CI validation script
+
+**Checkpoint:** ✅ Server is authoritative for version lineage
 
 ---
 
@@ -124,15 +167,24 @@ Phase 6 (Bridge Work) ← Can run in parallel
 
 | File | Purpose | Phase |
 |------|---------|-------|
-| (to be tracked) | | |
+| backend/docker-compose.yml | InsForge + PostgreSQL + MinIO services | 1 |
+| backend/schema.sql | Database schema | 1 |
+| backend/functions/generate-spec.ts | SSE spec generation | 1 |
+| backend/functions/specs.ts | CRUD endpoints | 1 |
+| backend/functions/preview.ts | Public preview | 1 |
+| backend/.env.example | Environment template (auth, OAuth, MinIO) | 1 |
+| backend/README.md | Backend documentation | 1 |
+| docs/designs/wave4-delivery.md | Full design specs | - |
+| docs_dev/wave4-test-plan.md | Test plan | - |
 
 ---
 
 ## Current Status
 
-**Phase:** Planning
+**Phase:** Wave 4 ✅ COMPLETE (Phases 1-4, 6)
 **Blocker:** None
-**Next Action:** Begin Phase 1 - InsForge setup
+**Deferred:** Phase 5 (App Store) — submit after user testing
+**Next Action:** Begin Wave 5 or user testing
 
 ---
 

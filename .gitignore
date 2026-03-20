@@ -32,6 +32,17 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+backend/.env
+website/.env.local
+
+# Next.js
+website/.next/
+website/out/
+
+# Docker volumes
+backend/postgres-data/
+backend/insforge-data/
 
 # typescript
 *.tsbuildinfo

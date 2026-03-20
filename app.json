@@ -12,19 +12,39 @@
       "resizeMode": "contain",
       "backgroundColor": "#FAF7F2"
     },
+    "scheme": "kas-app",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kasapp.app"
     },
     "android": {
+      "package": "com.kasapp.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "kas-app"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "KAS App Preview",
+      "shortName": "KAS Preview",
+      "description": "Preview your KAS App business spec"
     },
     "plugins": [
       "expo-sqlite",

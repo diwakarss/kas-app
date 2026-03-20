@@ -74,3 +74,85 @@
 
 **Design tokens used:** dawn, clay, mist, ember, bloom, stream
 **Style:** Warm line-art, "Liquid Story" philosophy, 200x200 viewBox
+
+### InsForge Backend Setup (Wave 4)
+**Status:** Not started
+**Files to create:**
+- `backend/docker-compose.yml` — InsForge configuration
+- `backend/schema.sql` — PostgreSQL schema (app_instance, spec_version, generation_run)
+- `backend/functions/generate-spec.ts` — Edge function (Node.js mode)
+**Decisions locked:**
+- Edge function in InsForge (not Vercel)
+- InsForge Node.js mode (full bundling)
+- Server wins for sync conflicts
+
+### API Integration Tests (Wave 4)
+**Status:** Not started
+**Files to create:**
+- `tests/api/auth.test.ts` — Auth endpoint tests
+- `tests/api/specs.test.ts` — Spec CRUD tests
+- `tests/api/preview.test.ts` — Preview endpoint tests
+- `tests/api/setup.ts` — Test server setup
+**Coverage:** 100% of endpoints
+**See:** `docs_dev/wave4-test-plan.md`
+
+### SpecLoader Sync Tests (Wave 4)
+**Status:** Not started
+**Files to create:**
+- `tests/sync/spec-loader.test.ts` — All 4 branches (cache hit, miss, version mismatch, offline)
+- `tests/sync/migration-sync.test.ts` — Migration on sync tests
+- `tests/sync/offline.test.ts` — Offline behavior tests
+**Coverage:** 100% branch coverage
+**See:** `docs_dev/wave4-test-plan.md`
+
+### Auth Wrapper (Wave 4)
+**Status:** Not started
+**Files to create:**
+- `src/services/auth.ts` — Thin wrapper around InsForge auth
+- `src/screens/AuthScreen.tsx` — Login/signup UI
+**Approach:** Thin wrapper, InsForge handles sessions
+
+### Preview Performance (Wave 4)
+**Status:** Not started
+**Gate:** P2 preview iframe load <3s
+**Mitigations:**
+- Code splitting for preview mode
+- Lazy load non-essential components
+- Pre-generate sample data on server
+- Skeleton loading states
+
+### SSE Progress Streaming (Wave 4 — CEO Review Addition)
+**Status:** Not started
+**What:** Show generation progress steps ("Analyzing...", "Generating...", "Validating...")
+**Why:** Makes 10-30s generation time feel faster, builds trust in the AI process
+**Effort:** S (human: 2h, CC: 20 min)
+**Depends on:** InsForge edge functions
+**Feature flag:** ENABLE_PROGRESS_SSE
+
+---
+
+## Deferred (Post-Wave 4)
+
+### QR Code for App Download
+**Status:** Deferred from Wave 4 CEO review
+**What:** Show QR code on preview page that opens App Store/Play Store
+**Why:** Frictionless download experience, great for in-person demos to Ravi
+**Effort:** S (human: 1-2h, CC: 15 min)
+**Priority:** P2
+**Depends on:** App store submission complete
+
+### Template Gallery on Landing
+**Status:** Deferred from Wave 4 CEO review
+**What:** Show 3-4 sample apps (tutor, shopkeeper, doctor, restaurant) on landing page
+**Why:** Builds immediate credibility, users can see what KAS produces before typing
+**Effort:** M (human: 4h, CC: 1h)
+**Priority:** P2
+**Depends on:** Preview component, templates (already exist)
+
+### Webhook on Spec Generation
+**Status:** Deferred from Wave 4 CEO review
+**What:** POST to configurable URL when spec is generated
+**Why:** Platform foundation — enables Zapier, email notifications, CRM integrations
+**Effort:** M (human: 4h, CC: 1h)
+**Priority:** P3
+**No blockers**
