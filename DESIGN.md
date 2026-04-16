@@ -85,6 +85,36 @@ If you need a stronger shadow (modal, sheet), add a new preset to `tokens.ts` (e
 - **Empty state** — centered icon + message + optional primary CTA. See `EmptyState.tsx`.
 - **Warning badge** — inline text variant (`WarningTextBadge`) or chip. Color from `severityColors` in `src/core/theme/colors.ts`.
 
+## Emoji and icons
+
+KAS uses emoji for entity categorization (AddMenu rows, FAB toolbar) and avoids icon libraries.
+This keeps the bundle small and lets the LLM pick an icon per entity without shipping a fixed set.
+
+**When emoji is OK:**
+
+- Entity-type identifiers (👤 Client, 🎓 Class, 🐶 Pet). Always paired with a text label — never emoji-only.
+- FAB toolbar actions (🔍 Search, 📅 Calendar, 💬 Chat). Label + emoji.
+- Decorative accents in empty states when the screen also has explanatory text.
+
+**When emoji is NOT OK:**
+
+- Inline status indicators — use colored dots / `WarningBadge` from the palette (`bloom`/`ember`/`stream`).
+- Within sentences or body text — emojis break rhythm and don't inherit `clay`/`mist` color.
+- Severity or alert markers — use `severityColors` in `src/core/theme/colors.ts`.
+- Standalone tap targets without a label — fails accessibility (no text for screen readers).
+
+**Sizing:**
+
+- Toolbar / FAB: `fontSize: 22`
+- Entity-row (AddMenu): `fontSize: 24`, `marginRight: 12`
+
+**Picking the emoji:**
+
+- Inference lives in `ICON_MAP` inside `src/generation/services/spec-normalizer.ts`.
+  When adding a new domain keyword, pair it with a widely-supported glyph (U+2600 – U+1F9FF).
+- Avoid skintone modifiers, gendered people emojis when a neutral version exists, and
+  emojis with known cross-platform rendering issues.
+
 ## Accessibility
 
 - Every interactive element has `accessibilityRole="button"` (or `link`, `header`) and `accessibilityLabel`.
