@@ -5,7 +5,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../core/navigation/types';
-import { ActionProvider, Renderer, StateProvider } from '@json-render/react-native';
+import { ActionProvider, Renderer, StateProvider, VisibilityProvider, ValidationProvider } from '@json-render/react-native';
 import { useSpec } from '../core/context/SpecContext';
 import { useStoryData } from '../hooks/useStoryData';
 import { buildStorySpec } from '../ui/spec-builders/story';
@@ -83,9 +83,13 @@ export default function StoryScreen() {
 
       {/* Main content via json-render */}
       <StateProvider>
-        <ActionProvider handlers={actionHandlers}>
-          <Renderer spec={uiSpec} registry={registry} />
-        </ActionProvider>
+        <VisibilityProvider>
+          <ActionProvider handlers={actionHandlers}>
+            <ValidationProvider>
+              <Renderer spec={uiSpec} registry={registry} />
+            </ValidationProvider>
+          </ActionProvider>
+        </VisibilityProvider>
       </StateProvider>
 
       {/* Pagination — stays imperative */}

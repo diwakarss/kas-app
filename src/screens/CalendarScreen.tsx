@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../core/navigation/types';
-import { ActionProvider, Renderer, StateProvider } from '@json-render/react-native';
+import { ActionProvider, Renderer, StateProvider, VisibilityProvider, ValidationProvider } from '@json-render/react-native';
 import { useSpec } from '../core/context/SpecContext';
 import { useCalendarData } from '../hooks/useCalendarData';
 import { ensureV2 } from '../core/types/kas-spec-v2';
@@ -77,9 +77,13 @@ export default function CalendarScreen() {
         {/* Calendar content via json-render */}
         {uiSpec && (
           <StateProvider>
-            <ActionProvider handlers={actionHandlers}>
-              <Renderer spec={uiSpec} registry={registry} />
-            </ActionProvider>
+            <VisibilityProvider>
+              <ActionProvider handlers={actionHandlers}>
+                <ValidationProvider>
+                  <Renderer spec={uiSpec} registry={registry} />
+                </ValidationProvider>
+              </ActionProvider>
+            </VisibilityProvider>
           </StateProvider>
         )}
       </ScrollView>
