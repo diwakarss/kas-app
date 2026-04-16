@@ -109,6 +109,7 @@ const kasComponents = {
     <GreetingComponent
       greeting={props.greeting}
       dateLabel={props.dateLabel}
+      nextUp={props.nextUp}
     />
   ),
 

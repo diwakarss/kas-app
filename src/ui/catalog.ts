@@ -64,9 +64,10 @@ export const catalog = defineCatalog(schema, {
       props: z.object({
         greeting: z.string(),
         dateLabel: z.string(),
+        nextUp: z.string().nullable().default(null),
       }),
       slots: [],
-      description: 'Welcome greeting heading with date label below.',
+      description: 'Welcome greeting heading with date label and optional next-up hint.',
     },
 
     SummaryStats: {

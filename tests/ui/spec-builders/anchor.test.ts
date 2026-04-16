@@ -30,6 +30,7 @@ function makeMockAnchorData(overrides: Partial<AnchorData> = {}): AnchorData {
   return {
     greeting: 'Good morning',
     dateLabel: 'Today',
+    nextUp: null,
     cards: [makeMockCard(), makeMockCard({ id: 2, title: 'Ravi Singh', time: '11:00' })],
     emptyMessage: 'No classes today',
     emptyAction: 'Schedule a class',

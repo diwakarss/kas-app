@@ -27,6 +27,7 @@ function mockAnchorData(): AnchorData {
   return {
     greeting: 'Good morning',
     dateLabel: 'Today',
+    nextUp: null,
     cards: [
       {
         id: 1, title: 'Asha', subtitle: 'Scales', time: '10:00',

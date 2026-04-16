@@ -20,6 +20,7 @@ export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): 
     props: {
       greeting: anchorData.greeting,
       dateLabel: anchorData.dateLabel,
+      nextUp: anchorData.nextUp,
     },
     children: [],
   };

@@ -81,6 +81,7 @@ describe('Spec builders validate their output', () => {
     return {
       greeting: 'Good morning',
       dateLabel: 'Today',
+      nextUp: null,
       cards: [
         {
           id: 1, title: 'Asha Kumar', subtitle: 'Grade 4', time: '10:00 AM',

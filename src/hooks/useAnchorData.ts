@@ -32,6 +32,7 @@ export interface AnchorCard {
 export interface AnchorData {
   greeting: string;
   dateLabel: string;
+  nextUp: string | null;
   cards: AnchorCard[];
   emptyMessage: string;
   emptyAction: string | null;
@@ -325,13 +326,41 @@ export function useAnchorData(): AnchorData | null {
       return { label: stat.label, value: 0 };
     });
 
+    const nextUp = computeNextUp(cards, effectiveType);
+
     return {
       greeting,
       dateLabel: anchor.date_label,
+      nextUp,
       cards,
       emptyMessage: anchor.empty_state.message,
       emptyAction: anchor.empty_state.action ?? null,
       stats,
     };
   }, [spec, db, crud]);
+}
+
+/**
+ * "Next up" peek: short hint about the next upcoming card.
+ * Only meaningful for schedule-like anchors with time data.
+ */
+function computeNextUp(cards: AnchorCard[], effectiveType: string): string | null {
+  if (effectiveType !== 'day_schedule' && effectiveType !== 'upcoming_project') return null;
+  if (cards.length === 0) return null;
+
+  const now = new Date();
+  const upcoming = cards.find((c) => {
+    const raw = c.rawData;
+    for (const k of Object.keys(raw)) {
+      const v = raw[k];
+      if (typeof v === 'string' && ISO_DATETIME_RE.test(v)) {
+        const d = new Date(v);
+        if (!isNaN(d.getTime()) && d.getTime() >= now.getTime()) return true;
+      }
+    }
+    return false;
+  }) ?? cards[0];
+
+  const title = upcoming.title.length > 24 ? upcoming.title.slice(0, 24).trim() + '…' : upcoming.title;
+  return upcoming.time ? `Next: ${title} · ${upcoming.time}` : `Next: ${title}`;
 }
