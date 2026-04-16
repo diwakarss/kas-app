@@ -29,15 +29,76 @@ interface PreviewApiResponse {
 }
 
 /**
+ * Generate sample records client-side from a spec's entity definitions.
+ * Mirrors the server-side generateSampleData() in preview.ts.
+ */
+function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
+  const records: Record<string, any[]> = {};
+  if (!spec?.entities || !Array.isArray(spec.entities)) return records;
+
+  const sampleNames: Record<string, string[]> = {
+    client: ['Ramesh Rao', 'Sunita Menon', 'Arun Pillai'],
+    customer: ['Anjali Verma', 'Suresh Reddy', 'Meera Nair'],
+    student: ['Rahul Sharma', 'Priya Patel', 'Amit Kumar'],
+  };
+
+  for (const entity of spec.entities) {
+    const entityRecords: any[] = [];
+    const count = 3;
+    const nameList = sampleNames[entity.name.toLowerCase()] || [`Sample ${entity.display_name} 1`, `Sample ${entity.display_name} 2`, `Sample ${entity.display_name} 3`];
+
+    for (let i = 0; i < count; i++) {
+      const rec: any = {
+        id: i + 1,
+        _created_at: new Date(Date.now() - i * 86400000 * 3).toISOString(),
+        _updated_at: new Date().toISOString(),
+      };
+
+      for (const field of entity.fields || []) {
+        const fn = field.name.toLowerCase();
+        const ft = (field.type || 'text').toLowerCase();
+
+        if (fn.includes('name')) { rec[field.name] = nameList[i % nameList.length]; continue; }
+        if (fn.includes('email')) { rec[field.name] = `sample${i + 1}@example.com`; continue; }
+        if (fn.includes('phone')) { rec[field.name] = `+91 98765 4321${i}`; continue; }
+
+        switch (ft) {
+          case 'text': case 'string': rec[field.name] = `Sample ${field.display_name || field.name} ${i + 1}`; break;
+          case 'number': case 'integer': rec[field.name] = (i + 1) * 10; break;
+          case 'currency': case 'money': rec[field.name] = (i + 1) * 1000; break;
+          case 'date': rec[field.name] = new Date(Date.now() + i * 86400000 * 3).toISOString().split('T')[0]; break;
+          case 'boolean': rec[field.name] = i % 2 === 0; break;
+          case 'choice': case 'select': rec[field.name] = field.options?.[i % (field.options?.length || 1)] || 'Option 1'; break;
+          case 'duration': rec[field.name] = `${30 + i * 15} min`; break;
+          case 'note': rec[field.name] = ['Good progress.', 'Follow up next week.', 'On track.'][i]; break;
+          default: rec[field.name] = `Sample ${field.name} ${i + 1}`;
+        }
+      }
+      entityRecords.push(rec);
+    }
+    records[entity.name] = entityRecords;
+  }
+  return records;
+}
+
+/**
  * Fetch preview data from InsForge backend API
  */
 async function fetchPreviewSpec(specId: string): Promise<PreviewApiResponse> {
-  const response = await fetch(`${API_BASE_URL}/functions/get-spec?id=${specId}`);
+  const response = await fetch(`${API_BASE_URL}/get-spec?id=${specId}`);
   if (!response.ok) {
     const errorText = await response.text();
     return { success: false, error: errorText || `HTTP ${response.status}` };
   }
-  return response.json();
+  const json = await response.json();
+  if (!json.success || !json.data) {
+    return { success: false, error: json.error || 'No data returned' };
+  }
+  // The get-spec endpoint returns { success, data: { spec, ... } } without sampleRecords.
+  // Generate them client-side from the spec.
+  const spec = json.data.spec;
+  const sampleRecords = generateSampleRecords(spec);
+  return { success: true, data: { spec, sampleRecords } };
 }
 
 /**
