@@ -21,8 +21,18 @@ export default function StatsCard({ items }: StatsCardProps) {
     >
       <View className="flex-row justify-around">
         {items.map((item, i) => (
-          <View key={i} className="items-center flex-1">
-            <Text className="font-inter-medium text-base text-clay text-center" numberOfLines={1}>
+          <View
+            key={i}
+            className="items-center flex-1"
+            accessibilityLabel={`${item.label}, ${item.value}`}
+          >
+            <Text className="font-inter text-xs text-mist text-center" numberOfLines={1}>
+              {item.label}
+            </Text>
+            <Text
+              className="mt-1 font-inter-semibold text-xl text-clay text-center"
+              numberOfLines={1}
+            >
               {item.value}
             </Text>
           </View>

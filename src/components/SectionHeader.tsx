@@ -10,11 +10,17 @@ interface SectionHeaderProps {
 export default function SectionHeader({ title, count }: SectionHeaderProps) {
   return (
     <View className="flex-row items-center px-5 py-2">
-      <Text className="font-inter-medium text-base text-clay">{title}</Text>
+      <Text
+        className="font-inter-medium text-base text-clay"
+        accessibilityRole="header"
+      >
+        {title}
+      </Text>
       {count !== undefined && (
         <View
           className="rounded-full px-2 py-0.5 ml-2"
           style={{ backgroundColor: colors.mist + '25' }}
+          accessibilityLabel={`${count} items`}
         >
           <Text className="font-inter text-xs text-mist">{count}</Text>
         </View>

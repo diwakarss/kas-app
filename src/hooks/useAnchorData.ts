@@ -45,6 +45,41 @@ function getTimeOfDay(): string {
   return 'evening';
 }
 
+const ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Human-friendly day label for a date value: "Today", "Tomorrow", "Yesterday",
+ * "Apr 18" for this year, or "Apr 18, 2025" for other years.
+ */
+function formatDayLabel(value: string): string {
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays === -1) return 'Yesterday';
+  const thisYear = target.getFullYear() === today.getFullYear();
+  const monthDay = target.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return thisYear ? monthDay : `${monthDay}, ${target.getFullYear()}`;
+}
+
+/**
+ * If a resolved subtitle is a raw ISO date/datetime, humanize it.
+ * Otherwise return the string as-is.
+ */
+function humanizeSubtitle(value: string): string {
+  if (!value) return value;
+  if (ISO_DATETIME_RE.test(value) || ISO_DATE_RE.test(value)) {
+    return formatDayLabel(value);
+  }
+  return value;
+}
+
 /**
  * Map anchor type to SQLite date offset for the query.
  */
@@ -135,13 +170,23 @@ export function useAnchorData(): AnchorData | null {
 
       // Resolve templates
       const title = resolveTemplate(anchor.card_display.title, entity, relatedMap);
-      const subtitle = resolveTemplate(anchor.card_display.subtitle, entity, relatedMap);
+      const rawSubtitle = resolveTemplate(anchor.card_display.subtitle, entity, relatedMap);
+      const subtitle = humanizeSubtitle(rawSubtitle);
 
-      // Time display — extract HH:MM from datetime field (if available)
+      // Time display — prefer HH:MM from datetime, else show day label for date-only fields
       const rawTime = dateField ? (entity[dateField] ?? '') : '';
-      const time = typeof rawTime === 'string' && rawTime.includes('T')
-        ? rawTime.split('T')[1]?.substring(0, 5) ?? rawTime
-        : rawTime;
+      let time = '';
+      if (typeof rawTime === 'string' && rawTime) {
+        if (ISO_DATETIME_RE.test(rawTime)) {
+          time = rawTime.split('T')[1]?.substring(0, 5) ?? rawTime;
+        } else if (ISO_DATE_RE.test(rawTime)) {
+          time = formatDayLabel(rawTime);
+        } else {
+          time = rawTime;
+        }
+      } else if (rawTime) {
+        time = String(rawTime);
+      }
 
       // Warning handling
       let warningText: string | null = null;
@@ -200,10 +245,11 @@ export function useAnchorData(): AnchorData | null {
       };
     });
 
-    // Greeting
+    // Greeting — support {time_of_day}, {business_name}, {user_name}
     const greeting = resolveTemplate(anchor.greeting_template, {
       time_of_day: getTimeOfDay(),
       user_name: spec.meta.name,
+      business_name: spec.meta.name,
     });
 
     // Stats — generic approach based on anchor type
