@@ -8,6 +8,7 @@
 import type { Spec } from '@json-render/core';
 import type { CalendarData, CalendarDayEvent } from '../../hooks/useCalendarData';
 import type { KASAppSpecV2 } from '../../core/types/kas-spec-v2';
+import { catalog } from '../catalog';
 
 export function buildCalendarSpec(calendarData: CalendarData, appSpec: KASAppSpecV2): Spec {
   const elements: Record<string, any> = {};
@@ -77,5 +78,12 @@ export function buildCalendarSpec(calendarData: CalendarData, appSpec: KASAppSpe
     children: rootChildren,
   };
 
-  return { root: 'root', elements };
+  const builtSpec: Spec = { root: 'root', elements };
+
+  const validation = catalog.validate(builtSpec);
+  if (!validation.success) {
+    console.warn('[calendar builder] produced invalid spec:', validation.error);
+  }
+
+  return builtSpec;
 }

@@ -7,6 +7,7 @@
 
 import type { Spec } from '@json-render/core';
 import type { StoryData, TimelineEventData } from '../../hooks/useStoryData';
+import { catalog } from '../catalog';
 
 export function buildStorySpec(storyData: StoryData): Spec {
   const elements: Record<string, any> = {};
@@ -150,5 +151,12 @@ export function buildStorySpec(storyData: StoryData): Spec {
     children: rootChildren,
   };
 
-  return { root: 'root', elements };
+  const builtSpec: Spec = { root: 'root', elements };
+
+  const validation = catalog.validate(builtSpec);
+  if (!validation.success) {
+    console.warn('[story builder] produced invalid spec:', validation.error);
+  }
+
+  return builtSpec;
 }

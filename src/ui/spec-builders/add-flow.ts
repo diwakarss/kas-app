@@ -10,6 +10,7 @@
 
 import type { Spec } from '@json-render/core';
 import type { AddFlowStep, Entity, Field } from '../../core/types/spec';
+import { catalog } from '../catalog';
 
 export interface AddFlowInput {
   entityDef: Entity;
@@ -151,5 +152,12 @@ export function buildAddFlowSpec(input: AddFlowInput): Spec {
     children: rootChildren,
   };
 
-  return { root: 'root', elements };
+  const builtSpec: Spec = { root: 'root', elements };
+
+  const validation = catalog.validate(builtSpec);
+  if (!validation.success) {
+    console.warn('[add-flow builder] produced invalid spec:', validation.error);
+  }
+
+  return builtSpec;
 }

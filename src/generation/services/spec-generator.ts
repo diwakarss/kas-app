@@ -146,20 +146,26 @@ export class SpecGenerator {
       // Apply business identity
       const spec = BusinessIdentityService.inject(template, { name: businessName });
 
-      // Validate output
-      const validation = SpecValidator.validate(spec);
+      // Validate with catalog-backed schema checks
+      const validation = SpecValidator.validateWithCatalog(spec);
 
-      if (!validation.valid) {
+      if (!validation.success) {
         return {
           success: false,
-          errors: getAllErrors(validation),
+          errors: validation.errors,
           error_type: 'validation',
         };
       }
 
+      const validatedSpec = validation.repaired!;
+
+      if (validation.warnings.length > 0) {
+        console.warn('[SpecGenerator] Spec warnings:', validation.warnings);
+      }
+
       return {
         success: true,
-        spec,
+        spec: validatedSpec,
         source: 'template',
         template_used: templateId,
       };
