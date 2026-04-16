@@ -61,10 +61,27 @@ export const cardStyle = {
   elevation: 2,
 } as const;
 
+/** Shared shadow preset for elevated surfaces (cards, stats, etc). */
+export const cardShadow = {
+  shadowColor: '#3D3530',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 2,
+} as const;
+
 export const spacing = {
   xs: 4,
   sm: 8,
   md: 16,
   lg: 24,
   xl: 32,
+} as const;
+
+export const radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  pill: 9999,
 } as const;

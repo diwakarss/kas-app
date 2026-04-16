@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { WarningTextBadge } from './WarningBadge';
 import AnimatedPressable from './AnimatedPressable';
+import { cardShadow } from '../core/theme/tokens';
 
 interface EntityCardProps {
   title: string;
@@ -24,13 +25,7 @@ function EntityCard({
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${subtitle}, ${formatTime(time)}`}
       className="mx-5 mb-3 rounded-2xl bg-white p-4"
-      style={{
-        shadowColor: '#3D3530',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 2,
-      }}
+      style={cardShadow}
     >
       <View className="flex-row items-start justify-between">
         <View className="flex-1 mr-3">

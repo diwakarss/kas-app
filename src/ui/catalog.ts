@@ -200,6 +200,13 @@ export const catalog = defineCatalog(schema, {
       slots: [],
       description: 'Picker for selecting an existing entity record (FK resolution). Shows a list of available entities.',
     },
+
+    CardGrid: {
+      props: z.object({}),
+      slots: ['default'],
+      description:
+        'Responsive card layout. On phones (<768px) renders a single column. On tablets renders a 2-column grid.',
+    },
   },
 
   actions: {
@@ -253,6 +260,7 @@ export const kasComponentNames = [
   'EntityCard', 'TimelineEvent', 'StatsCard', 'Greeting', 'SummaryStats',
   'ComingUpCard', 'WarningBadge', 'FieldRenderer', 'FloatingActions',
   'EmptyState', 'SectionHeader', 'MonthGrid', 'DayDetail', 'StepProgress', 'EntityPicker',
+  'CardGrid',
 ] as const;
 
 /** All KAS action names */

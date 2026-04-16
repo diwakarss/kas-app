@@ -76,8 +76,8 @@ export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): 
     }
 
     elements['card-list'] = {
-      type: 'Column',
-      props: { gap: 0 },
+      type: 'CardGrid',
+      props: {},
       children: cardIds,
     };
     rootChildren.push('card-list');

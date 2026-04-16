@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+import { View, useWindowDimensions } from 'react-native';
 import { defineRegistry } from '@json-render/react-native';
 import { catalog } from './catalog';
 import { useFieldChange } from './FieldChangeContext';
@@ -65,6 +66,26 @@ function EntityPickerWrapper({ props }: any) {
       value={props.value}
       onChange={onChange}
     />
+  );
+}
+
+function CardGridWrapper({ children }: any) {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const items = React.Children.toArray(children);
+
+  if (!isTablet) {
+    return <View>{children}</View>;
+  }
+
+  return (
+    <View className="flex-row flex-wrap">
+      {items.map((child, i) => (
+        <View key={i} className="w-1/2">
+          {child}
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -174,6 +195,8 @@ const kasComponents = {
       total={props.totalSteps}
     />
   ),
+
+  CardGrid: CardGridWrapper,
 };
 
 export const { registry, handlers, executeAction } = defineRegistry(catalog, {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { cardShadow } from '../core/theme/tokens';
 
 interface StatsCardProps {
   items: { label: string; value: string }[];
@@ -9,16 +10,7 @@ export default function StatsCard({ items }: StatsCardProps) {
   if (items.length === 0) return null;
 
   return (
-    <View
-      className="mx-5 mb-4 rounded-2xl bg-white p-4"
-      style={{
-        shadowColor: '#3D3530',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 2,
-      }}
-    >
+    <View className="mx-5 mb-4 rounded-2xl bg-white p-4" style={cardShadow}>
       <View className="flex-row justify-around">
         {items.map((item, i) => (
           <View
