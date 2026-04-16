@@ -27,6 +27,74 @@ const VALID_FIELD_TYPES = new Set([
   'date', 'datetime', 'time', 'toggle', 'duration', 'note', 'image'
 ]);
 
+// ── Humanization helpers ──
+
+/** Convert snake_case or CamelCase to Title Case: "session_date" → "Session Date", "RepairOrder" → "Repair Order" */
+function humanize(name) {
+  return name
+    .replace(/_id$/, '')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+const IRREGULAR_PLURALS = {
+  Child: 'Children', Person: 'People', Man: 'Men', Woman: 'Women',
+  Class: 'Classes', Address: 'Addresses', Business: 'Businesses',
+  Diagnosis: 'Diagnoses', Analysis: 'Analyses', Status: 'Statuses',
+  Tooth: 'Teeth', Foot: 'Feet', Goose: 'Geese', Mouse: 'Mice',
+  Leaf: 'Leaves', Life: 'Lives', Wife: 'Wives', Knife: 'Knives',
+  Shelf: 'Shelves', Half: 'Halves', Self: 'Selves',
+  Ox: 'Oxen', Fish: 'Fish', Sheep: 'Sheep', Deer: 'Deer', Species: 'Species',
+  Series: 'Series', Attendance: 'Attendance Records',
+};
+
+function smartPlural(name) {
+  if (IRREGULAR_PLURALS[name]) return IRREGULAR_PLURALS[name];
+  if (name.endsWith('y') && !/[aeiou]y$/i.test(name)) return name.slice(0, -1) + 'ies';
+  if (name.endsWith('s') || name.endsWith('x') || name.endsWith('z') || name.endsWith('ch') || name.endsWith('sh'))
+    return name + 'es';
+  return name + 's';
+}
+
+const ICON_MAP = {
+  client: '👤', customer: '👤', patient: '🏥', owner: '👤', parent: '👪',
+  member: '👤', student: '🎓', instructor: '🧑‍🏫', teacher: '🧑‍🏫', staff: '👔',
+  employee: '👔', child: '👶', kid: '👶', baby: '👶',
+  pet: '🐾', dog: '🐕', cat: '🐱', animal: '🐾',
+  appointment: '📅', session: '📅', booking: '📅', reservation: '📅', visit: '📅',
+  class: '📚', course: '📚', lesson: '📚', workshop: '📚',
+  payment: '💳', invoice: '🧾', bill: '🧾', charge: '💰', fee: '💰',
+  treatment: '💊', record: '📋', prescription: '💊', medication: '💊',
+  workout: '💪', exercise: '💪', plan: '📝', program: '📝',
+  job: '🔧', task: '✅', project: '📊', service: '🛠️', order: '📦',
+  crew: '👷', team: '👥', group: '👥',
+  attendance: '✅', checkin: '✅', schedule: '🗓️',
+  note: '📝', comment: '💬', feedback: '💬', review: '⭐',
+  product: '📦', item: '📦', inventory: '📦',
+  vehicle: '🚗', car: '🚗', room: '🏠', property: '🏠', location: '📍',
+};
+
+function inferIcon(entityName) {
+  const lower = entityName.toLowerCase();
+  if (ICON_MAP[lower]) return ICON_MAP[lower];
+  for (const [keyword, icon] of Object.entries(ICON_MAP)) {
+    if (lower.includes(keyword)) return icon;
+  }
+  return '📄';
+}
+
+const SEARCHABLE_TYPES = new Set(['text', 'email', 'phone']);
+
+function humanizePrompt(fieldName, entity) {
+  if (fieldName.endsWith('_id') && entity) {
+    const rel = entity.relationships.find(r => r.foreign_key === fieldName);
+    if (rel) return `Select ${humanize(rel.target).toLowerCase()}`;
+    return `Select ${humanize(fieldName)}`;
+  }
+  return `Enter ${humanize(fieldName).toLowerCase()}`;
+}
+
 /**
  * Find the primary display text field for an entity.
  */
@@ -64,12 +132,17 @@ function normalizeField(field) {
     }
   }
 
+  const name = field.name || 'unnamed_field';
+  const isFK = name.endsWith('_id');
+
   return {
-    name: field.name || 'unnamed_field',
-    display_name: field.display_name || field.name || 'Unnamed Field',
+    name,
+    display_name: field.display_name && field.display_name !== field.name
+      ? field.display_name
+      : humanize(name),
     type: fieldType,
     required: field.required ?? false,
-    searchable: field.searchable ?? false,
+    searchable: field.searchable || (!isFK && SEARCHABLE_TYPES.has(fieldType)),
     options: field.options,
     default_value: field.default_value,
   };
@@ -93,11 +166,15 @@ function normalizeRelationship(rel, index) {
  */
 function normalizeEntity(entity) {
   const name = entity.name || 'UnnamedEntity';
+  const displayName = entity.display_name || humanize(name);
+  const icon = (entity.icon && entity.icon !== '📄') ? entity.icon : inferIcon(name);
   return {
     name,
-    display_name: entity.display_name || name,
-    display_name_plural: entity.display_name_plural || `${entity.display_name || name}s`,
-    icon: entity.icon || '📄',
+    display_name: displayName,
+    display_name_plural: entity.display_name_plural && entity.display_name_plural !== `${displayName}s`
+      ? entity.display_name_plural
+      : smartPlural(displayName),
+    icon,
     fields: (entity.fields || []).map(normalizeField),
     relationships: (entity.relationships || []).map((rel, i) => normalizeRelationship(rel, i)),
   };
@@ -209,8 +286,35 @@ function normalizeStoryEvents(raw, entities) {
 
       if (hasDotRef || hasInvalid || allFK) {
         const primary = findPrimaryTextField(srcEntity);
-        console.log(`[normalizeSpec] Fixed story_events.${key} event display '${ev.display}' → '{${primary}}' for source '${ev.source}'`);
-        ev.display = `{${primary}}`;
+        const primaryDef = srcEntity.fields.find(f => f.name === primary);
+        const needsPrefix = primaryDef && (primaryDef.type === 'date' || primaryDef.type === 'datetime' || primaryDef.type === 'number' || primaryDef.type === 'currency');
+        const fixedDisplay = needsPrefix ? `${srcEntity.display_name}: {${primary}}` : `{${primary}}`;
+        console.log(`[normalizeSpec] Fixed story_events.${key} event display '${ev.display}' → '${fixedDisplay}' for source '${ev.source}'`);
+        ev.display = fixedDisplay;
+      }
+    }
+
+    // Enrich LLM-provided story events with missing stats_card/origin/context
+    const targetEntity = entities.find(e => e.name === key);
+    if (targetEntity && config.events && !config.stats_card) {
+      const primary = findPrimaryTextField(targetEntity);
+      config.stats_card = [{ label: `{${primary}}` }];
+      config.origin = config.origin || 'Created on {created_at}';
+      config.context = config.context || targetEntity.display_name;
+      if (!config.coming_up) {
+        for (const ev of config.events) {
+          const srcEnt = entities.find(e => e.name === ev.source);
+          const dateField = srcEnt?.fields.find(f => f.type === 'datetime' || f.type === 'date');
+          if (srcEnt && dateField) {
+            config.coming_up = {
+              source: srcEnt.name,
+              relationship: ev.relationship,
+              display: ev.display,
+              sort: 'asc',
+            };
+            break;
+          }
+        }
       }
     }
   }
@@ -223,15 +327,39 @@ function normalizeStoryEvents(raw, entities) {
  */
 function normalizeAddFlows(raw, entities) {
   const fixed = {};
-  for (const [key, value] of Object.entries(raw)) {
+
+  // Handle LLM returning add_flows as an array instead of object
+  const entries = Array.isArray(raw)
+    ? raw.map((flow, i) => [flow.entity || `flow_${i}`, flow])
+    : Object.entries(raw);
+
+  for (const [key, value] of entries) {
+    // Skip numeric keys from LLM returning indexed-object format
+    if (/^\d+$/.test(key) && value?.entity) {
+      const entityName = value.entity;
+      console.log(`[normalizeSpec] Fixed add_flows[${key}] → add_flows.${entityName}`);
+      fixed[entityName] = value;
+      continue;
+    }
     if (Array.isArray(value)) {
-      // LLM returned flat array instead of {steps: [...]}
       console.log(`[normalizeSpec] Fixed add_flows.${key}: array → {steps: [...]}`);
       fixed[key] = { steps: value };
     } else if (value && typeof value === 'object') {
       fixed[key] = value;
     }
   }
+
+  // Humanize robotic prompts in LLM-provided flows
+  for (const [entityName, flow] of Object.entries(fixed)) {
+    if (!flow?.steps) continue;
+    const entity = entities.find(e => e.name === entityName);
+    for (const step of flow.steps) {
+      if (!step.prompt || step.prompt.match(/^Enter\s+\w+_/)) {
+        step.prompt = humanizePrompt(step.field, entity);
+      }
+    }
+  }
+
   return inferAddFlows(fixed, entities);
 }
 
@@ -250,7 +378,7 @@ function inferAddFlows(existing, entities) {
     result[entity.name] = {
       steps: userFields.map(f => ({
         field: f.name,
-        prompt: `Enter ${f.display_name || f.name}`,
+        prompt: humanizePrompt(f.name, entity),
         required: f.required ?? false,
         ...(f.type === 'number' || f.type === 'currency' ? { keyboard: 'numeric' } : {}),
         ...(f.type === 'phone' ? { keyboard: 'phone-pad' } : {}),
@@ -429,9 +557,15 @@ function normalizeSpec(spec) {
     add_flows: normalizeAddFlows(spec.add_flows || {}, entities),
     search: {
       entities: spec.search?.entities || entities.map(e => e.name),
-      display: spec.search?.display || Object.fromEntries(
-        entities.map(e => [e.name, `{${findPrimaryTextField(e)}}`])
-      ),
+      display: (() => {
+        const raw = spec.search?.display || {};
+        const display = {};
+        for (const e of entities) {
+          const tmpl = raw[e.name] || `{${findPrimaryTextField(e)}}`;
+          display[e.name] = validateTemplate(tmpl, e);
+        }
+        return display;
+      })(),
     },
     calendar: spec.calendar || {
       entity: entities.find(e => e.fields.some(f => f.type === 'datetime' || f.type === 'date'))?.name || defaultEntity,
