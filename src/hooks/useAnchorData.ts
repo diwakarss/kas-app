@@ -77,10 +77,13 @@ export function useAnchorData(): AnchorData | null {
     const dateOffset = getDateOffset(anchor.type);
 
     // Query entities (today for day_schedule, yesterday for yesterday_summary)
-    const dateField = anchor.card_display.time_field ?? 'datetime';
+    const dateField = anchor.card_display.time_field;
     let rawEntities: Record<string, any>[];
 
-    switch (anchor.type) {
+    // If no date field, treat as active_list regardless of anchor.type
+    const effectiveType = dateField ? anchor.type : 'active_list';
+
+    switch (effectiveType) {
       case 'upcoming_project': {
         const today = new Date().toISOString().split('T')[0];
         const weekLater = new Date();
@@ -88,10 +91,10 @@ export function useAnchorData(): AnchorData | null {
         const weekLaterStr = weekLater.toISOString().split('T')[0];
         rawEntities = crud.list(anchor.entity, {
           filters: [
-            { field: dateField, op: '>=', value: today },
-            { field: dateField, op: '<', value: weekLaterStr },
+            { field: dateField!, op: '>=', value: today },
+            { field: dateField!, op: '<', value: weekLaterStr },
           ],
-          orderBy: dateField,
+          orderBy: dateField!,
           orderDir: 'ASC',
         });
         break;
@@ -104,7 +107,7 @@ export function useAnchorData(): AnchorData | null {
         break;
       }
       default: {
-        rawEntities = crud.anchorQuery(dateField, dateField, joinTarget, joinFK, dateOffset);
+        rawEntities = crud.anchorQuery(dateField!, dateField!, joinTarget, joinFK, dateOffset);
         break;
       }
     }
@@ -134,8 +137,8 @@ export function useAnchorData(): AnchorData | null {
       const title = resolveTemplate(anchor.card_display.title, entity, relatedMap);
       const subtitle = resolveTemplate(anchor.card_display.subtitle, entity, relatedMap);
 
-      // Time display — extract HH:MM from datetime field
-      const rawTime = entity[dateField] ?? '';
+      // Time display — extract HH:MM from datetime field (if available)
+      const rawTime = dateField ? (entity[dateField] ?? '') : '';
       const time = typeof rawTime === 'string' && rawTime.includes('T')
         ? rawTime.split('T')[1]?.substring(0, 5) ?? rawTime
         : rawTime;
@@ -210,12 +213,12 @@ export function useAnchorData(): AnchorData | null {
     let targetCount: { cnt: number } | null;
     let weekCount: { cnt: number } | null;
 
-    if (anchor.type === 'active_list') {
+    if (effectiveType === 'active_list') {
       targetCount = db.getFirst<{ cnt: number }>(
         `SELECT COUNT(*) as cnt FROM ${anchorTable} WHERE archived = 0`
       );
       weekCount = targetCount;
-    } else if (anchor.type === 'upcoming_project') {
+    } else if (effectiveType === 'upcoming_project') {
       const todayStr = new Date().toISOString().split('T')[0];
       const weekLaterStr2 = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
       targetCount = db.getFirst<{ cnt: number }>(
@@ -243,9 +246,13 @@ export function useAnchorData(): AnchorData | null {
     const hasCurrencyAmount = anchorEntity.fields.some(
       (f) => f.name === 'amount' && (f.type === 'currency' || f.type === 'number')
     );
-    const targetSum = hasCurrencyAmount
+    const targetSum = hasCurrencyAmount && dateField
       ? db.getFirst<{ total: number }>(
           `SELECT COALESCE(SUM(amount), 0) as total FROM ${anchorTable} WHERE archived = 0 AND date(${dateField}) = ${dateFn}`
+        )
+      : hasCurrencyAmount
+      ? db.getFirst<{ total: number }>(
+          `SELECT COALESCE(SUM(amount), 0) as total FROM ${anchorTable} WHERE archived = 0`
         )
       : null;
 

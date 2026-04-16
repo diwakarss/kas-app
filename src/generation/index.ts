@@ -17,6 +17,18 @@ export { LLMAdaptationLayer, createDefaultAdaptationLayer, extractJSON, parseRes
 export { FreshGenerator, createFreshGenerator } from './services/fresh-generator';
 export { SpecValidator, validateGeneratedSpec, getAllErrors } from './services/spec-validator';
 export { SpecGenerator, createSpecGenerator } from './services/spec-generator';
+export {
+  calculateCost,
+  formatCost,
+  logGenerationMetrics,
+  getCostSummary,
+  getAllMetrics,
+  clearMetrics,
+  createMetrics,
+  type CostBreakdown,
+  type GenerationMetrics,
+  type CostSummary,
+} from './services/cost-tracker';
 
 // Providers
 export { QwenProvider } from './providers/qwen-provider';
