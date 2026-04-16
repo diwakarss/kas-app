@@ -43,6 +43,9 @@ export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): 
       const cardId = `card-${i}`;
       const belongsTo = findBelongsTo(appSpec);
 
+      const navEntityType = belongsTo?.target ?? appSpec.ui_hints.anchor.entity;
+      const navEntityId = belongsTo ? card.rawData[belongsTo.foreign_key] ?? card.id : card.id;
+
       elements[cardId] = {
         type: 'EntityCard',
         props: {
@@ -50,22 +53,20 @@ export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): 
           subtitle: card.subtitle,
           time: card.time,
           warningText: card.warningText,
-          entityType: belongsTo?.target ?? appSpec.ui_hints.anchor.entity,
-          entityId: belongsTo ? card.rawData[belongsTo.foreign_key] ?? card.id : card.id,
+          entityType: navEntityType,
+          entityId: navEntityId,
         },
         children: [],
-        on: belongsTo?.target
-          ? {
-              press: {
-                action: 'navigate',
-                params: {
-                  screen: 'Story',
-                  entityType: belongsTo.target,
-                  entityId: belongsTo ? card.rawData[belongsTo.foreign_key] ?? card.id : card.id,
-                },
-              },
-            }
-          : undefined,
+        on: {
+          press: {
+            action: 'navigate',
+            params: {
+              screen: 'Story',
+              entityType: navEntityType,
+              entityId: navEntityId,
+            },
+          },
+        },
       };
       cardIds.push(cardId);
     }
