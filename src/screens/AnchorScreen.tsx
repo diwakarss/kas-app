@@ -1,17 +1,15 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../core/navigation/types';
+import { ActionProvider, Renderer } from '@json-render/react-native';
 import { useSpec } from '../core/context/SpecContext';
 import { useAnchorData } from '../hooks/useAnchorData';
-import type { AnchorCard } from '../hooks/useAnchorData';
-import Greeting from '../components/Greeting';
-import SummaryStats from '../components/SummaryStats';
-import EntityCard from '../components/EntityCard';
-import EmptyState from '../components/EmptyState';
-import FloatingActions from '../components/FloatingActions';
+import { ensureV2 } from '../core/types/kas-spec-v2';
+import { buildAnchorSpec } from '../ui/spec-builders/anchor';
+import { registry } from '../ui/registry';
 import { colors } from '../core/theme/tokens';
 
 export default function AnchorScreen() {
@@ -19,39 +17,31 @@ export default function AnchorScreen() {
   const { spec, loading, error } = useSpec();
   const anchorData = useAnchorData();
 
-  const belongsTo = useMemo(() => {
-    if (!spec) return null;
-    return spec.entities
-      .find(e => e.name === spec.anchor.entity)
-      ?.relationships.find(r => r.type === 'belongs_to') ?? null;
-  }, [spec]);
+  const uiSpec = useMemo(() => {
+    if (!anchorData || !spec) return null;
+    return buildAnchorSpec(anchorData, ensureV2(spec));
+  }, [anchorData, spec]);
 
-  const renderCard = useCallback(({ item: card }: { item: AnchorCard }) => {
-    const storyTarget = belongsTo?.target;
-    const storyId = belongsTo ? card.rawData[belongsTo.foreign_key] : null;
-    return (
-      <EntityCard
-        title={card.title}
-        subtitle={card.subtitle}
-        time={card.time}
-        warningText={card.warningText}
-        onPress={storyTarget && storyId
-          ? () => navigation.navigate('Story', { entityType: storyTarget, entityId: storyId })
-          : undefined
-        }
-      />
-    );
-  }, [belongsTo, navigation]);
-
-  const ListHeader = useMemo(() => {
-    if (!anchorData) return null;
-    return (
-      <>
-        <Greeting greeting={anchorData.greeting} dateLabel={anchorData.dateLabel} />
-        <SummaryStats stats={anchorData.stats} />
-      </>
-    );
-  }, [anchorData?.greeting, anchorData?.dateLabel, anchorData?.stats]);
+  const actionHandlers = useMemo(() => ({
+    navigate: async (params: Record<string, unknown>) => {
+      const screen = params.screen as keyof RootStackParamList;
+      if (screen === 'Story') {
+        navigation.navigate('Story', {
+          entityType: params.entityType as string,
+          entityId: params.entityId as number,
+        });
+      } else if (screen === 'AddFlow') {
+        navigation.navigate('AddFlow', {
+          entityType: params.entityType as string,
+        });
+      }
+    },
+    addEntity: async (params: Record<string, unknown>) => {
+      navigation.navigate('AddFlow', {
+        entityType: params.entityType as string,
+      });
+    },
+  }), [navigation]);
 
   if (loading) {
     return (
@@ -81,7 +71,7 @@ export default function AnchorScreen() {
     );
   }
 
-  if (!anchorData) {
+  if (!uiSpec) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.dawn }}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -94,19 +84,8 @@ export default function AnchorScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dawn }}>
-      <FlatList
-        data={anchorData.cards}
-        renderItem={renderCard}
-        keyExtractor={(item) => String(item.id)}
-        ListHeaderComponent={ListHeader}
-        ListEmptyComponent={
-          <EmptyState message={anchorData.emptyMessage} action={anchorData.emptyAction} />
-        }
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      />
-      <FloatingActions />
-    </SafeAreaView>
+    <ActionProvider handlers={actionHandlers}>
+      <Renderer spec={uiSpec} registry={registry} />
+    </ActionProvider>
   );
 }
