@@ -60,6 +60,15 @@
 - Regression detection utilities
 - 11 tests for latency tracking and analysis
 
+### Spec Builder Default-Detection Guard (P2)
+**What:** Add a prop-diff check to each spec builder's `catalog.validate()` call. After validation, compare `builtSpec.elements[key].props` against `validation.data.elements[key].props`. If they differ, a Zod default was applied — meaning the builder omitted a prop the component needs. Log a warning with the specific props that were filled in. This turns a silent production rendering bug into a test-time/dev-time error.
+**Why:** `catalog.prompt()` tells the LLM that optional props have defaults. The LLM may omit them. But catalog defaults do NOT apply at runtime — `catalog.validate()` strips `on` handlers, so builders return the original spec, not the parsed output. If a builder omits a prop, the Renderer receives `undefined` and the component breaks. The current test suite doesn't catch this because `catalog.validate()` sees its own default as satisfying the schema.
+**Pros:** Catches builder gaps at dev time, ~15 lines per builder, no runtime cost in production
+**Cons:** Requires comparing serialized props (fragile for complex objects), may produce false positives for intentionally-omitted props
+**Context:** Discovered during PR #6 rework. The `on`-handler stripping forced builders to return `builtSpec` instead of `validation.data`. This is the belt-and-suspenders hardening for that decision.
+**Depends on:** PR #6 merged (validateWithCatalog + builder validation)
+**Added:** 2026-04-16
+
 ### Prompt Size Monitoring (json-render Migration)
 **What:** Add a test asserting `catalog.prompt().length < 8000` characters (~2000 tokens). If the prompt grows beyond this, investigate compression.
 **Why:** `catalog.prompt()` with 13+ custom components + 9 actions + KAS business rules could produce a very large system prompt, increasing token cost and diluting LLM attention on business-specific instructions.
