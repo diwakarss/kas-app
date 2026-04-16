@@ -28,6 +28,21 @@ const VALID_FIELD_TYPES = new Set([
 ]);
 
 /**
+ * Find the primary display text field for an entity.
+ */
+function findPrimaryTextField(entity) {
+  if (!entity) return 'name';
+  const systemFields = new Set(['id', 'created_at', 'updated_at', 'archived']);
+  if (entity.fields.some(f => f.name === 'name')) return 'name';
+  const searchable = entity.fields.find(f => f.searchable && f.type === 'text' && !systemFields.has(f.name));
+  if (searchable) return searchable.name;
+  const textField = entity.fields.find(f => f.type === 'text' && !systemFields.has(f.name));
+  if (textField) return textField.name;
+  const firstField = entity.fields.find(f => !systemFields.has(f.name) && !f.name.endsWith('_id'));
+  return firstField?.name || 'name';
+}
+
+/**
  * Normalize a field by adding default values for missing properties.
  */
 function normalizeField(field) {
@@ -101,22 +116,27 @@ function inferStoryEvents(existing, entities) {
         if (!parentEntity) continue;
         const dateField = childEntity.fields.find(f => f.type === 'datetime' || f.type === 'date');
         console.log(`[normalizeSpec] Inferred story_events for '${rel.target}' from '${childEntity.name}'`);
+        const childPrimary = findPrimaryTextField(childEntity);
+        const parentPrimary = findPrimaryTextField(parentEntity);
+        const childPrimaryDef = childEntity.fields.find(f => f.name === childPrimary);
+        const needsPrefix = childPrimaryDef && (childPrimaryDef.type === 'date' || childPrimaryDef.type === 'datetime' || childPrimaryDef.type === 'number' || childPrimaryDef.type === 'currency');
+        const displayTemplate = needsPrefix ? `${childEntity.display_name}: {${childPrimary}}` : `{${childPrimary}}`;
         result[rel.target] = {
           events: [{
             source: childEntity.name,
             relationship: rel.foreign_key,
             type: childEntity.name.toLowerCase(),
-            display: `{${childEntity.fields[0]?.name || 'name'}}`,
+            display: displayTemplate,
             icon_color: 'stream',
           }],
-          stats_card: [{ label: `{${parentEntity.fields[0]?.name || 'name'}}` }],
+          stats_card: [{ label: `{${parentPrimary}}` }],
           origin: 'Created on {created_at}',
           context: parentEntity.display_name,
           ...(dateField ? {
             coming_up: {
               source: childEntity.name,
               relationship: rel.foreign_key,
-              display: `{${childEntity.fields[0]?.name || 'name'}}`,
+              display: `{${childPrimary}}`,
               sort: 'asc',
             },
           } : {}),
@@ -130,12 +150,25 @@ function inferStoryEvents(existing, entities) {
 /**
  * Fix double-brace templates {{field}} → {field} in any string value recursively.
  */
-function fixDoubleBraces(obj) {
-  if (typeof obj === 'string') return obj.replace(/\{\{(\w+)\}\}/g, '{$1}');
-  if (Array.isArray(obj)) return obj.map(fixDoubleBraces);
+function fixTemplateSyntax(obj) {
+  if (typeof obj === 'string') {
+    let s = obj;
+    // Fix double braces with simple field: {{field}} → {field}
+    s = s.replace(/\{\{(\w+)\}\}/g, '{$1}');
+    // Remove double-brace expressions (ternaries, etc): {{expr}} → empty
+    s = s.replace(/\{\{[^}]*\}\}/g, '');
+    // Fix JS template literals: ${field} → {field}
+    s = s.replace(/\$\{(\w+)\}/g, '{$1}');
+    // Remove JS expressions in templates: ${expr ? ... : ...} → empty
+    s = s.replace(/\$\{[^}]+\}/g, '');
+    // Clean up leftover whitespace
+    s = s.replace(/\s{2,}/g, ' ').trim();
+    return s;
+  }
+  if (Array.isArray(obj)) return obj.map(fixTemplateSyntax);
   if (obj && typeof obj === 'object') {
     const result = {};
-    for (const [k, v] of Object.entries(obj)) result[k] = fixDoubleBraces(v);
+    for (const [k, v] of Object.entries(obj)) result[k] = fixTemplateSyntax(v);
     return result;
   }
   return obj;
@@ -148,17 +181,40 @@ function normalizeStoryEvents(raw, entities) {
   const fixed = {};
   for (const [key, value] of Object.entries(raw)) {
     if (Array.isArray(value)) {
-      // LLM returned flat array instead of {events: [...]}
       console.log(`[normalizeSpec] Fixed story_events.${key}: array → {events: [...]}`);
-      fixed[key] = { events: fixDoubleBraces(value) };
+      fixed[key] = { events: fixTemplateSyntax(value) };
     } else if (value && typeof value === 'object') {
-      fixed[key] = fixDoubleBraces(value);
-      // Ensure events key exists
+      fixed[key] = fixTemplateSyntax(value);
       if (!fixed[key].events && !fixed[key].stats_card) {
         fixed[key] = { events: [] };
       }
     }
   }
+
+  // Validate display templates in events reference real, meaningful fields on source entity
+  for (const [key, config] of Object.entries(fixed)) {
+    if (!config?.events) continue;
+    for (const ev of config.events) {
+      if (!ev.display || !ev.source) continue;
+      const srcEntity = entities.find(e => e.name === ev.source);
+      if (!srcEntity) continue;
+      const srcFields = new Set(srcEntity.fields.map(f => f.name));
+
+      // Check for dot-notation refs (cross-entity) — not supported in event display
+      const hasDotRef = /\{[a-zA-Z_]+\.[a-zA-Z_]+\}/.test(ev.display);
+      const simplePlaceholders = Array.from(ev.display.matchAll(/\{([a-zA-Z_]\w*)\}/g))
+        .filter(m => !ev.display.includes(m[1] + '.'));
+      const hasInvalid = simplePlaceholders.some(m => !srcFields.has(m[1]));
+      const allFK = simplePlaceholders.length > 0 && simplePlaceholders.every(m => m[1].endsWith('_id'));
+
+      if (hasDotRef || hasInvalid || allFK) {
+        const primary = findPrimaryTextField(srcEntity);
+        console.log(`[normalizeSpec] Fixed story_events.${key} event display '${ev.display}' → '{${primary}}' for source '${ev.source}'`);
+        ev.display = `{${primary}}`;
+      }
+    }
+  }
+
   return inferStoryEvents(fixed, entities);
 }
 
@@ -265,19 +321,6 @@ function normalizeSpec(spec) {
   const anchorEntity = entities.find(e => e.name === anchorEntityName) || entities[0];
   const dateTimeField = anchorEntity?.fields.find(f => f.type === 'datetime' || f.type === 'date');
   const timeFieldName = dateTimeField?.name || null;
-
-  // Find primary text field for the anchor entity (for card title defaults)
-  function findPrimaryTextField(entity) {
-    if (!entity) return 'name';
-    const systemFields = new Set(['id', 'created_at', 'updated_at', 'archived']);
-    if (entity.fields.some(f => f.name === 'name')) return 'name';
-    const searchable = entity.fields.find(f => f.searchable && f.type === 'text' && !systemFields.has(f.name));
-    if (searchable) return searchable.name;
-    const textField = entity.fields.find(f => f.type === 'text' && !systemFields.has(f.name));
-    if (textField) return textField.name;
-    const firstField = entity.fields.find(f => !systemFields.has(f.name));
-    return firstField?.name || 'name';
-  }
 
   // Validate template references exist on the entity and are meaningful display fields
   function validateTemplate(template, entity) {

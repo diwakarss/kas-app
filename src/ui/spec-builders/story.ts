@@ -110,9 +110,11 @@ export function buildStorySpec(storyData: StoryData): Spec {
     rootChildren.push('coming-up-section');
   }
 
-  // Entity details — show field values when available
+  // Entity details — show field values (skip system and FK fields)
+  const systemFields = new Set(['id', 'created_at', 'updated_at', 'archived']);
   const detailIds: string[] = [];
   for (const field of storyData.entityDef.fields || []) {
+    if (systemFields.has(field.name) || field.name.endsWith('_id')) continue;
     const value = storyData.entity[field.name];
     if (value == null || value === '') continue;
     const detailId = `detail-${field.name}`;

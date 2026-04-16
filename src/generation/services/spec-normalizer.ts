@@ -206,23 +206,28 @@ function inferStoryEvents(
           f.type === 'datetime' || f.type === 'date'
         );
 
+        const childPrimary = findPrimaryTextField(childEntity);
+        const parentPrimary = findPrimaryTextField(parentEntity);
+        const childPrimaryDef = childEntity.fields.find(f => f.name === childPrimary);
+        const needsPrefix = childPrimaryDef && ['date', 'datetime', 'number', 'currency'].includes(childPrimaryDef.type);
+        const displayTemplate = needsPrefix ? `${childEntity.display_name}: {${childPrimary}}` : `{${childPrimary}}`;
         console.log(`[normalizeSpec] Inferred story_events for '${rel.target}' from '${childEntity.name}'`);
         result[rel.target] = {
           events: [{
             source: childEntity.name,
             relationship: rel.foreign_key,
             type: childEntity.name.toLowerCase(),
-            display: `{${childEntity.fields[0]?.name || 'name'}}`,
+            display: displayTemplate,
             icon_color: 'stream',
           }],
-          stats_card: [{ label: `{${parentEntity.fields[0]?.name || 'name'}}` }],
+          stats_card: [{ label: `{${parentPrimary}}` }],
           origin: 'Created on {created_at}',
           context: parentEntity.display_name,
           ...(dateField ? {
             coming_up: {
               source: childEntity.name,
               relationship: rel.foreign_key,
-              display: `{${childEntity.fields[0]?.name || 'name'}}`,
+              display: `{${childPrimary}}`,
               sort: 'asc',
             },
           } : {}),
@@ -272,12 +277,20 @@ function inferAddFlows(
 /**
  * Fix double-brace templates {{field}} → {field} in any string value recursively.
  */
-function fixDoubleBraces(obj: any): any {
-  if (typeof obj === 'string') return obj.replace(/\{\{(\w+)\}\}/g, '{$1}');
-  if (Array.isArray(obj)) return obj.map(fixDoubleBraces);
+function fixTemplateSyntax(obj: any): any {
+  if (typeof obj === 'string') {
+    let s = obj;
+    s = s.replace(/\{\{(\w+)\}\}/g, '{$1}');
+    s = s.replace(/\{\{[^}]*\}\}/g, '');
+    s = s.replace(/\$\{(\w+)\}/g, '{$1}');
+    s = s.replace(/\$\{[^}]+\}/g, '');
+    s = s.replace(/\s{2,}/g, ' ').trim();
+    return s;
+  }
+  if (Array.isArray(obj)) return obj.map(fixTemplateSyntax);
   if (obj && typeof obj === 'object') {
     const result: Record<string, any> = {};
-    for (const [k, v] of Object.entries(obj)) result[k] = fixDoubleBraces(v);
+    for (const [k, v] of Object.entries(obj)) result[k] = fixTemplateSyntax(v);
     return result;
   }
   return obj;
@@ -294,14 +307,36 @@ function normalizeStoryEventsFormat(
   for (const [key, value] of Object.entries(raw)) {
     if (Array.isArray(value)) {
       console.log(`[normalizeSpec] Fixed story_events.${key}: array → {events: [...]}`);
-      fixed[key] = { events: fixDoubleBraces(value) };
+      fixed[key] = { events: fixTemplateSyntax(value) };
     } else if (value && typeof value === 'object') {
-      fixed[key] = fixDoubleBraces(value);
+      fixed[key] = fixTemplateSyntax(value);
       if (!fixed[key].events && !fixed[key].stats_card) {
         fixed[key] = { events: [] };
       }
     }
   }
+
+  // Validate display templates reference real fields on source entity
+  for (const [key, config] of Object.entries(fixed)) {
+    if (!config?.events) continue;
+    for (const ev of config.events) {
+      if (!ev.display || !ev.source) continue;
+      const srcEntity = entities.find(e => e.name === ev.source);
+      if (!srcEntity) continue;
+      const srcFields = new Set(srcEntity.fields.map((f: Field) => f.name));
+      const hasDotRef = /\{[a-zA-Z_]+\.[a-zA-Z_]+\}/.test(ev.display);
+      const simplePlaceholders = Array.from((ev.display as string).matchAll(/\{([a-zA-Z_]\w*)\}/g))
+        .filter((m: RegExpMatchArray) => !(ev.display as string).includes(m[1] + '.'));
+      const hasInvalid = simplePlaceholders.some((m: RegExpMatchArray) => !srcFields.has(m[1]));
+      const allFK = simplePlaceholders.length > 0 && simplePlaceholders.every((m: RegExpMatchArray) => m[1].endsWith('_id'));
+      if (hasDotRef || hasInvalid || allFK) {
+        const primary = findPrimaryTextField(srcEntity);
+        console.log(`[normalizeSpec] Fixed story_events.${key} event display '${ev.display}' → '{${primary}}' for source '${ev.source}'`);
+        ev.display = `{${primary}}`;
+      }
+    }
+  }
+
   return inferStoryEvents(fixed, entities);
 }
 
