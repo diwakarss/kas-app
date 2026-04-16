@@ -7,141 +7,91 @@
 
 import type { LLMProvider, GenerationResult } from '../types/providers';
 import type { KASAppSpec } from '../../core/types/spec';
+import { catalog } from '../../ui/catalog';
 
 /**
- * System prompt for spec generation.
+ * KAS-specific business schema rules appended to the catalog-generated prompt.
+ * The catalog handles UI component schemas; these rules handle the business data layer.
  */
-const SPEC_GENERATION_SYSTEM_PROMPT = `/no_think
-You are a business application specification generator. Return ONLY valid JSON, no explanations.
+const KAS_BUSINESS_RULES = `
+BUSINESS DATA SCHEMA:
+In addition to the UI spec above, generate a complete business specification JSON object with these sections:
 
-CRITICAL: Follow this EXACT structure. Missing fields will break the app.
-
-{
-  "meta": {
-    "name": "Business Name",
-    "business_type": "type",
-    "version": 1,
-    "spec_id": "unique-id-here",
-    "created_date": "2024-01-01T00:00:00Z",
-    "customizations": [],
-    "version_history": [{"version": 1, "date": "2024-01-01T00:00:00Z", "source": "generated", "changes": "Initial"}]
-  },
-  "entities": [
-    {
-      "name": "Customer",
-      "display_name": "Customer",
-      "display_name_plural": "Customers",
-      "icon": "👤",
-      "fields": [
-        {"name": "name", "display_name": "Name", "type": "text", "required": true, "searchable": true},
-        {"name": "phone", "display_name": "Phone", "type": "phone", "required": false, "searchable": true}
-      ],
-      "relationships": []
-    },
-    {
-      "name": "Appointment",
-      "display_name": "Appointment",
-      "display_name_plural": "Appointments",
-      "icon": "📅",
-      "fields": [
-        {"name": "datetime", "display_name": "Date & Time", "type": "datetime", "required": true, "searchable": true},
-        {"name": "notes", "display_name": "Notes", "type": "note", "required": false, "searchable": false}
-      ],
-      "relationships": [
-        {"target": "Customer", "type": "belongs_to", "foreign_key": "customer_id", "display_in_story": true}
-      ]
-    }
-  ],
-  "anchor": {
-    "entity": "Appointment",
-    "type": "day_schedule",
-    "greeting_template": "Good {time_of_day}",
-    "date_label": "today",
-    "card_display": {
-      "title": "{customer.name}",
-      "subtitle": "{notes}",
-      "time_field": "datetime",
-      "actions": ["edit", "delete"]
-    },
-    "empty_state": {
-      "message": "No appointments today",
-      "action": "Add an appointment",
-      "fallback_view": "calendar"
-    },
-    "summary": {
-      "stats": [
-        {"label": "Today", "query": "today_class_count"},
-        {"label": "This Week", "query": "week_class_count"}
-      ]
-    }
-  },
-  "story_events": {
-    "Customer": {
-      "stats_card": [{"label": "{name}"}],
-      "coming_up": {
-        "entity": "Appointment",
-        "relationship": "customer_id",
-        "date_field": "datetime",
-        "display": "{datetime} - {notes}"
-      },
-      "events": [
-        {"source": "Appointment", "relationship": "customer_id", "type": "scheduled", "display": "{datetime} - {notes}", "icon_color": "stream"}
-      ],
-      "origin": "Created on {created_at}",
-      "context": "Customer profile"
-    }
-  },
-  "add_flows": {
-    "Customer": {
-      "steps": [
-        {"field": "name", "prompt": "Customer name?", "required": true, "keyboard": "default"},
-        {"field": "phone", "prompt": "Phone number?", "required": false, "skip_text": "skip", "keyboard": "phone"}
-      ]
-    },
-    "Appointment": {
-      "steps": [
-        {"field": "customer_id", "prompt": "Select customer", "required": true},
-        {"field": "datetime", "prompt": "When?", "required": true, "keyboard": "default"},
-        {"field": "notes", "prompt": "Any notes?", "required": false, "skip_text": "skip", "keyboard": "default"}
-      ],
-      "after_add": {"action": "navigate", "target": "Customer", "text": "View Customer"}
-    }
-  },
-  "search": {
-    "entities": ["Customer", "Appointment"],
-    "default_entity": "Customer",
-    "display": {
-      "Customer": "{name} - {phone}",
-      "Appointment": "{customer.name} - {datetime}"
-    }
-  },
-  "calendar": {
-    "entity": "Appointment",
-    "date_field": "datetime",
-    "display": "{time} - {customer.name}",
-    "color_field": "status"
-  },
-  "chat_commands": [
-    {"pattern": "add customer", "action": {"type": "add", "entity": "Customer"}},
-    {"pattern": "add appointment", "action": {"type": "add", "entity": "Appointment"}}
-  ],
-  "business_rules": [],
-  "computed_fields": {
-    "Customer": [
-      {"name": "appointment_count", "display_name": "Appointments", "type": "count", "source_entity": "Appointment", "relationship": "customer_id"}
-    ]
-  }
+"meta": {
+  "name": "Business Name",
+  "business_type": "type",
+  "version": 1,
+  "spec_id": "unique-slug-here",
+  "created_date": "ISO date",
+  "base_template": "generated",
+  "source": "generated",
+  "generation_confidence": 0.85,
+  "version_history": [{"version": 1, "date": "ISO date", "source": "generated", "changes": "Initial"}],
+  "customizations": []
 }
 
-RULES:
-1. Field types: text, number, currency, phone, email, choice, date, datetime, time, toggle, duration, note, image
-2. For "choice" fields, include "choices": ["option1", "option2"]
-3. Relationship types: belongs_to (child entity has FK to parent)
-4. The anchor entity MUST have a datetime field for scheduling
-5. CRITICAL: story_events MUST exist for entities that are belongs_to targets (like Customer)
-6. CRITICAL: add_flows steps use "field" (singular), NOT "fields" array. Each step is one field.
-7. CRITICAL: search.display and calendar.display are REQUIRED templates
-8. CRITICAL: anchor needs card_display, empty_state, and summary sections`;
+"entities": Array of entity definitions. Each entity has:
+  - name, display_name, display_name_plural, icon (emoji)
+  - fields: [{name, display_name, type, required, searchable, ...}]
+  - relationships: [{target, type, foreign_key, display_in_story}]
+
+"anchor": The home screen config:
+  - type: "day_schedule" | "yesterday_summary" | "upcoming_project" | "active_list"
+  - entity, greeting_template, date_label, card_display, empty_state, summary
+
+"story_events": Record of entity name → {events, stats_card, coming_up, origin, context}
+"add_flows": Record of entity name → {steps: [{field, prompt, required, keyboard?, ...}], after_add?}
+"search": {entities: string[], display: Record<entity, template>}
+"calendar": {entity, date_field, display, color_field?}
+"chat_commands": Array of command patterns with actions
+"business_rules": Array of warning/threshold rules
+"computed_fields": Record of entity name → computed field definitions
+
+Field types: text, number, currency, phone, email, choice, date, datetime, time, toggle, duration, note, image
+Relationship types: belongs_to (child has FK to parent), has_many (inverse)
+Computed types: count, sum, days_since, days_until, latest, formula
+
+CRITICAL RULES:
+1. Every entity must have a "name" or primary text field marked searchable
+2. Activity entities must have a datetime field for scheduling
+3. FK fields in belongs_to relationships must end with "_id"
+4. Choice fields must include an "options" array
+5. The calendar entity must have a date or datetime field
+6. story_events MUST exist for entities that are belongs_to targets
+7. add_flows steps use "field" (singular), NOT "fields" array. Each step is one field.
+8. search.display and calendar.display are REQUIRED templates
+9. anchor needs card_display, empty_state, and summary sections`;
+
+/**
+ * Build the system prompt from catalog + KAS business rules.
+ * The catalog generates component/action schemas automatically.
+ * We append KAS-specific business data instructions.
+ */
+export function buildSystemPrompt(customRules?: string[]): string {
+  const uiPrompt = catalog.prompt({
+    mode: 'standalone',
+    customRules: [
+      'Always include a root layout element containing all other elements',
+      'Every business app needs: a person entity, an activity entity, and optionally a transaction entity',
+      'The anchor screen must show today\'s items with greeting, stats, and entity cards',
+      'Story screens show a timeline of events for a single entity record',
+      'Always include add flows with step-by-step field entry',
+      ...(customRules || []),
+    ],
+  });
+
+  return `/no_think\n${uiPrompt}\n\n${KAS_BUSINESS_RULES}`;
+}
+
+/** Cached system prompt for generation (avoid regenerating on every call) */
+let _cachedSystemPrompt: string | null = null;
+
+function getSystemPrompt(): string {
+  if (!_cachedSystemPrompt) {
+    _cachedSystemPrompt = buildSystemPrompt();
+  }
+  return _cachedSystemPrompt;
+}
 
 /**
  * Prompt template for fresh spec generation.
@@ -265,7 +215,7 @@ export class LLMAdaptationLayer {
     const prompt = buildGenerationPrompt(businessType, businessName, features);
 
     const result = await this.provider.generate(prompt, {
-      system_prompt: SPEC_GENERATION_SYSTEM_PROMPT,
+      system_prompt: getSystemPrompt(),
       temperature: 0.7,
       max_tokens: 8192,
     });
@@ -289,7 +239,7 @@ export class LLMAdaptationLayer {
     const prompt = buildModificationPrompt(currentSpec, modification);
 
     const result = await this.provider.generate(prompt, {
-      system_prompt: SPEC_GENERATION_SYSTEM_PROMPT,
+      system_prompt: getSystemPrompt(),
       temperature: 0.5, // Lower temperature for modifications
       max_tokens: 8192,
     });
