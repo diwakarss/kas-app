@@ -48,11 +48,7 @@ function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
     const nameList = sampleNames[entity.name.toLowerCase()] || [`Sample ${entity.display_name} 1`, `Sample ${entity.display_name} 2`, `Sample ${entity.display_name} 3`];
 
     for (let i = 0; i < count; i++) {
-      const rec: any = {
-        id: i + 1,
-        _created_at: new Date(Date.now() - i * 86400000 * 3).toISOString(),
-        _updated_at: new Date().toISOString(),
-      };
+      const rec: any = {};
 
       for (const field of entity.fields || []) {
         const fn = field.name.toLowerCase();

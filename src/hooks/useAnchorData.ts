@@ -257,15 +257,24 @@ export function useAnchorData(): AnchorData | null {
       : null;
 
     const stats = anchor.summary.stats.map((stat) => {
-      // Generic stat query matching
-      if (stat.query === 'today_class_count' || stat.query === 'yesterday_sale_count') {
+      const qry = stat.query.toLowerCase();
+      // Match count-based stats (today_count, today_class_count, yesterday_sale_count, etc.)
+      if (qry.includes('today') && qry.includes('count') || qry === 'today_count') {
         return { label: stat.label, value: targetCount?.cnt ?? 0 };
       }
-      if (stat.query === 'week_class_count') {
+      if (qry.includes('yesterday') && qry.includes('count')) {
+        return { label: stat.label, value: targetCount?.cnt ?? 0 };
+      }
+      if (qry.includes('week') && qry.includes('count') || qry === 'week_count') {
         return { label: stat.label, value: weekCount?.cnt ?? 0 };
       }
-      if (stat.query === 'yesterday_total_amount' || stat.query === 'today_total_amount') {
+      // Match amount/total stats
+      if (qry.includes('total') || qry.includes('amount') || qry.includes('revenue')) {
         return { label: stat.label, value: `Rs.${targetSum?.total ?? 0}` };
+      }
+      // Fallback: if the query name contains "count", use target count
+      if (qry.includes('count')) {
+        return { label: stat.label, value: targetCount?.cnt ?? 0 };
       }
       return { label: stat.label, value: 0 };
     });
