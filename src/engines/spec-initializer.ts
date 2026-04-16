@@ -42,6 +42,63 @@ function loadActiveSpec(): any {
 }
 
 /**
+ * Initialize spec from provided JSON.
+ * Used for preview mode where spec is fetched from API.
+ * Does NOT seed data — sample data comes from API response.
+ */
+export function initializeSpecFromJson(
+  adapter: DatabaseAdapter,
+  specJson: unknown
+): InitializedSpec {
+  console.log('[SpecInitializer] Initializing from provided JSON...');
+
+  // 1. Validate spec
+  const result = loadSpec(specJson);
+  if (!result.success) {
+    console.error('[SpecInitializer] Spec validation failed:', result.errors);
+    return {
+      spec: null,
+      db: null,
+      crud: null,
+      loading: false,
+      error: `Spec validation failed:\n${result.errors.join('\n')}`,
+    };
+  }
+
+  const validSpec = result.spec;
+  console.log('[SpecInitializer] Spec validated:', validSpec.meta.name);
+
+  // 2. Initialize schema (idempotent — IF NOT EXISTS)
+  const ddlStatements = generateDDL(validSpec);
+  const isWeb = Platform.OS === 'web';
+  console.log('[SpecInitializer] DDL statements:', ddlStatements.length);
+  for (let i = 0; i < ddlStatements.length; i++) {
+    // sql.js doesn't include FTS5 — skip virtual tables and their triggers on web
+    if (isWeb && (ddlStatements[i].includes('fts5') || ddlStatements[i].includes('_fts'))) {
+      continue;
+    }
+    try {
+      adapter.execRaw(ddlStatements[i]);
+    } catch (ddlErr: any) {
+      console.warn(`[SpecInitializer] DDL[${i}] failed:`, ddlErr.message);
+    }
+  }
+  console.log('[SpecInitializer] Schema initialized');
+
+  // 3. Create CRUD service (no seeding — caller handles sample data)
+  const crudService = new CrudService(adapter, validSpec);
+
+  console.log('[SpecInitializer] Initialization complete (preview mode)');
+  return {
+    spec: validSpec,
+    db: adapter,
+    crud: crudService,
+    loading: false,
+    error: null,
+  };
+}
+
+/**
  * Initialize spec, database schema, and seed data.
  * Returns the full context value ready for SpecContext.
  */

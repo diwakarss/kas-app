@@ -1,0 +1,45 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Empty State: No Payments Recorded -->
+  <!-- Style: Clean, trustworthy, inviting to track finances -->
+
+  <!-- Soft background circle -->
+  <circle cx="100" cy="100" r="80" fill="#FAF7F2" stroke="#B8AFA6" stroke-width="2" stroke-dasharray="8 4"/>
+
+  <!-- Wallet (open, empty but ready) -->
+  <g transform="translate(55, 60)">
+    <!-- Wallet body -->
+    <rect x="0" y="20" width="90" height="60" rx="8" fill="#D4845A" opacity="0.3"/>
+    <rect x="5" y="25" width="80" height="50" rx="6" fill="white" stroke="#D4845A" stroke-width="2"/>
+    <!-- Wallet flap (open) -->
+    <path d="M5 25 Q45 -5 85 25" fill="#D4845A" opacity="0.5" stroke="#D4845A" stroke-width="2"/>
+    <!-- Card slots (empty) -->
+    <rect x="12" y="35" width="30" height="4" rx="2" fill="#B8AFA6" opacity="0.4"/>
+    <rect x="12" y="45" width="25" height="4" rx="2" fill="#B8AFA6" opacity="0.3"/>
+    <rect x="12" y="55" width="20" height="4" rx="2" fill="#B8AFA6" opacity="0.2"/>
+  </g>
+
+  <!-- Coins floating/waiting -->
+  <g transform="translate(130, 50)">
+    <ellipse cx="15" cy="8" rx="15" ry="5" fill="#5A8B67" opacity="0.4"/>
+    <ellipse cx="15" cy="5" rx="15" ry="5" fill="#5A8B67" opacity="0.5"/>
+    <text x="10" y="8" font-family="Arial" font-size="8" fill="white" font-weight="bold">₹</text>
+  </g>
+
+  <g transform="translate(140, 75)">
+    <ellipse cx="12" cy="6" rx="12" ry="4" fill="#5A8B67" opacity="0.3"/>
+    <ellipse cx="12" cy="4" rx="12" ry="4" fill="#5A8B67" opacity="0.4"/>
+  </g>
+
+  <!-- Upward arrow (growth/tracking) -->
+  <g transform="translate(50, 135)" opacity="0.4">
+    <line x1="0" y1="20" x2="30" y2="0" stroke="#5A8B67" stroke-width="2" stroke-linecap="round"/>
+    <polyline points="20,-5 30,0 25,10" fill="none" stroke="#5A8B67" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Plus hint -->
+  <g transform="translate(155, 145)" opacity="0.3">
+    <circle cx="0" cy="0" r="10" fill="#5B8BA4"/>
+    <line x1="-4" y1="0" x2="4" y2="0" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <line x1="0" y1="-4" x2="0" y2="4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

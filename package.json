@@ -8,6 +8,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "web:preview": "EXPO_PUBLIC_API_URL=http://localhost:7131 expo start --web",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint . --ext .ts,.tsx",
@@ -15,6 +16,7 @@
     "validate:spec": "node tools/constitution-compiler/validate.js",
     "lint:architecture": "depcruise --config .dependency-cruiser.cjs src",
     "check:migration-safety": "node tools/constitution-compiler/check-migration.js",
+    "check:landing-contract": "ts-node tools/check-landing-contract.ts",
     "compile:constitution": "ts-node tools/constitution-compiler/compile.ts",
     "prepare": "husky"
   },
