@@ -32,6 +32,21 @@ interface PreviewApiResponse {
  * Generate sample records client-side from a spec's entity definitions.
  * Mirrors the server-side generateSampleData() in preview.ts.
  */
+/** Contextual sample values for common text field names */
+const SAMPLE_TEXT: Record<string, string[]> = {
+  description: ['Regular checkup and cleaning', 'Follow-up consultation', 'New patient intake'],
+  reason: ['Annual wellness exam', 'Persistent cough', 'Post-surgery follow-up'],
+  topic: ['Algebra fundamentals', 'Essay writing', 'Science project'],
+  activity: ['Arts and crafts', 'Story time', 'Outdoor play'],
+  style: ['Ballet', 'Contemporary', 'Hip Hop'],
+  service: ['Full grooming package', 'Nail trim only', 'Bath and brush'],
+  notes: ['Good progress overall', 'Follow up next week', 'On track with plan'],
+  note: ['Good progress overall', 'Follow up next week', 'On track with plan'],
+  address: ['123 MG Road, Bangalore', '45 Anna Nagar, Chennai', '78 Park Street, Kolkata'],
+  location: ['Main Studio', 'Conference Room A', 'Outdoor Area'],
+  title: ['Introduction Session', 'Advanced Workshop', 'Review Meeting'],
+};
+
 function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
   const records: Record<string, any[]> = {};
   if (!spec?.entities || !Array.isArray(spec.entities)) return records;
@@ -40,6 +55,31 @@ function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
     client: ['Ramesh Rao', 'Sunita Menon', 'Arun Pillai'],
     customer: ['Anjali Verma', 'Suresh Reddy', 'Meera Nair'],
     student: ['Rahul Sharma', 'Priya Patel', 'Amit Kumar'],
+    child: ['Aarav Mehta', 'Ishita Roy', 'Kabir Singh'],
+    kid: ['Aarav Mehta', 'Ishita Roy', 'Kabir Singh'],
+    pet: ['Buddy', 'Luna', 'Max'],
+    dog: ['Buddy', 'Luna', 'Max'],
+    cat: ['Whiskers', 'Mittens', 'Shadow'],
+    animal: ['Buddy', 'Luna', 'Max'],
+    vehicle: ['2022 Honda Civic', '2021 Toyota Camry', '2020 Ford F-150'],
+    car: ['2022 Honda Civic', '2021 Toyota Camry', '2020 Ford F-150'],
+    instructor: ['Vikram Das', 'Lakshmi Iyer', 'Deepa Shah'],
+    teacher: ['Vikram Das', 'Lakshmi Iyer', 'Deepa Shah'],
+    employee: ['Ravi Patel', 'Neha Gupta', 'Sanjay Mishra'],
+    staff: ['Ravi Patel', 'Neha Gupta', 'Sanjay Mishra'],
+    class: ['Ballet Basics', 'Contemporary Dance', 'Hip Hop Beginners'],
+    course: ['Intro to Music', 'Advanced Art', 'Creative Writing'],
+    room: ['Room 101', 'Studio A', 'Conference Hall'],
+    product: ['Premium Widget', 'Standard Kit', 'Deluxe Package'],
+    item: ['Item A', 'Item B', 'Item C'],
+    member: ['Arjun Nair', 'Kavitha Reddy', 'Mohan Das'],
+    patient: ['Suresh Babu', 'Radha Krishnan', 'Anita Desai'],
+    appointment: ['Consultation', 'Follow-up', 'Check-up'],
+    session: ['Morning Session', 'Afternoon Session', 'Evening Session'],
+    payment: ['Monthly Payment', 'Registration Fee', 'Material Fee'],
+    invoice: ['INV-001', 'INV-002', 'INV-003'],
+    order: ['Order #1001', 'Order #1002', 'Order #1003'],
+    part: ['Brake Pad Set', 'Oil Filter', 'Spark Plug Kit'],
   };
 
   for (const entity of spec.entities) {
@@ -59,13 +99,18 @@ function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
         if (fn.includes('phone')) { rec[field.name] = `+91 98765 4321${i}`; continue; }
 
         // FK fields: reference record i+1 in the target entity (autoincrement IDs start at 1)
-        if (fn.endsWith('_id') && ft === 'number') {
+        // Match on field name suffix regardless of declared type — LLM sometimes types these as 'integer' or leaves blank.
+        if (fn.endsWith('_id')) {
           rec[field.name] = (i % count) + 1;
           continue;
         }
 
         switch (ft) {
-          case 'text': case 'string': rec[field.name] = `Sample ${field.display_name || field.name} ${i + 1}`; break;
+          case 'text': case 'string': {
+            const contextual = SAMPLE_TEXT[fn];
+            rec[field.name] = contextual ? contextual[i % contextual.length] : `Sample ${field.display_name || field.name} ${i + 1}`;
+            break;
+          }
           case 'number': case 'integer': rec[field.name] = (i + 1) * 10; break;
           case 'currency': case 'money': rec[field.name] = (i + 1) * 1000; break;
           case 'date': {
@@ -100,6 +145,35 @@ function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
     records[entity.name] = entityRecords;
   }
   return records;
+}
+
+/**
+ * Topologically sort entities so parents come before children.
+ * Entities with no belongs_to come first; cycles break in declaration order.
+ */
+function topoSortEntities(spec: KASAppSpec, available: string[]): string[] {
+  const visited = new Set<string>();
+  const order: string[] = [];
+  const byName = new Map((spec.entities || []).map(e => [e.name, e]));
+  const availSet = new Set(available);
+
+  function visit(name: string, stack: Set<string>) {
+    if (visited.has(name) || !availSet.has(name) || stack.has(name)) return;
+    stack.add(name);
+    const ent = byName.get(name);
+    const parents = (ent?.relationships || [])
+      .filter(r => r.type === 'belongs_to')
+      .map(r => r.target);
+    for (const p of parents) visit(p, stack);
+    stack.delete(name);
+    if (!visited.has(name)) {
+      visited.add(name);
+      order.push(name);
+    }
+  }
+
+  for (const name of available) visit(name, new Set());
+  return order;
 }
 
 /**
@@ -170,10 +244,13 @@ export function WebSpecProvider({ children }: WebSpecProviderProps) {
           // Initialize with fetched spec
           const result = initializeSpecFromJson(adapter, response.data.spec);
 
-          // Insert sample records if provided
+          // Insert sample records if provided — parents before children so FK references resolve.
           if (response.data.sampleRecords && result.crud) {
             console.log('[WebSpecProvider] Inserting sample records...');
-            for (const [entityName, records] of Object.entries(response.data.sampleRecords)) {
+            const insertOrder = topoSortEntities(response.data.spec, Object.keys(response.data.sampleRecords));
+            for (const entityName of insertOrder) {
+              const records = response.data.sampleRecords[entityName];
+              if (!records) continue;
               for (const record of records) {
                 try {
                   await result.crud.create(entityName, record);

@@ -69,8 +69,37 @@ function inferIcon(entityName: string): string {
   return '📄';
 }
 
+/** Person-like entity names — entities that represent people, pets, or subjects */
+const PERSON_LIKE_NAMES = new Set([
+  'client', 'customer', 'patient', 'member', 'student', 'child', 'kid',
+  'pet', 'dog', 'cat', 'animal', 'owner', 'parent', 'employee', 'staff',
+  'instructor', 'teacher', 'trainer', 'therapist', 'doctor',
+]);
+
+/** Check if an entity represents a person/subject (by name or structure) */
+function isPersonLikeEntity(entity: Entity): boolean {
+  if (PERSON_LIKE_NAMES.has(entity.name.toLowerCase())) return true;
+  const fieldNames = new Set(entity.fields.map(f => f.name.toLowerCase()));
+  return fieldNames.has('name') && (fieldNames.has('email') || fieldNames.has('phone'));
+}
+
 /** Auto-detect searchable fields: text, email, phone on non-FK fields */
 const SEARCHABLE_TYPES = new Set(['text', 'email', 'phone']);
+
+/** Default options for common choice field names */
+const DEFAULT_CHOICE_OPTIONS: Record<string, string[]> = {
+  status: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
+  level: ['Beginner', 'Intermediate', 'Advanced'],
+  priority: ['Low', 'Medium', 'High', 'Urgent'],
+  type: ['Standard', 'Premium', 'Custom'],
+  payment_method: ['Cash', 'Credit Card', 'Debit Card', 'Online Transfer'],
+  method: ['Cash', 'Credit Card', 'Debit Card', 'Online Transfer'],
+  size: ['Small', 'Medium', 'Large'],
+  gender: ['Male', 'Female', 'Other'],
+  rating: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+  frequency: ['Daily', 'Weekly', 'Monthly', 'Yearly'],
+  day: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+};
 
 /**
  * Normalize a field by adding default values for missing properties.
@@ -80,6 +109,12 @@ function normalizeField(field: Partial<Field>): Field {
   const type = field.type || 'text';
   const isFK = name.endsWith('_id');
 
+  // Infer options for choice fields that don't have them
+  let options = field.options;
+  if (type === 'choice' && (!options || options.length === 0)) {
+    options = DEFAULT_CHOICE_OPTIONS[name.toLowerCase()];
+  }
+
   return {
     name,
     display_name: field.display_name && field.display_name !== field.name
@@ -88,7 +123,7 @@ function normalizeField(field: Partial<Field>): Field {
     type,
     required: field.required ?? false,
     searchable: field.searchable || (!isFK && SEARCHABLE_TYPES.has(type)),
-    options: field.options,
+    options,
     default_value: field.default_value,
   } as Field;
 }
@@ -173,6 +208,33 @@ function findPrimaryTextField(entity: Entity | undefined): string {
 }
 
 /**
+ * Find the best subtitle field on an entity, excluding the title field.
+ * Prefers descriptive text (description/notes/reason) → other text → choice status → last resort date.
+ */
+const SUBTITLE_PREFERRED = ['description', 'reason', 'notes', 'note', 'topic', 'activity', 'service', 'title', 'summary'];
+
+function findSubtitleField(entity: Entity | undefined, excludeField: string): string | null {
+  if (!entity) return null;
+  const systemFields = new Set(['id', 'created_at', 'updated_at', 'archived']);
+  const isUsable = (f: Field) =>
+    !systemFields.has(f.name) && f.name !== excludeField && !f.name.endsWith('_id');
+
+  // 1. Preferred descriptive fields (description, reason, notes, etc.)
+  for (const pref of SUBTITLE_PREFERRED) {
+    const field = entity.fields.find(f => f.name.toLowerCase() === pref && isUsable(f));
+    if (field) return field.name;
+  }
+  // 2. Any non-primary, non-FK text field
+  const textField = entity.fields.find(f => f.type === 'text' && isUsable(f));
+  if (textField) return textField.name;
+  // 3. Choice/status field
+  const choiceField = entity.fields.find(f => f.type === 'choice' && isUsable(f));
+  if (choiceField) return choiceField.name;
+  // 4. Don't fall back to raw date — let the subtitle stay empty
+  return null;
+}
+
+/**
  * Validate a template string against an entity's fields.
  * If any placeholder references a field that doesn't exist, replace with the primary text field.
  */
@@ -199,28 +261,89 @@ function validateTemplate(template: string, entity: Entity | undefined): string 
   return template;
 }
 
+/**
+ * Find the best scheduling date field on an entity.
+ * Prefers schedule-like names (date, appointment_date, session_date, start_date)
+ * over metadata-like names (date_of_birth, birth_date, created_at, dob).
+ * Returns null if no scheduling date field exists.
+ */
+const METADATA_DATE_PATTERNS = /birth|dob|founded|established|joined|registered|hired|anniversary/i;
+
+function findScheduleDateField(entity: Entity | undefined): Field | null {
+  if (!entity) return null;
+  const dateFields = entity.fields.filter(f => f.type === 'datetime' || f.type === 'date');
+  if (dateFields.length === 0) return null;
+  // Filter out metadata dates
+  const scheduleDates = dateFields.filter(f => !METADATA_DATE_PATTERNS.test(f.name));
+  if (scheduleDates.length > 0) return scheduleDates[0];
+  // All dates are metadata — return null so anchor falls back to active_list
+  return null;
+}
+
 function normalizeAnchor(anchor: Partial<KASAppSpec['anchor']> | undefined, entities: Entity[]): KASAppSpec['anchor'] {
   const defaultEntity = entities[0]?.name || 'Item';
-  const anchorEntityName = anchor?.entity || defaultEntity;
-  const anchorEntity = entities.find(e => e.name === anchorEntityName) || entities[0];
+  let anchorEntityName = anchor?.entity || defaultEntity;
+  let anchorEntity = entities.find(e => e.name === anchorEntityName) || entities[0];
+
+  // Auto-swap: if anchor entity is a person-like entity with no schedule date,
+  // prefer an activity entity (has belongs_to + datetime) for a better day-schedule view
+  if (anchorEntity && isPersonLikeEntity(anchorEntity) && !findScheduleDateField(anchorEntity)) {
+    const activityEntity = entities.find(e =>
+      e.name !== anchorEntity!.name &&
+      e.relationships.some(r => r.type === 'belongs_to') &&
+      findScheduleDateField(e) !== null
+    );
+    if (activityEntity) {
+      console.log(`[normalizeSpec] Anchor swap: '${anchorEntityName}' (person, no date) → '${activityEntity.name}' (activity with date)`);
+      anchorEntityName = activityEntity.name;
+      anchorEntity = activityEntity;
+    }
+  }
+
   const primaryField = findPrimaryTextField(anchorEntity);
-  const dateTimeField = anchorEntity?.fields.find(f => f.type === 'datetime' || f.type === 'date');
+  const dateTimeField = findScheduleDateField(anchorEntity);
 
   // Smart default title: if primary field is a date and entity has belongs_to, use related entity name
   let defaultTitle = `{${primaryField}}`;
   let defaultSubtitle = '';
   if (anchorEntity) {
     const primaryFieldDef = anchorEntity.fields.find(f => f.name === primaryField);
-    if (primaryFieldDef && (primaryFieldDef.type === 'date' || primaryFieldDef.type === 'datetime')) {
+    const primaryIsDate = primaryFieldDef && (primaryFieldDef.type === 'date' || primaryFieldDef.type === 'datetime');
+
+    if (primaryIsDate) {
       const belongsTo = anchorEntity.relationships.find(r => r.type === 'belongs_to');
       if (belongsTo) {
         const parentEntity = entities.find(e => e.name === belongsTo.target);
         if (parentEntity) {
           const parentPrimary = findPrimaryTextField(parentEntity);
           defaultTitle = `{${belongsTo.target.toLowerCase()}.${parentPrimary}}`;
-          defaultSubtitle = `{${primaryField}}`;
+          // Prefer a text subtitle over the date that's now the title reference
+          const subField = findSubtitleField(anchorEntity, primaryField);
+          defaultSubtitle = subField ? `{${subField}}` : '';
         }
       }
+    }
+
+    // Phase B: if Phase A didn't fire and anchor entity belongs_to a person-like entity, flip title to person name
+    if (defaultTitle === `{${primaryField}}`) {
+      const belongsToRels = anchorEntity.relationships.filter(r => r.type === 'belongs_to');
+      for (const bt of belongsToRels) {
+        const parent = entities.find(e => e.name === bt.target);
+        if (parent && isPersonLikeEntity(parent)) {
+          const parentPrimary = findPrimaryTextField(parent);
+          defaultTitle = `{${bt.target.toLowerCase()}.${parentPrimary}}`;
+          const subField = findSubtitleField(anchorEntity, primaryField);
+          defaultSubtitle = subField ? `{${subField}}` : '';
+          console.log(`[normalizeSpec] Anchor title Phase B: using person-like ${bt.target}.${parentPrimary}`);
+          break;
+        }
+      }
+    }
+
+    // Default subtitle when title uses entity's own primary text field
+    if (!defaultSubtitle && defaultTitle === `{${primaryField}}`) {
+      const subField = findSubtitleField(anchorEntity, primaryField);
+      if (subField) defaultSubtitle = `{${subField}}`;
     }
   }
 
@@ -232,13 +355,13 @@ function normalizeAnchor(anchor: Partial<KASAppSpec['anchor']> | undefined, enti
   return {
     entity: anchorEntityName,
     type: anchor?.type || 'day_schedule',
-    greeting_template: anchor?.greeting_template || 'Good {time_of_day}',
+    greeting_template: anchor?.greeting_template || 'Good {time_of_day}, {business_name}',
     date_label: anchor?.date_label || 'today',
     card_display: {
       ...anchor?.card_display,
       title: validatedTitle,
       subtitle: validatedSubtitle,
-      time_field: anchor?.card_display?.time_field || dateTimeField?.name || 'datetime',
+      time_field: anchor?.card_display?.time_field || dateTimeField?.name || null,
       actions: anchor?.card_display?.actions || ['edit', 'delete'],
     },
     empty_state: {
@@ -356,6 +479,28 @@ function inferAddFlows(
     };
   }
 
+  // Infer after_add flows: after adding a parent entity, suggest adding a child
+  for (const entity of entities) {
+    const flow = result[entity.name];
+    if (!flow || flow.after_add) continue;
+    // Find a child entity that belongs_to this entity
+    const childEntity = entities.find(child =>
+      child.name !== entity.name &&
+      child.relationships.some(r => r.type === 'belongs_to' && r.target === entity.name)
+    );
+    if (childEntity) {
+      const childRel = childEntity.relationships.find(r => r.type === 'belongs_to' && r.target === entity.name);
+      if (childRel) {
+        flow.after_add = {
+          action: 'suggest',
+          target: childEntity.name,
+          text: `Add ${childEntity.display_name}`,
+          pre_fill: { [childRel.foreign_key]: '{id}' },
+        };
+      }
+    }
+  }
+
   return result;
 }
 
@@ -401,9 +546,32 @@ function normalizeStoryEventsFormat(
     }
   }
 
-  // Validate display templates reference real fields on source entity
+  // Validate story events: FK must exist on source entity AND point back to the story entity
   for (const [key, config] of Object.entries(fixed)) {
     if (!config?.events) continue;
+    config.events = config.events.filter((ev: any) => {
+      if (!ev.source || !ev.relationship) return false;
+      const srcEntity = entities.find(e => e.name === ev.source);
+      if (!srcEntity) {
+        console.log(`[normalizeSpec] Removed story_events.${key} event: source '${ev.source}' not found`);
+        return false;
+      }
+      // Check that the FK field exists on the source entity
+      const hasFK = srcEntity.fields.some((f: Field) => f.name === ev.relationship);
+      if (!hasFK) {
+        console.log(`[normalizeSpec] Removed story_events.${key} event: FK '${ev.relationship}' not found on '${ev.source}'`);
+        return false;
+      }
+      // Check that the FK's relationship target matches the story entity
+      const rel = srcEntity.relationships.find((r: any) => r.foreign_key === ev.relationship);
+      if (rel && rel.target !== key) {
+        console.log(`[normalizeSpec] Removed story_events.${key} event: FK '${ev.relationship}' on '${ev.source}' points to '${rel.target}', not '${key}'`);
+        return false;
+      }
+      return true;
+    });
+
+    // Validate display templates reference real fields on source entity
     for (const ev of config.events) {
       if (!ev.display || !ev.source) continue;
       const srcEntity = entities.find(e => e.name === ev.source);
@@ -555,6 +723,22 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
     }
   }
 
+  // Inject status field on activity entities (has validated belongs_to, no choice field)
+  for (const entity of entities) {
+    const hasBelongsTo = entity.relationships.some(r => r.type === 'belongs_to');
+    const hasChoiceField = entity.fields.some(f => f.type === 'choice');
+    if (hasBelongsTo && !hasChoiceField && !isPersonLikeEntity(entity)) {
+      entity.fields.push(normalizeField({
+        name: 'status',
+        type: 'choice',
+        required: false,
+        options: ['Scheduled', 'In Progress', 'Completed', 'Cancelled'],
+        default_value: 'Scheduled',
+      }));
+      console.log(`[normalizeSpec] Injected status field on activity entity '${entity.name}'`);
+    }
+  }
+
   return {
     meta: {
       spec_id: spec.meta?.spec_id || crypto.randomUUID?.() || `spec-${Date.now()}`,
@@ -591,12 +775,16 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
         return display;
       })(),
     },
-    calendar: spec.calendar || {
-      entity: entities.find(e => e.fields.some(f => f.type === 'datetime' || f.type === 'date'))?.name || entities[0]?.name,
-      date_field: entities.find(e => e.fields.some(f => f.type === 'datetime' || f.type === 'date'))
-        ?.fields.find(f => f.type === 'datetime' || f.type === 'date')?.name || 'datetime',
-      display: '{time}',
-    },
+    calendar: spec.calendar || (() => {
+      // Prefer an entity with a schedule date (not birth dates)
+      const calEntity = entities.find(e => findScheduleDateField(e) !== null) || entities[0];
+      const calDateField = findScheduleDateField(calEntity);
+      return {
+        entity: calEntity?.name || entities[0]?.name,
+        date_field: calDateField?.name || 'date',
+        display: `{${findPrimaryTextField(calEntity)}}`,
+      };
+    })(),
     chat_commands: spec.chat_commands || [],
   } as KASAppSpec;
 }

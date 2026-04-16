@@ -41,10 +41,14 @@ export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): 
     for (let i = 0; i < anchorData.cards.length; i++) {
       const card = anchorData.cards[i];
       const cardId = `card-${i}`;
+      // Only navigate to parent entity when the card title uses a cross-entity ref (e.g., "{client.name}").
+      // If the title uses anchor entity's own fields (e.g., "{name}"), navigate to the entity itself.
       const belongsTo = findBelongsTo(appSpec);
+      const titleUsesCrossRef = appSpec.ui_hints.anchor.card_display?.title?.includes('.') ?? false;
+      const shouldNavToParent = belongsTo && titleUsesCrossRef;
 
-      const navEntityType = belongsTo?.target ?? appSpec.ui_hints.anchor.entity;
-      const navEntityId = belongsTo ? card.rawData[belongsTo.foreign_key] ?? card.id : card.id;
+      const navEntityType = shouldNavToParent ? belongsTo.target : appSpec.ui_hints.anchor.entity;
+      const navEntityId = shouldNavToParent ? card.rawData[belongsTo.foreign_key] ?? card.id : card.id;
 
       elements[cardId] = {
         type: 'EntityCard',

@@ -60,7 +60,18 @@ CRITICAL RULES:
 6. story_events MUST exist for entities that are belongs_to targets
 7. add_flows steps use "field" (singular), NOT "fields" array. Each step is one field.
 8. search.display and calendar.display are REQUIRED templates
-9. anchor needs card_display, empty_state, and summary sections`;
+9. anchor needs card_display, empty_state, and summary sections
+
+ANCHOR CARD DISPLAY:
+10. anchor.card_display.title MUST show the person/subject name using cross-entity ref syntax.
+    For activity entities that belong_to a person, use: title: "{person_entity.name}"
+    Example: title: "{client.name}", subtitle: "{description}"
+11. Activity entities (appointments, sessions, orders, jobs) MUST have a "status" choice field
+    with options: ["Scheduled", "In Progress", "Completed", "Cancelled"]
+12. For appointment/session entities, use "datetime" type (not "date") for the scheduling field
+    so the time of day is captured.
+13. For orders/invoices that need line items, create a simple child entity (e.g., OrderItem belongs_to Order)
+    with fields like item_name, quantity, price. Do NOT create many-to-many junction tables.`;
 
 /**
  * Build the system prompt from catalog + KAS business rules.
