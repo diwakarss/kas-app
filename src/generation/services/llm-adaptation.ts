@@ -116,6 +116,14 @@ Create 3-5 entities that make sense for this business type. Include:
 - A main "activity" entity (appointment/class/session/transaction)
 - Any supporting entities needed
 
+RELATIONSHIPS ARE CRITICAL:
+- Activity entities MUST have a belongs_to relationship to the person entity.
+  Example: Workout belongs_to Client via "client_id" foreign key.
+- Add a foreign key field (e.g. "client_id" with type "number") in the activity entity's fields array.
+- The relationship object must have: {"target": "Client", "type": "belongs_to", "foreign_key": "client_id", "display_in_story": true}
+- story_events MUST exist for every entity that is a belongs_to target (e.g. Client needs story_events showing Workouts).
+- add_flows MUST exist for at least the activity entity with steps for each field.
+
 Return the complete JSON spec with all sections populated.`;
 
   return prompt;

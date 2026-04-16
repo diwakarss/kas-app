@@ -113,6 +113,91 @@ function normalizeAnchor(anchor: Partial<KASAppSpec['anchor']> | undefined, enti
 }
 
 /**
+ * Infer story_events for entities that are belongs_to targets.
+ * If entity X has children pointing at it, story_events[X] should list those children.
+ */
+function inferStoryEvents(
+  existing: Record<string, any>,
+  entities: Entity[]
+): Record<string, any> {
+  const result = { ...existing };
+
+  // Find which entities are targets of belongs_to relationships
+  for (const entity of entities) {
+    for (const rel of entity.relationships) {
+      if (rel.type === 'belongs_to' && !result[rel.target]) {
+        const childEntity = entity;
+        const parentEntity = entities.find(e => e.name === rel.target);
+        if (!parentEntity) continue;
+
+        const dateField = childEntity.fields.find(f =>
+          f.type === 'datetime' || f.type === 'date'
+        );
+
+        console.log(`[normalizeSpec] Inferred story_events for '${rel.target}' from '${childEntity.name}'`);
+        result[rel.target] = {
+          events: [{
+            source: childEntity.name,
+            relationship: rel.foreign_key,
+            type: childEntity.name.toLowerCase(),
+            display: `{${childEntity.fields[0]?.name || 'name'}}`,
+            icon_color: 'stream',
+          }],
+          stats_card: [{ label: `{${parentEntity.fields[0]?.name || 'name'}}` }],
+          origin: 'Created on {created_at}',
+          context: parentEntity.display_name,
+          ...(dateField ? {
+            coming_up: {
+              source: childEntity.name,
+              relationship: rel.foreign_key,
+              display: `{${childEntity.fields[0]?.name || 'name'}}`,
+              sort: 'asc',
+            },
+          } : {}),
+        };
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Infer add_flows for entities that don't have them.
+ * Creates a step-per-field flow for each entity.
+ */
+function inferAddFlows(
+  existing: Record<string, any>,
+  entities: Entity[]
+): Record<string, any> {
+  const result = { ...existing };
+
+  for (const entity of entities) {
+    if (result[entity.name]) continue;
+
+    // Skip system fields
+    const userFields = entity.fields.filter(f =>
+      !['id', 'created_at', 'updated_at', 'archived'].includes(f.name)
+    );
+    if (userFields.length === 0) continue;
+
+    console.log(`[normalizeSpec] Inferred add_flow for '${entity.name}'`);
+    result[entity.name] = {
+      steps: userFields.map(f => ({
+        field: f.name,
+        prompt: `Enter ${f.display_name || f.name}`,
+        required: f.required ?? false,
+        ...(f.type === 'number' || f.type === 'currency' ? { keyboard: 'numeric' } : {}),
+        ...(f.type === 'phone' ? { keyboard: 'phone-pad' } : {}),
+        ...(f.type === 'email' ? { keyboard: 'email-address' } : {}),
+      })),
+    };
+  }
+
+  return result;
+}
+
+/**
  * Normalize a spec by filling in defaults for all missing fields.
  *
  * @param spec - The raw spec from LLM
@@ -129,11 +214,45 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
   for (const entity of entities) {
     entity.relationships = entity.relationships.filter(rel => {
       if (!entityNames.has(rel.target)) {
-        console.warn(`[SpecNormalizer] Removing invalid relationship in '${entity.name}': target '${rel.target}' not found`);
+        // Try to fuzzy-match the target to an existing entity (case-insensitive)
+        const match = entities.find(e =>
+          e.name.toLowerCase() === rel.target.toLowerCase() ||
+          e.display_name?.toLowerCase() === rel.target.toLowerCase()
+        );
+        if (match) {
+          console.log(`[normalizeSpec] Fixed relationship target '${rel.target}' → '${match.name}' in '${entity.name}'`);
+          rel.target = match.name;
+          return true;
+        }
+        console.warn(`[normalizeSpec] Removing invalid relationship in '${entity.name}': target '${rel.target}' not found`);
         return false;
       }
       return true;
     });
+  }
+
+  // Infer missing relationships from *_id fields
+  for (const entity of entities) {
+    const existingTargets = new Set(entity.relationships.map(r => r.target));
+    for (const field of entity.fields) {
+      if (!field.name.endsWith('_id')) continue;
+      const candidateName = field.name.replace(/_id$/, '');
+      // Find a matching entity (case-insensitive)
+      const target = entities.find(e =>
+        e.name.toLowerCase() === candidateName.toLowerCase() ||
+        e.name.toLowerCase() === candidateName.replace(/_/g, '').toLowerCase()
+      );
+      if (target && target.name !== entity.name && !existingTargets.has(target.name)) {
+        console.log(`[normalizeSpec] Inferred belongs_to ${entity.name} → ${target.name} from field '${field.name}'`);
+        entity.relationships.push({
+          target: target.name,
+          type: 'belongs_to',
+          foreign_key: field.name,
+          display_in_story: true,
+        } as Relationship);
+        existingTargets.add(target.name);
+      }
+    }
   }
 
   return {
@@ -158,8 +277,8 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
     anchor: normalizeAnchor(spec.anchor, entities),
     computed_fields: normalizeComputedFields(spec.computed_fields),
     business_rules: spec.business_rules || [],
-    story_events: spec.story_events || {},
-    add_flows: spec.add_flows || {},
+    story_events: inferStoryEvents(spec.story_events || {}, entities),
+    add_flows: inferAddFlows(spec.add_flows || {}, entities),
     search: {
       entities: spec.search?.entities || entities.map(e => e.name),
       display: spec.search?.display || {},
