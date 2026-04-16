@@ -13,6 +13,7 @@
 import React from 'react';
 import { defineRegistry } from '@json-render/react-native';
 import { catalog } from './catalog';
+import { useFieldChange } from './FieldChangeContext';
 
 // Import existing component implementations
 import EntityCardComponent from '../components/EntityCard';
@@ -29,6 +30,42 @@ import SectionHeaderComponent from '../components/SectionHeader';
 import MonthGridComponent from '../components/MonthGrid';
 import DayDetailComponent from '../components/DayDetail';
 import StepProgressComponent from '../components/StepProgress';
+import EntityPickerComponent from '../components/EntityPicker';
+
+// Wrapper components that need hooks must be defined as named functions
+function FieldRendererWrapper({ props }: any) {
+  const onChange = useFieldChange();
+  return (
+    <FieldRendererComponent
+      field={{
+        name: '',
+        display_name: props.label,
+        type: props.fieldType,
+        required: props.required,
+        searchable: false,
+        placeholder: props.placeholder,
+        prefix: props.prefix,
+        suffix: props.suffix,
+        options: props.options,
+        allow_custom: props.allowCustom,
+      }}
+      value={props.value}
+      onChange={onChange}
+    />
+  );
+}
+
+function EntityPickerWrapper({ props }: any) {
+  const onChange = useFieldChange();
+  return (
+    <EntityPickerComponent
+      options={props.options ?? []}
+      entityDisplayName={props.entityDisplayName}
+      value={props.value}
+      onChange={onChange}
+    />
+  );
+}
 
 // Custom KAS component implementations.
 // Standard components (Container, Row, Column, ScrollContainer, etc.)
@@ -95,24 +132,8 @@ const kasComponents = {
     <FloatingActionsComponent />
   ),
 
-  FieldRenderer: ({ props }: any) => (
-    <FieldRendererComponent
-      field={{
-        name: '',
-        display_name: props.label,
-        type: props.fieldType,
-        required: props.required,
-        searchable: false,
-        placeholder: props.placeholder,
-        prefix: props.prefix,
-        suffix: props.suffix,
-        options: props.options,
-        allow_custom: props.allowCustom,
-      }}
-      value={props.value}
-      onChange={() => {}}
-    />
-  ),
+  FieldRenderer: FieldRendererWrapper,
+  EntityPicker: EntityPickerWrapper,
 
   SectionHeader: ({ props }: any) => (
     <SectionHeaderComponent
@@ -152,7 +173,6 @@ export const { registry, handlers, executeAction } = defineRegistry(catalog, {
 
   actions: {
     navigate: async (params) => {
-      // Action handlers are wired at runtime by the screen via ActionProvider
       console.log('[KAS Registry] navigate action:', params);
     },
     addEntity: async (params) => {
@@ -163,6 +183,15 @@ export const { registry, handlers, executeAction } = defineRegistry(catalog, {
     },
     search: async (params) => {
       console.log('[KAS Registry] search action:', params);
+    },
+    addFlowNext: async () => {
+      console.log('[KAS Registry] addFlowNext action');
+    },
+    addFlowBack: async () => {
+      console.log('[KAS Registry] addFlowBack action');
+    },
+    addFlowSkip: async () => {
+      console.log('[KAS Registry] addFlowSkip action');
     },
   },
 });

@@ -190,6 +190,16 @@ export const catalog = defineCatalog(schema, {
       slots: [],
       description: 'Progress indicator showing current step in a multi-step add flow.',
     },
+
+    EntityPicker: {
+      props: z.object({
+        options: z.array(z.record(z.string(), z.unknown())),
+        entityDisplayName: z.string(),
+        value: z.number().nullable().default(null),
+      }),
+      slots: [],
+      description: 'Picker for selecting an existing entity record (FK resolution). Shows a list of available entities.',
+    },
   },
 
   actions: {
@@ -223,6 +233,18 @@ export const catalog = defineCatalog(schema, {
       }),
       description: 'Execute a search across one or more entity types using FTS5.',
     },
+    addFlowNext: {
+      params: z.object({}),
+      description: 'Advance to the next step in the add flow, or submit if on the last step.',
+    },
+    addFlowBack: {
+      params: z.object({}),
+      description: 'Go back to the previous step in the add flow.',
+    },
+    addFlowSkip: {
+      params: z.object({}),
+      description: 'Skip the current optional step in the add flow.',
+    },
   },
 });
 
@@ -230,8 +252,8 @@ export const catalog = defineCatalog(schema, {
 export const kasComponentNames = [
   'EntityCard', 'TimelineEvent', 'StatsCard', 'Greeting', 'SummaryStats',
   'ComingUpCard', 'WarningBadge', 'FieldRenderer', 'FloatingActions',
-  'EmptyState', 'SectionHeader', 'MonthGrid', 'DayDetail', 'StepProgress',
+  'EmptyState', 'SectionHeader', 'MonthGrid', 'DayDetail', 'StepProgress', 'EntityPicker',
 ] as const;
 
 /** All KAS action names */
-export const kasActionNames = ['navigate', 'addEntity', 'archiveEntity', 'search'] as const;
+export const kasActionNames = ['navigate', 'addEntity', 'archiveEntity', 'search', 'addFlowNext', 'addFlowBack', 'addFlowSkip'] as const;

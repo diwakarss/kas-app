@@ -32,6 +32,8 @@ function makeMockInput(overrides: Partial<AddFlowInput> = {}): AddFlowInput {
     canAdvance: false,
     isLastStep: false,
     contextSummary: '',
+    fkTarget: null,
+    fkOptions: [],
     ...overrides,
   };
 }
@@ -83,9 +85,9 @@ describe('buildAddFlowSpec', () => {
     expect(spec.elements['skip-btn']).toBeUndefined();
   });
 
-  test('shows Save on last step', () => {
+  test('shows Done on last step', () => {
     const spec = buildAddFlowSpec(makeMockInput({ isLastStep: true }));
-    expect(spec.elements['next-btn'].props.label).toBe('Save');
+    expect(spec.elements['next-btn'].props.label).toBe('Done');
   });
 
   test('shows Next on non-last step', () => {
@@ -106,5 +108,52 @@ describe('buildAddFlowSpec', () => {
   test('hides Back button on step 0', () => {
     const spec = buildAddFlowSpec(makeMockInput({ currentStep: 0 }));
     expect(spec.elements['back-btn']).toBeUndefined();
+  });
+
+  test('renders EntityPicker for FK fields', () => {
+    const spec = buildAddFlowSpec(
+      makeMockInput({
+        fkTarget: 'Student',
+        fkOptions: [{ id: 1, name: 'Asha' }, { id: 2, name: 'Ravi' }],
+        fieldDef: null,
+      }),
+    );
+    expect(spec.elements['field']).toBeDefined();
+    expect(spec.elements['field'].type).toBe('EntityPicker');
+    expect(spec.elements['field'].props.entityDisplayName).toBe('Student');
+    expect((spec.elements['field'].props as any).options.length).toBe(2);
+  });
+
+  test('buttons use named actions', () => {
+    const spec = buildAddFlowSpec(makeMockInput({ currentStep: 1 }));
+    expect((spec.elements['next-btn'].on as any).press.action).toBe('addFlowNext');
+    expect((spec.elements['back-btn'].on as any).press.action).toBe('addFlowBack');
+  });
+
+  test('skip button uses addFlowSkip action', () => {
+    const spec = buildAddFlowSpec(
+      makeMockInput({
+        currentStep: 1,
+        currentStepDef: { field: 'phone', prompt: 'Phone?', required: false, skip_text: 'skip', keyboard: 'phone' },
+        fieldDef: { name: 'phone', display_name: 'Phone', type: 'phone', required: false, searchable: true },
+      }),
+    );
+    expect((spec.elements['skip-btn'].on as any).press.action).toBe('addFlowSkip');
+  });
+
+  test('includes context summary when provided', () => {
+    const spec = buildAddFlowSpec(makeMockInput({ contextSummary: 'Adding for Asha Kumar' }));
+    expect(spec.elements['context']).toBeDefined();
+    expect(spec.elements['context'].props.text).toBe('Adding for Asha Kumar');
+  });
+
+  test('omits context when empty', () => {
+    const spec = buildAddFlowSpec(makeMockInput({ contextSummary: '' }));
+    expect(spec.elements['context']).toBeUndefined();
+  });
+
+  test('shows Done on last step', () => {
+    const spec = buildAddFlowSpec(makeMockInput({ isLastStep: true }));
+    expect(spec.elements['next-btn'].props.label).toBe('Done');
   });
 });

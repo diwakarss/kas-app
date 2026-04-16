@@ -9,6 +9,8 @@
 import { buildAnchorSpec } from '../../src/ui/spec-builders/anchor';
 import { buildStorySpec } from '../../src/ui/spec-builders/story';
 import { buildCalendarSpec } from '../../src/ui/spec-builders/calendar';
+import { buildAddFlowSpec } from '../../src/ui/spec-builders/add-flow';
+import type { AddFlowInput } from '../../src/ui/spec-builders/add-flow';
 import { convertV1toV2, ensureV2 } from '../../src/core/types/kas-spec-v2';
 import { SpecLibrary } from '../../src/generation/services/spec-library';
 import { catalog } from '../../src/ui/catalog';
@@ -117,5 +119,47 @@ describe('Screen swap integration', () => {
     const v2 = getTutorV2();
     const result = ensureV2(v2);
     expect(result).toBe(v2);
+  });
+
+  test('AddFlowScreen spec is valid and passes catalog validation', () => {
+    const input: AddFlowInput = {
+      entityDef: {
+        name: 'Student', display_name: 'Student', display_name_plural: 'Students',
+        icon: '🎓',
+        fields: [{ name: 'name', display_name: 'Name', type: 'text', required: true, searchable: true }],
+        relationships: [],
+      },
+      steps: [{ field: 'name', prompt: 'Name?', required: true, keyboard: 'default' }],
+      currentStep: 0, totalSteps: 1,
+      currentStepDef: { field: 'name', prompt: 'Name?', required: true, keyboard: 'default' },
+      fieldDef: { name: 'name', display_name: 'Name', type: 'text', required: true, searchable: true },
+      currentValue: '', canAdvance: false, isLastStep: true,
+      contextSummary: '', fkTarget: null, fkOptions: [],
+    };
+    const spec = buildAddFlowSpec(input);
+    expect(validateSpec(spec).valid).toBe(true);
+    expect(catalog.validate(spec).success).toBe(true);
+  });
+
+  test('AddFlowScreen spec includes StepProgress and FieldRenderer', () => {
+    const input: AddFlowInput = {
+      entityDef: {
+        name: 'Student', display_name: 'Student', display_name_plural: 'Students',
+        icon: '🎓',
+        fields: [{ name: 'name', display_name: 'Name', type: 'text', required: true, searchable: true }],
+        relationships: [],
+      },
+      steps: [{ field: 'name', prompt: 'Name?', required: true, keyboard: 'default' }],
+      currentStep: 0, totalSteps: 1,
+      currentStepDef: { field: 'name', prompt: 'Name?', required: true, keyboard: 'default' },
+      fieldDef: { name: 'name', display_name: 'Name', type: 'text', required: true, searchable: true },
+      currentValue: 'Asha', canAdvance: true, isLastStep: true,
+      contextSummary: '', fkTarget: null, fkOptions: [],
+    };
+    const spec = buildAddFlowSpec(input);
+    expect(spec.elements['step-progress']).toBeDefined();
+    expect(spec.elements['field']).toBeDefined();
+    expect(spec.elements['field'].type).toBe('FieldRenderer');
+    expect(spec.elements['next-btn'].props.label).toBe('Done');
   });
 });

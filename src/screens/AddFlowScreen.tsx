@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../core/navigation/types';
+import { ActionProvider, Renderer } from '@json-render/react-native';
 import { useAddFlow } from '../hooks/useAddFlow';
-import FieldRenderer from '../components/FieldRenderer';
-import EntityPicker from '../components/EntityPicker';
-import StepProgress from '../components/StepProgress';
+import { buildAddFlowSpec } from '../ui/spec-builders/add-flow';
+import { registry } from '../ui/registry';
+import { FieldChangeProvider } from '../ui/FieldChangeContext';
 import { colors } from '../core/theme/tokens';
 
 type AddFlowRouteProp = RouteProp<RootStackParamList, 'AddFlow'>;
@@ -20,6 +21,60 @@ export default function AddFlowScreen() {
   const flow = useAddFlow(entityType, preFill);
   const [afterAddState, setAfterAddState] = useState<{ id: number } | null>(null);
 
+  const handleNext = useCallback(() => {
+    if (flow.isLastStep) {
+      const id = flow.submit();
+      if (id !== null) {
+        if (flow.afterAdd && flow.afterAdd.action !== 'none') {
+          setAfterAddState({ id });
+        } else {
+          navigation.goBack();
+        }
+      }
+    } else {
+      flow.next();
+    }
+  }, [flow, navigation]);
+
+  const uiSpec = useMemo(() => {
+    if (!flow.entityDef || flow.steps.length === 0) return null;
+    return buildAddFlowSpec({
+      entityDef: flow.entityDef,
+      steps: flow.steps,
+      currentStep: flow.currentStep,
+      totalSteps: flow.totalSteps,
+      currentStepDef: flow.currentStepDef,
+      fieldDef: flow.fieldDef,
+      currentValue: flow.currentValue,
+      canAdvance: flow.canAdvance,
+      isLastStep: flow.isLastStep,
+      contextSummary: flow.contextSummary,
+      fkTarget: flow.fkTarget,
+      fkOptions: flow.fkOptions,
+    });
+  }, [flow]);
+
+  const actionHandlers = useMemo(() => ({
+    addFlowNext: async () => handleNext(),
+    addFlowBack: async () => {
+      if (flow.currentStep > 0) {
+        flow.back();
+      } else {
+        navigation.goBack();
+      }
+    },
+    addFlowSkip: async () => {
+      if (flow.isLastStep) {
+        handleNext();
+      } else {
+        flow.skip();
+      }
+    },
+    navigate: async (params: Record<string, unknown>) => {
+      navigation.navigate(params.screen as any, params as any);
+    },
+  }), [flow, handleNext, navigation]);
+
   if (!flow.entityDef || flow.steps.length === 0) {
     return (
       <SafeAreaView className="flex-1 bg-dawn">
@@ -30,7 +85,7 @@ export default function AddFlowScreen() {
     );
   }
 
-  // After-add states (suggest another entity or navigate to story)
+  // After-add states stay imperative — full-screen overlays with navigation
   if (afterAddState && flow.afterAdd) {
     const afterAdd = flow.afterAdd;
 
@@ -99,97 +154,13 @@ export default function AddFlowScreen() {
     return null;
   }
 
-  const handleNext = () => {
-    if (flow.isLastStep) {
-      const id = flow.submit();
-      if (id !== null) {
-        if (flow.afterAdd && flow.afterAdd.action !== 'none') {
-          setAfterAddState({ id });
-        } else {
-          navigation.goBack();
-        }
-      }
-    } else {
-      flow.next();
-    }
-  };
-
   return (
-    <SafeAreaView className="flex-1 bg-dawn">
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View className="flex-row items-center px-5 py-2">
-          <Pressable onPress={() => flow.currentStep > 0 ? flow.back() : navigation.goBack()}>
-            <Text className="font-inter-medium text-base text-stream">
-              {flow.currentStep > 0 ? '\u2190 Back' : '\u2715 Cancel'}
-            </Text>
-          </Pressable>
-        </View>
-
-        <StepProgress current={flow.currentStep} total={flow.totalSteps} />
-
-        {flow.contextSummary ? (
-          <View className="px-5 pb-2">
-            <Text className="font-inter text-sm text-mist">{flow.contextSummary}</Text>
-          </View>
-        ) : null}
-
-        <View className="px-5 py-4">
-          <Text className="font-inter-semibold text-clay" style={{ fontSize: 28 }}>
-            {flow.currentStepDef?.prompt}
-          </Text>
-        </View>
-
-        <View className="px-5 flex-1">
-          {flow.fkTarget ? (
-            <EntityPicker
-              options={flow.fkOptions}
-              entityDisplayName={flow.fkTarget}
-              value={flow.currentValue ?? null}
-              onChange={flow.setValue}
-            />
-          ) : flow.fieldDef ? (
-            <FieldRenderer
-              field={flow.fieldDef}
-              value={flow.currentValue}
-              onChange={flow.setValue}
-              stepConfig={flow.currentStepDef || undefined}
-            />
-          ) : null}
-        </View>
-
-        <View className="px-5 pb-6">
-          {flow.currentStepDef && !flow.currentStepDef.required && (
-            <Pressable
-              onPress={flow.isLastStep ? handleNext : flow.skip}
-              className="items-center py-3 mb-2"
-            >
-              <Text className="font-inter-medium text-sm" style={{ color: colors.mist }}>
-                {flow.currentStepDef.skip_text || 'skip'}
-              </Text>
-            </Pressable>
-          )}
-          <Pressable
-            onPress={handleNext}
-            disabled={!flow.canAdvance}
-            className="rounded-xl items-center"
-            style={{
-              backgroundColor: flow.canAdvance ? colors.stream : colors.mist + '50',
-              paddingVertical: 16,
-              opacity: flow.canAdvance ? 1 : 0.6,
-            }}
-            accessibilityLabel={flow.isLastStep ? 'Done, save entry' : 'Next step'}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !flow.canAdvance }}
-          >
-            <Text
-              className="font-inter-medium text-base"
-              style={{ color: flow.canAdvance ? colors.dawn : colors.clay + '80' }}
-            >
-              {flow.isLastStep ? 'Done' : 'Next'}
-            </Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <FieldChangeProvider value={flow.setValue}>
+        <ActionProvider handlers={actionHandlers}>
+          <Renderer spec={uiSpec} registry={registry} />
+        </ActionProvider>
+      </FieldChangeProvider>
+    </KeyboardAvoidingView>
   );
 }

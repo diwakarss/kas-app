@@ -240,12 +240,12 @@ describe('KAS Catalog', () => {
       }
     });
 
-    test('KAS components count is 14', () => {
-      expect(kasComponentNames.length).toBe(14);
+    test('KAS components count is 15', () => {
+      expect(kasComponentNames.length).toBe(15);
     });
 
-    test('KAS actions count is 4', () => {
-      expect(kasActionNames.length).toBe(4);
+    test('KAS actions count is 7', () => {
+      expect(kasActionNames.length).toBe(7);
     });
   });
 });

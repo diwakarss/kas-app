@@ -29,6 +29,7 @@ jest.mock('../../src/components/SectionHeader', () => ({ __esModule: true, defau
 jest.mock('../../src/components/MonthGrid', () => ({ __esModule: true, default: mockComponent('MonthGrid') }));
 jest.mock('../../src/components/DayDetail', () => ({ __esModule: true, default: mockComponent('DayDetail') }));
 jest.mock('../../src/components/StepProgress', () => ({ __esModule: true, default: mockComponent('StepProgress') }));
+jest.mock('../../src/components/EntityPicker', () => ({ __esModule: true, default: mockComponent('EntityPicker') }));
 
 describe('KAS Registry', () => {
   let registry: Record<string, unknown>;
