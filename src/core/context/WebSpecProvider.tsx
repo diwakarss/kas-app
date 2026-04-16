@@ -13,7 +13,7 @@ import { usePreview } from './PreviewContext';
 import type { KASAppSpec } from '../types/spec';
 
 // InsForge backend API URL - configurable via env
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7130';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7133';
 
 interface WebSpecProviderProps {
   children: ReactNode;
