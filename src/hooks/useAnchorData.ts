@@ -29,6 +29,17 @@ export interface AnchorCard {
   relatedData: Record<string, Record<string, any>>;
 }
 
+export interface StatTrend {
+  direction: 'up' | 'down' | 'flat';
+  label: string;
+}
+
+export interface AnchorStat {
+  label: string;
+  value: number | string;
+  trend?: StatTrend | null;
+}
+
 export interface AnchorData {
   greeting: string;
   dateLabel: string;
@@ -36,7 +47,7 @@ export interface AnchorData {
   cards: AnchorCard[];
   emptyMessage: string;
   emptyAction: string | null;
-  stats: { label: string; value: number | string }[];
+  stats: AnchorStat[];
 }
 
 function getTimeOfDay(): string {
@@ -289,6 +300,27 @@ export function useAnchorData(): AnchorData | null {
       );
     }
 
+    // Baselines for trend deltas (day_schedule / yesterday_summary only)
+    let dayBaseline: number | null = null;
+    let weekBaseline: number | null = null;
+    if (effectiveType !== 'active_list' && effectiveType !== 'upcoming_project' && dateField) {
+      const sameDayLastWeek = dateOffset
+        ? `date('now', '${dateOffset}', '-7 days')`
+        : `date('now', '-7 days')`;
+      dayBaseline = db.getFirst<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt FROM ${anchorTable} WHERE archived = 0 AND date(${dateField}) = ${sameDayLastWeek}`
+      )?.cnt ?? null;
+
+      const priorWeekStart = new Date();
+      priorWeekStart.setDate(priorWeekStart.getDate() - priorWeekStart.getDay() - 7);
+      const priorWeekEnd = new Date(priorWeekStart);
+      priorWeekEnd.setDate(priorWeekEnd.getDate() + 6);
+      weekBaseline = db.getFirst<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt FROM ${anchorTable} WHERE archived = 0 AND date(${dateField}) >= ? AND date(${dateField}) <= ?`,
+        [priorWeekStart.toISOString().split('T')[0], priorWeekEnd.toISOString().split('T')[0]]
+      )?.cnt ?? null;
+    }
+
     // Sum of amount field (only if anchor entity has a currency field named 'amount')
     const hasCurrencyAmount = anchorEntity.fields.some(
       (f) => f.name === 'amount' && (f.type === 'currency' || f.type === 'number')
@@ -303,27 +335,27 @@ export function useAnchorData(): AnchorData | null {
         )
       : null;
 
-    const stats = anchor.summary.stats.map((stat) => {
+    const stats: AnchorStat[] = anchor.summary.stats.map((stat) => {
       const qry = stat.query.toLowerCase();
       // Match count-based stats (today_count, today_class_count, yesterday_sale_count, etc.)
       if (qry.includes('today') && qry.includes('count') || qry === 'today_count') {
-        return { label: stat.label, value: targetCount?.cnt ?? 0 };
+        return { label: stat.label, value: targetCount?.cnt ?? 0, trend: computeTrend(targetCount?.cnt, dayBaseline) };
       }
       if (qry.includes('yesterday') && qry.includes('count')) {
-        return { label: stat.label, value: targetCount?.cnt ?? 0 };
+        return { label: stat.label, value: targetCount?.cnt ?? 0, trend: computeTrend(targetCount?.cnt, dayBaseline) };
       }
       if (qry.includes('week') && qry.includes('count') || qry === 'week_count') {
-        return { label: stat.label, value: weekCount?.cnt ?? 0 };
+        return { label: stat.label, value: weekCount?.cnt ?? 0, trend: computeTrend(weekCount?.cnt, weekBaseline) };
       }
       // Match amount/total stats
       if (qry.includes('total') || qry.includes('amount') || qry.includes('revenue')) {
-        return { label: stat.label, value: `Rs.${targetSum?.total ?? 0}` };
+        return { label: stat.label, value: `Rs.${targetSum?.total ?? 0}`, trend: null };
       }
       // Fallback: if the query name contains "count", use target count
       if (qry.includes('count')) {
-        return { label: stat.label, value: targetCount?.cnt ?? 0 };
+        return { label: stat.label, value: targetCount?.cnt ?? 0, trend: computeTrend(targetCount?.cnt, dayBaseline) };
       }
-      return { label: stat.label, value: 0 };
+      return { label: stat.label, value: 0, trend: null };
     });
 
     const nextUp = computeNextUp(cards, effectiveType);
@@ -338,6 +370,23 @@ export function useAnchorData(): AnchorData | null {
       stats,
     };
   }, [spec, db, crud]);
+}
+
+/**
+ * Compute a trend delta comparing current count to a baseline.
+ * Returns null when the baseline is unavailable or both values are zero
+ * (no signal to show). Label omits the sign for the flat case.
+ */
+function computeTrend(current: number | undefined, baseline: number | null): StatTrend | null {
+  if (current == null || baseline == null) return null;
+  if (current === 0 && baseline === 0) return null;
+  const delta = current - baseline;
+  if (delta === 0) return { direction: 'flat', label: 'no change' };
+  const direction: StatTrend['direction'] = delta > 0 ? 'up' : 'down';
+  const sign = delta > 0 ? '+' : '';
+  if (baseline === 0) return { direction, label: `${sign}${delta}` };
+  const pct = Math.round((delta / baseline) * 100);
+  return { direction, label: `${sign}${pct}%` };
 }
 
 /**

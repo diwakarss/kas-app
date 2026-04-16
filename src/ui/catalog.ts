@@ -76,11 +76,18 @@ export const catalog = defineCatalog(schema, {
           z.object({
             label: z.string(),
             value: z.union([z.string(), z.number()]),
+            trend: z
+              .object({
+                direction: z.enum(['up', 'down', 'flat']),
+                label: z.string(),
+              })
+              .nullable()
+              .default(null),
           }),
         ),
       }),
       slots: [],
-      description: 'Summary statistics bar shown on the anchor (home) screen.',
+      description: 'Summary statistics bar shown on the anchor (home) screen. Stats may include a trend delta vs last week.',
     },
 
     ComingUpCard: {
