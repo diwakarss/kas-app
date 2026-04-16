@@ -5,7 +5,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../core/navigation/types';
-import { ActionProvider, Renderer } from '@json-render/react-native';
+import { ActionProvider, Renderer, StateProvider } from '@json-render/react-native';
 import { useAddFlow } from '../hooks/useAddFlow';
 import { buildAddFlowSpec } from '../ui/spec-builders/add-flow';
 import { registry } from '../ui/registry';
@@ -156,11 +156,13 @@ export default function AddFlowScreen() {
 
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <FieldChangeProvider value={flow.setValue}>
-        <ActionProvider handlers={actionHandlers}>
-          <Renderer spec={uiSpec} registry={registry} />
-        </ActionProvider>
-      </FieldChangeProvider>
+      <StateProvider>
+        <FieldChangeProvider value={flow.setValue}>
+          <ActionProvider handlers={actionHandlers}>
+            <Renderer spec={uiSpec} registry={registry} />
+          </ActionProvider>
+        </FieldChangeProvider>
+      </StateProvider>
     </KeyboardAvoidingView>
   );
 }

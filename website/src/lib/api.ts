@@ -45,11 +45,10 @@ export async function generateSpec({
   onError,
 }: GenerateOptions): Promise<void> {
   try {
-    const response = await fetch(`${API_URL}/functions/generate-spec`, {
+    const response = await fetch(`${API_URL}/generate-spec`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'text/event-stream',
       },
       body: JSON.stringify({
         business_name: businessName,
@@ -132,7 +131,7 @@ export async function generateSpec({
       if (data.success && data.data) {
         onComplete({
           type: 'complete',
-          specId: data.data.id,
+          specId: data.data.specId || data.data.id,
           spec: data.data.spec,
         });
       } else {
