@@ -31,6 +31,7 @@ import MonthGridComponent from '../components/MonthGrid';
 import DayDetailComponent from '../components/DayDetail';
 import StepProgressComponent from '../components/StepProgress';
 import EntityPickerComponent from '../components/EntityPicker';
+import DetailRowComponent from '../components/DetailRow';
 
 // Wrapper components that need hooks must be defined as named functions
 function FieldRendererWrapper({ props }: any) {
@@ -134,6 +135,13 @@ const kasComponents = {
 
   FieldRenderer: FieldRendererWrapper,
   EntityPicker: EntityPickerWrapper,
+
+  DetailRow: ({ props }: any) => (
+    <DetailRowComponent
+      label={props.label}
+      value={props.value}
+    />
+  ),
 
   SectionHeader: ({ props }: any) => (
     <SectionHeaderComponent

@@ -110,6 +110,36 @@ export function buildStorySpec(storyData: StoryData): Spec {
     rootChildren.push('coming-up-section');
   }
 
+  // Entity details — show field values when available
+  const detailIds: string[] = [];
+  for (const field of storyData.entityDef.fields || []) {
+    const value = storyData.entity[field.name];
+    if (value == null || value === '') continue;
+    const detailId = `detail-${field.name}`;
+    elements[detailId] = {
+      type: 'DetailRow',
+      props: {
+        label: field.display_name || field.name,
+        value: String(value),
+      },
+      children: [],
+    };
+    detailIds.push(detailId);
+  }
+  if (detailIds.length > 0) {
+    elements['details-header'] = {
+      type: 'SectionHeader',
+      props: { title: 'Details' },
+      children: [],
+    };
+    elements['details-section'] = {
+      type: 'Column',
+      props: { gap: 0 },
+      children: ['details-header', ...detailIds],
+    };
+    rootChildren.push('details-section');
+  }
+
   // Timeline events
   if (storyData.events.length > 0) {
     elements['story-header'] = {
