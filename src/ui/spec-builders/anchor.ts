@@ -8,6 +8,7 @@
 import type { Spec } from '@json-render/core';
 import type { AnchorData, AnchorCard } from '../../hooks/useAnchorData';
 import type { KASAppSpecV2 } from '../../core/types/kas-spec-v2';
+import { catalog } from '../catalog';
 
 export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): Spec {
   const elements: Record<string, any> = {};
@@ -116,7 +117,14 @@ export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): 
     children: rootChildren,
   };
 
-  return { root: 'root', elements };
+  const builtSpec: Spec = { root: 'root', elements };
+
+  const validation = catalog.validate(builtSpec);
+  if (!validation.success) {
+    console.warn('[anchor builder] produced invalid spec:', validation.error);
+  }
+
+  return builtSpec;
 }
 
 function findBelongsTo(appSpec: KASAppSpecV2) {

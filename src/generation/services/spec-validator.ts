@@ -275,9 +275,62 @@ export function getAllErrors(result: ExtendedValidationResult): string[] {
 }
 
 /**
+ * Catalog-integrated validation result. The `repaired` spec may have Zod
+ * defaults applied and should be used instead of the raw input.
+ */
+export interface CatalogValidationResult {
+  success: boolean;
+  repaired?: KASAppSpec;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
+ * Validate a spec with catalog-aware checks on top of existing structural,
+ * semantic, and business logic validation. Returns warnings for drift that
+ * won't crash but may degrade the UI.
+ */
+function validateWithCatalog(rawSpec: unknown): CatalogValidationResult {
+  if (!rawSpec || typeof rawSpec !== 'object') {
+    return { success: false, errors: ['Spec must be an object'], warnings: [] };
+  }
+
+  const baseResult = validateGeneratedSpec(rawSpec as KASAppSpec);
+
+  if (!baseResult.valid) {
+    return {
+      success: false,
+      errors: getAllErrors(baseResult),
+      warnings: baseResult.injection_warnings,
+    };
+  }
+
+  const spec = rawSpec as KASAppSpec;
+  const warnings: string[] = [...baseResult.injection_warnings];
+
+  if (spec.anchor && !spec.anchor.card_display) {
+    warnings.push('Anchor missing card_display; spec builders will use minimal defaults');
+  }
+
+  for (const entity of spec.entities) {
+    for (const rel of entity.relationships) {
+      if (rel.type === 'belongs_to' && !spec.story_events[rel.target]) {
+        warnings.push(
+          `Entity '${rel.target}' is a belongs_to target but has no story_events; ` +
+          `Story screen will fall back to defaults`
+        );
+      }
+    }
+  }
+
+  return { success: true, repaired: spec, errors: [], warnings };
+}
+
+/**
  * Spec Validator Service (namespace export)
  */
 export const SpecValidator = {
   validate: validateGeneratedSpec,
+  validateWithCatalog,
   getAllErrors,
 };

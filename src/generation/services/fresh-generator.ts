@@ -88,28 +88,29 @@ export class FreshGenerator {
         features
       );
 
-      // Normalize the spec to fill in missing defaults
+      // Normalize structural gaps the LLM commonly produces
       const normalizedSpec = normalizeSpec(result.spec);
       console.log('[FreshGenerator] Spec normalized with defaults');
 
-      // Validate the normalized spec
-      const validation = SpecValidator.validate(normalizedSpec);
+      // Validate with catalog-backed schema checks (applies Zod defaults)
+      const validation = SpecValidator.validateWithCatalog(normalizedSpec);
 
-      if (!validation.valid) {
+      if (!validation.success) {
         return {
           success: false,
-          errors: getAllErrors(validation),
+          errors: validation.errors,
           error_type: 'validation',
         };
       }
 
-      // Log injection warnings (but don't fail)
-      if (validation.injection_warnings.length > 0) {
-        console.warn('[FreshGenerator] Injection warnings:', validation.injection_warnings);
+      const spec = validation.repaired!;
+
+      if (validation.warnings.length > 0) {
+        console.warn('[FreshGenerator] Spec warnings:', validation.warnings);
       }
 
       // Apply business identity
-      const finalSpec = BusinessIdentityService.inject(normalizedSpec, identity);
+      const finalSpec = BusinessIdentityService.inject(spec, identity);
 
       // Get provider info for metadata and cost calculation
       const providerInfo = this.adapter.getProviderInfo();
