@@ -138,8 +138,8 @@ async function handleRequest(req, res) {
     return sendJson(res, { user: { id: userId, email: body.email }, token });
   }
 
-  // Generate spec (SSE)
-  if (path === '/api/specs/generate' && method === 'POST') {
+  // Generate spec (SSE) — supports both mock and InsForge endpoint paths
+  if ((path === '/api/specs/generate' || path === '/functions/generate-spec') && method === 'POST') {
     const body = await parseBody(req);
     const specId = crypto.randomUUID();
     const spec = {

@@ -58,12 +58,37 @@ function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
         if (fn.includes('email')) { rec[field.name] = `sample${i + 1}@example.com`; continue; }
         if (fn.includes('phone')) { rec[field.name] = `+91 98765 4321${i}`; continue; }
 
+        // FK fields: reference record i+1 in the target entity (autoincrement IDs start at 1)
+        if (fn.endsWith('_id') && ft === 'number') {
+          rec[field.name] = (i % count) + 1;
+          continue;
+        }
+
         switch (ft) {
           case 'text': case 'string': rec[field.name] = `Sample ${field.display_name || field.name} ${i + 1}`; break;
           case 'number': case 'integer': rec[field.name] = (i + 1) * 10; break;
           case 'currency': case 'money': rec[field.name] = (i + 1) * 1000; break;
-          case 'date': rec[field.name] = new Date(Date.now() + i * 86400000 * 3).toISOString().split('T')[0]; break;
-          case 'boolean': rec[field.name] = i % 2 === 0; break;
+          case 'date': {
+            // First record = today, spread others around today
+            const offset = i === 0 ? 0 : i * 3;
+            rec[field.name] = new Date(Date.now() + offset * 86400000).toISOString().split('T')[0];
+            break;
+          }
+          case 'datetime': {
+            // First record = today, spread around today with different times
+            const dtOffset = i === 0 ? 0 : i * 3;
+            const hours = 9 + i * 2; // 9am, 11am, 1pm
+            const dt = new Date(Date.now() + dtOffset * 86400000);
+            dt.setHours(hours, 0, 0, 0);
+            rec[field.name] = dt.toISOString();
+            break;
+          }
+          case 'time': {
+            const h = 9 + i * 2;
+            rec[field.name] = `${String(h).padStart(2, '0')}:00`;
+            break;
+          }
+          case 'boolean': case 'toggle': rec[field.name] = i % 2 === 0; break;
           case 'choice': case 'select': rec[field.name] = field.options?.[i % (field.options?.length || 1)] || 'Option 1'; break;
           case 'duration': rec[field.name] = `${30 + i * 15} min`; break;
           case 'note': rec[field.name] = ['Good progress.', 'Follow up next week.', 'On track.'][i]; break;

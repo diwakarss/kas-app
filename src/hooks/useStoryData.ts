@@ -80,7 +80,7 @@ export function useStoryData(entityType: string, entityId: number, page: number 
       const cu = storyConfig.coming_up;
       const now = new Date().toISOString();
       const cuEntityDef0 = spec.entities.find(e => e.name === cu.source);
-      const cuDateField = cuEntityDef0?.fields.find(f => f.type === 'datetime' || f.type === 'date')?.name ?? 'datetime';
+      const cuDateField = cuEntityDef0?.fields.find(f => f.type === 'datetime' || f.type === 'date')?.name ?? 'created_at';
       const cuResults = crud.list(cu.source, {
         filters: [
           { field: cu.relationship, op: '=', value: entityId },
@@ -116,7 +116,7 @@ export function useStoryData(entityType: string, entityId: number, page: number 
     );
     const sources: StoryEventSource[] = storyEvents.map(ev => {
       const srcDef = spec.entities.find(e => e.name === ev.source);
-      const srcDateField = srcDef?.fields.find(f => f.type === 'datetime' || f.type === 'date')?.name ?? 'datetime';
+      const srcDateField = srcDef?.fields.find(f => f.type === 'datetime' || f.type === 'date')?.name ?? 'created_at';
       return {
         sourceTable: toTableName(ev.source),
         relationship: ev.relationship,

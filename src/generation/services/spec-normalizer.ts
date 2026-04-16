@@ -81,20 +81,92 @@ function normalizeComputedFields(
 /**
  * Normalize anchor section.
  */
+function findPrimaryTextField(entity: Entity | undefined): string {
+  if (!entity) return 'name';
+  const systemFields = new Set(['id', 'created_at', 'updated_at', 'archived']);
+  // Prefer a field literally named "name"
+  if (entity.fields.some(f => f.name === 'name')) return 'name';
+  // Then first searchable text field
+  const searchable = entity.fields.find(f => f.searchable && f.type === 'text' && !systemFields.has(f.name));
+  if (searchable) return searchable.name;
+  // Then first text field
+  const textField = entity.fields.find(f => f.type === 'text' && !systemFields.has(f.name));
+  if (textField) return textField.name;
+  // Then first non-system field
+  const firstField = entity.fields.find(f => !systemFields.has(f.name));
+  return firstField?.name || 'name';
+}
+
+/**
+ * Validate a template string against an entity's fields.
+ * If any placeholder references a field that doesn't exist, replace with the primary text field.
+ */
+function validateTemplate(template: string, entity: Entity | undefined): string {
+  if (!entity || !template) return template;
+  const fieldNames = new Set(entity.fields.map(f => f.name));
+  const specialTokens = new Set(['time_of_day', 'time']);
+
+  // Allow templates with dot-notation (cross-entity refs) to pass through
+  if (template.match(/\{[a-zA-Z_]+\.[a-zA-Z_]+\}/)) return template;
+
+  const placeholders = Array.from(template.matchAll(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g));
+
+  const hasInvalid = placeholders.some(m => !fieldNames.has(m[1]) && !specialTokens.has(m[1]));
+  const allFK = placeholders.length > 0 && placeholders
+    .filter(m => !specialTokens.has(m[1]))
+    .every(m => m[1].endsWith('_id'));
+
+  if (hasInvalid || allFK) {
+    const primary = findPrimaryTextField(entity);
+    console.log(`[normalizeSpec] Template '${template}' has ${hasInvalid ? 'invalid' : 'FK-only'} refs for '${entity.name}', using '{${primary}}'`);
+    return `{${primary}}`;
+  }
+  return template;
+}
+
 function normalizeAnchor(anchor: Partial<KASAppSpec['anchor']> | undefined, entities: Entity[]): KASAppSpec['anchor'] {
   const defaultEntity = entities[0]?.name || 'Item';
+  const anchorEntityName = anchor?.entity || defaultEntity;
+  const anchorEntity = entities.find(e => e.name === anchorEntityName) || entities[0];
+  const primaryField = findPrimaryTextField(anchorEntity);
+  const dateTimeField = anchorEntity?.fields.find(f => f.type === 'datetime' || f.type === 'date');
+
+  // Smart default title: if primary field is a date and entity has belongs_to, use related entity name
+  let defaultTitle = `{${primaryField}}`;
+  let defaultSubtitle = '';
+  if (anchorEntity) {
+    const primaryFieldDef = anchorEntity.fields.find(f => f.name === primaryField);
+    if (primaryFieldDef && (primaryFieldDef.type === 'date' || primaryFieldDef.type === 'datetime')) {
+      const belongsTo = anchorEntity.relationships.find(r => r.type === 'belongs_to');
+      if (belongsTo) {
+        const parentEntity = entities.find(e => e.name === belongsTo.target);
+        if (parentEntity) {
+          const parentPrimary = findPrimaryTextField(parentEntity);
+          defaultTitle = `{${belongsTo.target.toLowerCase()}.${parentPrimary}}`;
+          defaultSubtitle = `{${primaryField}}`;
+        }
+      }
+    }
+  }
+
+  const rawTitle = anchor?.card_display?.title || defaultTitle;
+  const validatedTitle = validateTemplate(rawTitle, anchorEntity);
+  const rawSubtitle = anchor?.card_display?.subtitle || defaultSubtitle;
+  const validatedSubtitle = validateTemplate(rawSubtitle, anchorEntity);
 
   return {
-    entity: anchor?.entity || defaultEntity,
+    entity: anchorEntityName,
     type: anchor?.type || 'day_schedule',
     greeting_template: anchor?.greeting_template || 'Good {time_of_day}',
     date_label: anchor?.date_label || 'today',
     card_display: {
-      title: anchor?.card_display?.title || '{name}',
-      subtitle: anchor?.card_display?.subtitle || '',
-      time_field: anchor?.card_display?.time_field || 'datetime',
+      title: validatedTitle,
+      subtitle: validatedSubtitle,
+      time_field: anchor?.card_display?.time_field || dateTimeField?.name || 'datetime',
       actions: anchor?.card_display?.actions || ['edit', 'delete'],
       ...anchor?.card_display,
+      title: validatedTitle,
+      subtitle: validatedSubtitle,
     },
     empty_state: {
       message: anchor?.empty_state?.message || 'No items today',
@@ -198,6 +270,61 @@ function inferAddFlows(
 }
 
 /**
+ * Fix double-brace templates {{field}} → {field} in any string value recursively.
+ */
+function fixDoubleBraces(obj: any): any {
+  if (typeof obj === 'string') return obj.replace(/\{\{(\w+)\}\}/g, '{$1}');
+  if (Array.isArray(obj)) return obj.map(fixDoubleBraces);
+  if (obj && typeof obj === 'object') {
+    const result: Record<string, any> = {};
+    for (const [k, v] of Object.entries(obj)) result[k] = fixDoubleBraces(v);
+    return result;
+  }
+  return obj;
+}
+
+/**
+ * Normalize story_events: fix array format and ensure {events} structure.
+ */
+function normalizeStoryEventsFormat(
+  raw: Record<string, any>,
+  entities: Entity[]
+): Record<string, any> {
+  const fixed: Record<string, any> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (Array.isArray(value)) {
+      console.log(`[normalizeSpec] Fixed story_events.${key}: array → {events: [...]}`);
+      fixed[key] = { events: fixDoubleBraces(value) };
+    } else if (value && typeof value === 'object') {
+      fixed[key] = fixDoubleBraces(value);
+      if (!fixed[key].events && !fixed[key].stats_card) {
+        fixed[key] = { events: [] };
+      }
+    }
+  }
+  return inferStoryEvents(fixed, entities);
+}
+
+/**
+ * Normalize add_flows: fix array format and ensure {steps} structure.
+ */
+function normalizeAddFlowsFormat(
+  raw: Record<string, any>,
+  entities: Entity[]
+): Record<string, any> {
+  const fixed: Record<string, any> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (Array.isArray(value)) {
+      console.log(`[normalizeSpec] Fixed add_flows.${key}: array → {steps: [...]}`);
+      fixed[key] = { steps: value };
+    } else if (value && typeof value === 'object') {
+      fixed[key] = value;
+    }
+  }
+  return inferAddFlows(fixed, entities);
+}
+
+/**
  * Normalize a spec by filling in defaults for all missing fields.
  *
  * @param spec - The raw spec from LLM
@@ -277,15 +404,18 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
     anchor: normalizeAnchor(spec.anchor, entities),
     computed_fields: normalizeComputedFields(spec.computed_fields),
     business_rules: spec.business_rules || [],
-    story_events: inferStoryEvents(spec.story_events || {}, entities),
-    add_flows: inferAddFlows(spec.add_flows || {}, entities),
+    story_events: normalizeStoryEventsFormat(spec.story_events || {}, entities),
+    add_flows: normalizeAddFlowsFormat(spec.add_flows || {}, entities),
     search: {
       entities: spec.search?.entities || entities.map(e => e.name),
-      display: spec.search?.display || {},
+      display: spec.search?.display || Object.fromEntries(
+        entities.map(e => [e.name, `{${findPrimaryTextField(e)}}`])
+      ),
     },
     calendar: spec.calendar || {
       entity: entities.find(e => e.fields.some(f => f.type === 'datetime' || f.type === 'date'))?.name || entities[0]?.name,
-      date_field: 'datetime',
+      date_field: entities.find(e => e.fields.some(f => f.type === 'datetime' || f.type === 'date'))
+        ?.fields.find(f => f.type === 'datetime' || f.type === 'date')?.name || 'datetime',
       display: '{time}',
     },
     chat_commands: spec.chat_commands || [],
