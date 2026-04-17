@@ -36,7 +36,7 @@
     },
     "normalization_diffs": [
       "greeting: \"Good {time_of_day}\" -> \"Good {time_of_day}, {business_name}\"",
-      "subtitle: \"{date}\" -> \"{status}\""
+      "subtitle: \"{date}\" -> \"{menu_plan}\""
     ],
     "relationships_added": []
   },
@@ -57,7 +57,7 @@
     },
     "normalization_diffs": [
       "greeting: \"Good {time_of_day}\" -> \"Good {time_of_day}, {business_name}\"",
-      "subtitle: \"{scheduled_for}\" -> \"{status}\""
+      "subtitle: \"{scheduled_for}\" -> \"{property.address}\""
     ],
     "relationships_added": []
   },

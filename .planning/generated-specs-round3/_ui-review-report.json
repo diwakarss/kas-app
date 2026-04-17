@@ -76,7 +76,7 @@
       "entity": "Booking",
       "greeting": "Good {time_of_day}, {business_name}",
       "title_template": "{client.name}",
-      "subtitle_template": "{status}",
+      "subtitle_template": "{menu_plan}",
       "time_field": "date",
       "stats": [
         "Bookings Today",
@@ -114,23 +114,23 @@
     "simulated_cards": [
       {
         "title": "Ramesh Rao",
-        "subtitle": "Scheduled",
+        "subtitle": "Thai green curry + brown rice",
         "time": "9:00 AM",
-        "subtitle_raw": "Scheduled",
+        "subtitle_raw": "Thai green curry + brown rice",
         "time_raw": "2026-04-17T03:30:00.000Z"
       },
       {
         "title": "Sunita Menon",
-        "subtitle": "In Progress",
+        "subtitle": "Mediterranean bowls",
         "time": "11:00 AM",
-        "subtitle_raw": "In Progress",
+        "subtitle_raw": "Mediterranean bowls",
         "time_raw": "2026-04-20T05:30:00.000Z"
       },
       {
         "title": "Arun Pillai",
-        "subtitle": "Completed",
+        "subtitle": "Chicken tikka + naan",
         "time": "1:00 PM",
-        "subtitle_raw": "Completed",
+        "subtitle_raw": "Chicken tikka + naan",
         "time_raw": "2026-04-23T07:30:00.000Z"
       }
     ],
@@ -143,7 +143,7 @@
       "entity": "Showing",
       "greeting": "Good {time_of_day}, {business_name}",
       "title_template": "{client.name}",
-      "subtitle_template": "{status}",
+      "subtitle_template": "{property.address}",
       "time_field": "scheduled_for",
       "stats": [
         "Showings Today",
@@ -183,23 +183,23 @@
     "simulated_cards": [
       {
         "title": "Ramesh Rao",
-        "subtitle": "Scheduled",
+        "subtitle": "",
         "time": "9:00 AM",
-        "subtitle_raw": "Scheduled",
+        "subtitle_raw": "",
         "time_raw": "2026-04-17T03:30:00.000Z"
       },
       {
         "title": "Sunita Menon",
-        "subtitle": "In Progress",
+        "subtitle": "",
         "time": "11:00 AM",
-        "subtitle_raw": "In Progress",
+        "subtitle_raw": "",
         "time_raw": "2026-04-20T05:30:00.000Z"
       },
       {
         "title": "Arun Pillai",
-        "subtitle": "Completed",
+        "subtitle": "",
         "time": "1:00 PM",
-        "subtitle_raw": "Completed",
+        "subtitle_raw": "",
         "time_raw": "2026-04-23T07:30:00.000Z"
       }
     ],
