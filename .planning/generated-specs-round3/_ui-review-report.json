@@ -232,9 +232,7 @@
     "catalog_validation": {
       "overall": true,
       "errors": [],
-      "warnings": [
-        "Potential injection detected at spec.story_events.Order.stats_card[1].label: matches pattern /\\$\\{[^}]+\\}/"
-      ]
+      "warnings": []
     },
     "builder_validation": {
       "anchor": {

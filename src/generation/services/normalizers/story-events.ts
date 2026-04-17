@@ -219,9 +219,12 @@ export function injectBalanceDueStats(
       s => typeof s?.label === 'string' && s.label.includes('{balance_due}')
     );
     if (alreadyHas) continue;
+    // NOTE: balance_due computed field has prefix:'$' so the renderer adds
+    // the sign. Don't write `${balance_due}` here — the spec validator's
+    // injection detector flags `${…}` as template-injection.
     result[entityName] = {
       ...cfg,
-      stats_card: [...existing, { label: 'Balance Due: ${balance_due}' }],
+      stats_card: [...existing, { label: 'Balance Due: {balance_due}' }],
     };
     console.log(`[normalizeSpec] Surfaced balance_due on story_events.${entityName}.stats_card`);
   }
