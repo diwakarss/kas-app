@@ -1,6 +1,13 @@
 {
   "law-firm.json": {
-    "validation": {
+    "validation_raw": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "validation_normalized": {
       "valid": true,
       "structural": [],
       "semantic": [],
@@ -13,7 +20,14 @@
     "relationships_added": []
   },
   "personal-chef.json": {
-    "validation": {
+    "validation_raw": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "validation_normalized": {
       "valid": true,
       "structural": [],
       "semantic": [],
@@ -27,7 +41,14 @@
     "relationships_added": []
   },
   "real-estate.json": {
-    "validation": {
+    "validation_raw": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "validation_normalized": {
       "valid": true,
       "structural": [],
       "semantic": [],
@@ -41,13 +62,20 @@
     "relationships_added": []
   },
   "tailor.json": {
-    "validation": {
+    "validation_raw": {
       "valid": false,
       "structural": [],
       "semantic": [],
       "business_logic": [
         "Anchor entity 'Order' has no date/datetime field for day_schedule anchor type"
       ],
+      "injection": []
+    },
+    "validation_normalized": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
       "injection": []
     },
     "normalization_diffs": [
@@ -59,7 +87,14 @@
     "relationships_added": []
   },
   "tour-guide.json": {
-    "validation": {
+    "validation_raw": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "validation_normalized": {
       "valid": true,
       "structural": [],
       "semantic": [],
@@ -73,7 +108,14 @@
     "relationships_added": []
   },
   "wedding-planner.json": {
-    "validation": {
+    "validation_raw": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "validation_normalized": {
       "valid": true,
       "structural": [],
       "semantic": [],

@@ -16,9 +16,10 @@ import type { StoryData } from '../../src/hooks/useStoryData';
 import type { CalendarData } from '../../src/hooks/useCalendarData';
 import type { AddFlowInput } from '../../src/ui/spec-builders/add-flow';
 
+const originalLog = console.log;
 const originalWarn = console.warn;
-beforeAll(() => { console.warn = jest.fn(); });
-afterAll(() => { console.warn = originalWarn; });
+beforeAll(() => { console.log = jest.fn(); console.warn = jest.fn(); });
+afterAll(() => { console.log = originalLog; console.warn = originalWarn; });
 
 // ── Sample record generation (mirrors WebSpecProvider.generateSampleRecords) ──
 const SAMPLE_NAMES: Record<string, string[]> = {
@@ -151,7 +152,7 @@ function simulate(spec: any) {
   return { sample, vertical, anchor: simulateAnchor(spec, sample) };
 }
 
-test('full UI review for 6 generated specs', () => {
+test('normalizer + UI builders produce valid specs for canonical verticals', () => {
   const dir = path.resolve(__dirname, '../../.planning/generated-specs-round3');
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.json') && !f.startsWith('_')).sort();
 
@@ -349,21 +350,33 @@ test('full UI review for 6 generated specs', () => {
   }
 
   fs.writeFileSync(path.resolve(__dirname, '../../.planning/generated-specs-round3/_ui-review-report.json'), JSON.stringify(report, null, 2));
+
+  // ── Hard invariants ──
+  // Findings with prefix "BUG:" are regressions; "INFO:" are informational
+  // notes (multi-hop title opportunities, extra date fields, etc.). Only
+  // BUGs fail CI.
+  expect(Object.keys(report).length).toBe(6);
+  const failures: string[] = [];
   for (const [f, r] of Object.entries<any>(report)) {
-    console.log(`\n=== ${f} ===`);
-    console.log('  anchor:', r.normalized_anchor);
-    console.log('  catalog_validation.success:', r.catalog_validation.overall);
-    if (r.catalog_validation.errors.length) console.log('  catalog errors:', r.catalog_validation.errors);
-    if (r.catalog_validation.warnings.length) console.log('  catalog warnings:', r.catalog_validation.warnings.slice(0, 5));
-    console.log('  builder catalog.validate — anchor:', r.builder_validation.anchor.ok, 'story:', r.builder_validation.story.ok, 'calendar:', r.builder_validation.calendar.ok);
-    if (!r.builder_validation.anchor.ok) console.log('    anchor errors:', r.builder_validation.anchor.errors.slice(0,3));
-    if (!r.builder_validation.story.ok) console.log('    story errors:', r.builder_validation.story.errors.slice(0,3));
-    if (!r.builder_validation.calendar.ok) console.log('    calendar errors:', r.builder_validation.calendar.errors.slice(0,3));
-    console.log('  simulated cards:');
-    for (const c of r.simulated_cards || []) console.log(`    • title="${c.title}" | subtitle="${c.subtitle}" (raw="${c.subtitle_raw}") | time="${c.time}"`);
-    console.log('  findings:');
-    for (const x of r.findings) console.log(`    - ${x}`);
+    if (!r.catalog_validation.overall) {
+      failures.push(`${f}: catalog.validate failed — errors=${JSON.stringify(r.catalog_validation.errors)}`);
+    }
+    if (r.catalog_validation.warnings.length > 0) {
+      failures.push(`${f}: catalog warnings present — ${JSON.stringify(r.catalog_validation.warnings)}`);
+    }
+    for (const builder of ['anchor', 'story', 'calendar'] as const) {
+      const b = r.builder_validation[builder];
+      if (!b.ok) {
+        failures.push(`${f}: ${builder} builder catalog.validate failed — ${JSON.stringify(b.errors)}`);
+      }
+    }
+    const bugs = (r.findings as string[]).filter(x => x.startsWith('BUG:'));
+    if (bugs.length > 0) {
+      failures.push(`${f}: BUG-level findings — ${JSON.stringify(bugs)}`);
+    }
   }
 
-  expect(Object.keys(report).length).toBe(6);
+  if (failures.length > 0) {
+    throw new Error(`UI-review regressions:\n  - ${failures.join('\n  - ')}`);
+  }
 });
