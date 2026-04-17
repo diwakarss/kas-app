@@ -149,6 +149,80 @@ function hasMoneyFields(entity: Entity): boolean {
          fieldNames.has('paid_amount') || fieldNames.has('total');
 }
 
+/**
+ * Status taxonomies per entity role. Empty means "don't auto-inject status
+ * for this role" (person/container/record — no workflow state to track).
+ */
+const STATUS_TAXONOMY_BY_ROLE: Record<EntityRole, { options: string[]; default: string } | null> = {
+  activity: { options: ['Scheduled', 'In Progress', 'Completed', 'Cancelled'], default: 'Scheduled' },
+  document: { options: ['Draft', 'In Review', 'Active', 'Closed'], default: 'Draft' },
+  payment: { options: ['Pending', 'Paid', 'Partial', 'Overdue', 'Refunded'], default: 'Pending' },
+  account: { options: ['Active', 'Low Balance', 'Depleted', 'Closed'], default: 'Active' },
+  person: null,
+  container: null,
+  record: null,
+};
+
+/** Options are "generic activity status" when they look like the default Scheduled-style set. */
+function isGenericActivityStatus(options: string[] | undefined): boolean {
+  if (!options || options.length === 0) return false;
+  const lower = new Set(options.map(o => o.toLowerCase()));
+  const hasCancelled = lower.has('cancelled');
+  const hasCompleted = lower.has('completed');
+  const hasInProgress = lower.has('in progress') || lower.has('in-progress');
+  const startsWithActivity = lower.has('scheduled') || lower.has('pending');
+  return startsWithActivity && hasInProgress && hasCompleted && hasCancelled;
+}
+
+/**
+ * Inject or repair the status field so payment/account/document entities get
+ * a domain-appropriate taxonomy. If the LLM supplied non-generic custom
+ * options, respect them — they're presumably vertical-specific.
+ */
+function normalizeStatusForRole(entity: Entity): void {
+  const role = classifyEntityRole(entity);
+  const taxonomy = STATUS_TAXONOMY_BY_ROLE[role];
+  if (!taxonomy) return;
+
+  // Activity role: preserve the existing inject-if-missing-and-belongs-to behavior
+  if (role === 'activity') {
+    const hasBelongsTo = entity.relationships.some(r => r.type === 'belongs_to');
+    const hasChoiceField = entity.fields.some(f => f.type === 'choice');
+    if (hasBelongsTo && !hasChoiceField && !isPersonLikeEntity(entity)) {
+      entity.fields.push(normalizeField({
+        name: 'status',
+        type: 'choice',
+        required: false,
+        options: taxonomy.options,
+        default_value: taxonomy.default,
+      }));
+      console.log(`[normalizeSpec] Injected status field on activity entity '${entity.name}'`);
+    }
+    return;
+  }
+
+  // payment / account / document: inject if missing, or replace when generic
+  const existingStatus = entity.fields.find(f => f.name === 'status');
+  if (!existingStatus) {
+    entity.fields.push(normalizeField({
+      name: 'status',
+      type: 'choice',
+      required: false,
+      options: taxonomy.options,
+      default_value: taxonomy.default,
+    }));
+    console.log(`[normalizeSpec] Injected ${role} status field on '${entity.name}': ${taxonomy.options.join('/')}`);
+    return;
+  }
+  if (existingStatus.type === 'choice' && isGenericActivityStatus(existingStatus.options)) {
+    console.log(`[normalizeSpec] Replaced generic status on ${role} entity '${entity.name}': ${(existingStatus.options || []).join('/')} → ${taxonomy.options.join('/')}`);
+    existingStatus.options = taxonomy.options;
+    if (existingStatus.default_value === 'Scheduled' || existingStatus.default_value === 'Pending') {
+      existingStatus.default_value = taxonomy.default;
+    }
+  }
+}
+
 /** Classify an entity by role. Pure function — no mutation. */
 export function classifyEntityRole(entity: Entity): EntityRole {
   const lower = entity.name.toLowerCase();
@@ -264,10 +338,143 @@ function normalizeComputedFields(
       relationship: field.relationship,
       source_field: field.source_field,
       formula: field.formula,
+      date_field: field.date_field,
+      filter: field.filter,
+      format: field.format,
+      prefix: field.prefix,
+      suffix: field.suffix,
     }));
   }
 
   return normalized;
+}
+
+const EXISTING_BALANCE_FIELD_NAMES = new Set([
+  'balance_due', 'balance', 'amount_due', 'outstanding', 'remaining', 'amount_paid',
+]);
+
+/** Pick the parent currency field that represents the billable total. */
+function findTotalField(entity: Entity): Field | null {
+  const byName = ['total_cost', 'total', 'amount', 'fee', 'price', 'cost', 'rate'];
+  for (const n of byName) {
+    const f = entity.fields.find(x => x.name === n && x.type === 'currency');
+    if (f) return f;
+  }
+  return entity.fields.find(f => f.type === 'currency') ?? null;
+}
+
+/** Pick the child payment amount field (what each payment contributes). */
+function findPaymentAmountField(entity: Entity): Field | null {
+  const byName = ['amount', 'amount_paid', 'total', 'payment_amount'];
+  for (const n of byName) {
+    const f = entity.fields.find(x => x.name === n && x.type === 'currency');
+    if (f) return f;
+  }
+  return entity.fields.find(f => f.type === 'currency') ?? null;
+}
+
+/**
+ * For each parent entity with a billable total and a payment-role child, inject
+ *   amount_paid = sum(Payment.amount WHERE status='Paid')
+ *   balance_due = total - amount_paid
+ *
+ * Skipped when the parent already owns a balance-like field or computed field.
+ * Respects "Paid" status only when the payment entity has a status choice
+ * containing "Paid" (which our role-aware status taxonomy guarantees).
+ */
+function injectBalanceDue(
+  entities: Entity[],
+  computedFields: Record<string, any[]>
+): Record<string, any[]> {
+  const result: Record<string, any[]> = { ...computedFields };
+
+  for (const parent of entities) {
+    const role = classifyEntityRole(parent);
+    if (role === 'payment' || role === 'account') continue;
+
+    const parentField = findTotalField(parent);
+    if (!parentField) continue;
+
+    // Find a payment-role child that belongs_to this parent
+    const payChild = entities.find(
+      c => classifyEntityRole(c) === 'payment' &&
+           c.relationships.some(r => r.type === 'belongs_to' && r.target === parent.name)
+    );
+    if (!payChild) continue;
+
+    const payRel = payChild.relationships.find(r => r.type === 'belongs_to' && r.target === parent.name)!;
+    const payAmountField = findPaymentAmountField(payChild);
+    if (!payAmountField) continue;
+
+    const parentHasBalanceField = parent.fields.some(
+      f => EXISTING_BALANCE_FIELD_NAMES.has(f.name.toLowerCase())
+    );
+    const existing = new Set((result[parent.name] || []).map((c: any) => c.name));
+    const parentHasBalanceComputed =
+      existing.has('balance_due') || existing.has('amount_paid');
+
+    if (parentHasBalanceField || parentHasBalanceComputed) continue;
+
+    const payStatus = payChild.fields.find(f => f.name === 'status' && f.type === 'choice');
+    const hasPaidOption = payStatus?.options?.some(o => o.toLowerCase() === 'paid') ?? false;
+
+    const amountPaid: any = {
+      name: 'amount_paid',
+      display_name: 'Amount Paid',
+      type: 'sum',
+      source_entity: payChild.name,
+      source_field: payAmountField.name,
+      relationship: payRel.foreign_key,
+      prefix: '$',
+    };
+    if (hasPaidOption) {
+      amountPaid.filter = { field: 'status', condition: 'equals', value: 'Paid' };
+    }
+
+    const balanceDue: any = {
+      name: 'balance_due',
+      display_name: 'Balance Due',
+      type: 'formula',
+      formula: `{${parentField.name}} - {amount_paid}`,
+      prefix: '$',
+    };
+
+    result[parent.name] = [...(result[parent.name] || []), amountPaid, balanceDue];
+    console.log(
+      `[normalizeSpec] Injected balance_due on '${parent.name}': ${parentField.name} - sum(${payChild.name}.${payAmountField.name}${hasPaidOption ? ' WHERE status=Paid' : ''})`
+    );
+  }
+
+  return result;
+}
+
+/**
+ * For each entity that has a balance_due computed field, ensure its
+ * story_events.stats_card surfaces the balance so users see it on the
+ * Story screen. Idempotent: skips entities whose stats_card already
+ * references balance_due.
+ */
+function injectBalanceDueStats(
+  storyEvents: Record<string, any>,
+  computedFields: Record<string, any[]>
+): Record<string, any> {
+  const result: Record<string, any> = { ...storyEvents };
+  for (const [entityName, cfs] of Object.entries(computedFields)) {
+    if (!cfs.some((cf: any) => cf.name === 'balance_due')) continue;
+    const cfg = result[entityName];
+    if (!cfg) continue;
+    const existing: any[] = Array.isArray(cfg.stats_card) ? cfg.stats_card : [];
+    const alreadyHas = existing.some(
+      s => typeof s?.label === 'string' && s.label.includes('{balance_due}')
+    );
+    if (alreadyHas) continue;
+    result[entityName] = {
+      ...cfg,
+      stats_card: [...existing, { label: 'Balance Due: ${balance_due}' }],
+    };
+    console.log(`[normalizeSpec] Surfaced balance_due on story_events.${entityName}.stats_card`);
+  }
+  return result;
 }
 
 /**
@@ -1092,20 +1299,11 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
     }
   }
 
-  // Inject status field on activity entities (has validated belongs_to, no choice field)
+  // Inject / normalize status field based on entity role so payment and
+  // account entities get domain-appropriate taxonomies instead of the generic
+  // activity Scheduled/In Progress/Completed/Cancelled set.
   for (const entity of entities) {
-    const hasBelongsTo = entity.relationships.some(r => r.type === 'belongs_to');
-    const hasChoiceField = entity.fields.some(f => f.type === 'choice');
-    if (hasBelongsTo && !hasChoiceField && !isPersonLikeEntity(entity)) {
-      entity.fields.push(normalizeField({
-        name: 'status',
-        type: 'choice',
-        required: false,
-        options: ['Scheduled', 'In Progress', 'Completed', 'Cancelled'],
-        default_value: 'Scheduled',
-      }));
-      console.log(`[normalizeSpec] Injected status field on activity entity '${entity.name}'`);
-    }
+    normalizeStatusForRole(entity);
   }
 
   const normalizedAnchor = normalizeAnchor(spec.anchor, entities);
@@ -1137,6 +1335,12 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
     }
   }
 
+  const computedFields = injectBalanceDue(entities, normalizeComputedFields(spec.computed_fields));
+  const storyEvents = injectBalanceDueStats(
+    normalizeStoryEventsFormat(spec.story_events || {}, entities),
+    computedFields
+  );
+
   return {
     meta: {
       spec_id: spec.meta?.spec_id || crypto.randomUUID?.() || `spec-${Date.now()}`,
@@ -1157,9 +1361,9 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
     },
     entities,
     anchor: normalizedAnchor,
-    computed_fields: normalizeComputedFields(spec.computed_fields),
+    computed_fields: computedFields,
     business_rules: spec.business_rules || [],
-    story_events: normalizeStoryEventsFormat(spec.story_events || {}, entities),
+    story_events: storyEvents,
     add_flows: normalizeAddFlowsFormat(spec.add_flows || {}, entities),
     search: {
       entities: spec.search?.entities || entities.map(e => e.name),
