@@ -57,7 +57,7 @@ describe('buildCalendarSpec', () => {
     expect(spec.elements['month-grid'].type).toBe('MonthGrid');
     expect(spec.elements['month-grid'].props.year).toBe(2026);
     expect(spec.elements['month-grid'].props.month).toBe(4);
-    expect(spec.elements['month-grid'].props.events['2026-04-16']).toBeDefined();
+    expect((spec.elements['month-grid'].props as any).events['2026-04-16']).toBeDefined();
   });
 
   test('shows DayDetail when date is selected with events', () => {

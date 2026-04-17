@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { SpecValidator } from '../src/generation/services/spec-validator';
-import { normalizeSpec } from '../src/generation/services/spec-normalizer';
+import { SpecValidator } from '../../src/generation/services/spec-validator';
+import { normalizeSpec } from '../../src/generation/services/spec-normalizer';
 
 const dir = '.planning/generated-specs-round3';
 const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
