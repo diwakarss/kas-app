@@ -7,6 +7,7 @@ import type { RootStackParamList } from '../core/navigation/types';
 import { colors } from '../core/theme/tokens';
 import AddMenu from './AddMenu';
 import SearchOverlay from '../screens/SearchOverlay';
+import ChatOverlay from '../screens/ChatOverlay';
 
 export default function FloatingActions() {
   const insets = useSafeAreaInsets();
@@ -14,6 +15,7 @@ export default function FloatingActions() {
   const route = useRoute();
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   // Build context for AddMenu
   const routeName = route.name;
@@ -64,7 +66,12 @@ export default function FloatingActions() {
           <Text style={{ fontSize: 24, color: colors.dawn, fontWeight: '300' }}>+</Text>
         </Pressable>
 
-        <Pressable accessibilityRole="button" accessibilityLabel="Chat" className="items-center justify-center p-3 opacity-40">
+        <Pressable
+          onPress={() => setShowChat(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Chat"
+          className="items-center justify-center p-3"
+        >
           <Text style={{ fontSize: 22 }}>{'\uD83D\uDCAC'}</Text>
           <Text className="font-inter text-xs text-mist mt-0.5">Chat</Text>
         </Pressable>
@@ -80,6 +87,11 @@ export default function FloatingActions() {
       <SearchOverlay
         visible={showSearch}
         onClose={() => setShowSearch(false)}
+      />
+
+      <ChatOverlay
+        visible={showChat}
+        onClose={() => setShowChat(false)}
       />
     </>
   );

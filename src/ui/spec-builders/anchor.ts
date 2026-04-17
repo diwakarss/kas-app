@@ -42,14 +42,12 @@ export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): 
     for (let i = 0; i < anchorData.cards.length; i++) {
       const card = anchorData.cards[i];
       const cardId = `card-${i}`;
-      // Only navigate to parent entity when the card title uses a cross-entity ref (e.g., "{client.name}").
-      // If the title uses anchor entity's own fields (e.g., "{name}"), navigate to the entity itself.
-      const belongsTo = findBelongsTo(appSpec);
-      const titleUsesCrossRef = appSpec.ui_hints.anchor.card_display?.title?.includes('.') ?? false;
-      const shouldNavToParent = belongsTo && titleUsesCrossRef;
-
-      const navEntityType = shouldNavToParent ? belongsTo.target : appSpec.ui_hints.anchor.entity;
-      const navEntityId = shouldNavToParent ? card.rawData[belongsTo.foreign_key] ?? card.id : card.id;
+      // Always open the anchor entity's Story on tap. Business owners expect
+      // "today's jobs → tap → this job", not "tap → client profile". Earlier
+      // logic redirected to the parent when the card title was a cross-ref
+      // like {client.name}; that broke the mental model on 5 of 6 round-5 apps.
+      const navEntityType = appSpec.ui_hints.anchor.entity;
+      const navEntityId = card.id;
 
       elements[cardId] = {
         type: 'EntityCard',
@@ -131,11 +129,4 @@ export function buildAnchorSpec(anchorData: AnchorData, appSpec: KASAppSpecV2): 
   }
 
   return builtSpec;
-}
-
-function findBelongsTo(appSpec: KASAppSpecV2) {
-  const anchorEntity = appSpec.entities.find(
-    (e) => e.name === appSpec.ui_hints.anchor.entity,
-  );
-  return anchorEntity?.relationships.find((r) => r.type === 'belongs_to') ?? null;
 }

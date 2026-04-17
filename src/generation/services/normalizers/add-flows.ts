@@ -23,6 +23,24 @@ function humanizePrompt(fieldName: string, entity: Entity | undefined): string {
 }
 
 /**
+ * Infer an on-screen keyboard hint from the field type or name so mobile web
+ * users get a numeric pad for money, a phone pad for phones, etc. LLM output
+ * rarely sets this on individual steps, and fields like `phone` often ship as
+ * plain `text` type, so we pattern-match the name too.
+ */
+function inferKeyboardForField(fieldName: string, fieldType: string | undefined): string | null {
+  const t = (fieldType || 'text').toLowerCase();
+  if (t === 'number' || t === 'integer' || t === 'currency' || t === 'money') return 'numeric';
+  if (t === 'phone') return 'phone-pad';
+  if (t === 'email') return 'email-address';
+  const n = fieldName.toLowerCase();
+  if (/phone|mobile|tel/.test(n)) return 'phone-pad';
+  if (/email/.test(n)) return 'email-address';
+  if (/zip|postal|amount|price|cost|fee|balance|total|quantity|qty/.test(n)) return 'numeric';
+  return null;
+}
+
+/**
  * When a field is an `_id` FK with a matching belongs_to relationship,
  * return the step-level picker props. Returns {} for non-FK fields.
  */
@@ -98,15 +116,18 @@ function inferAddFlows(
 
     console.log(`[normalizeSpec] Inferred add_flow for '${entity.name}'`);
     result[entity.name] = {
-      steps: userFields.map(f => ({
-        field: f.name,
-        prompt: humanizePrompt(f.name, entity),
-        required: f.required ?? false,
-        ...(f.type === 'number' || f.type === 'currency' ? { keyboard: 'numeric' } : {}),
-        ...(f.type === 'phone' ? { keyboard: 'phone-pad' } : {}),
-        ...(f.type === 'email' ? { keyboard: 'email-address' } : {}),
-        ...(buildEntityPickerProps(f.name, entity)),
-      })),
+      steps: userFields.map(f => {
+        const kb = inferKeyboardForField(f.name, f.type);
+        const required = f.required ?? false;
+        return {
+          field: f.name,
+          prompt: humanizePrompt(f.name, entity),
+          required,
+          ...(kb ? { keyboard: kb } : {}),
+          ...(required ? {} : { skip_text: 'Skip' }),
+          ...(buildEntityPickerProps(f.name, entity)),
+        };
+      }),
     };
   }
 
@@ -166,13 +187,26 @@ export function normalizeAddFlowsFormat(
     }
   }
 
-  // Humanize robotic prompts in LLM-provided flows
+  // Humanize robotic prompts + fill in keyboard/skip defaults on LLM-provided flows
   for (const [entityName, flow] of Object.entries(fixed)) {
     if (!flow?.steps) continue;
     const entity = entities.find(e => e.name === entityName);
     for (const step of flow.steps) {
       if (!step.prompt || step.prompt.match(/^Enter\s+\w+_/)) {
         step.prompt = humanizePrompt(step.field, entity);
+      }
+      if (!step.keyboard && step.field && step.field_type !== 'entity_picker') {
+        const isFk = entity?.relationships.some(r => r.type === 'belongs_to' && r.foreign_key === step.field);
+        if (!isFk) {
+          const entityField = entity?.fields.find(f => f.name === step.field);
+          const kb = inferKeyboardForField(step.field, entityField?.type || step.field_type);
+          if (kb) step.keyboard = kb;
+        }
+      }
+      if (!step.skip_text) {
+        const entityField = entity?.fields.find(f => f.name === step.field);
+        const required = step.required ?? entityField?.required ?? false;
+        if (!required) step.skip_text = 'Skip';
       }
     }
   }

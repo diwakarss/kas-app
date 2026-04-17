@@ -166,9 +166,11 @@ export const catalog = defineCatalog(schema, {
 
     MonthGrid: {
       props: z.object({
-        entityType: z.string(),
-        dateField: z.string(),
-        displayTemplate: z.string(),
+        year: z.number(),
+        month: z.number(),
+        events: z.record(z.string(), z.array(z.any())),
+        selectedDate: z.string().nullable(),
+        onSelectDate: z.any(),
       }),
       slots: [],
       description: 'Calendar month grid showing entity records on their dates.',
@@ -177,13 +179,8 @@ export const catalog = defineCatalog(schema, {
     DayDetail: {
       props: z.object({
         date: z.string(),
-        items: z.array(
-          z.object({
-            display: z.string(),
-            entityType: z.string(),
-            entityId: z.number(),
-          }),
-        ),
+        events: z.array(z.any()),
+        onEventPress: z.any(),
       }),
       slots: [],
       description: 'Day detail view showing all items for a selected calendar date.',

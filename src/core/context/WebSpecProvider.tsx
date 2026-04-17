@@ -12,6 +12,7 @@ import { SpecContextValue, SpecContext } from './SpecContext';
 import { usePreview } from './PreviewContext';
 import type { KASAppSpec } from '../types/spec';
 import { detectVertical, buildSampleText } from '../../generation/services/sample-seeds';
+import { normalizeSpec } from '../../generation/services/spec-normalizer';
 
 // InsForge backend API URL - configurable via env
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7133';
@@ -184,8 +185,11 @@ async function fetchPreviewSpec(specId: string): Promise<PreviewApiResponse> {
     return { success: false, error: json.error || 'No data returned' };
   }
   // The get-spec endpoint returns { success, data: { spec, ... } } without sampleRecords.
-  // Generate them client-side from the spec.
-  const spec = json.data.spec;
+  // Run Phase 1-4 normalization client-side so chat_commands, FK picker steps,
+  // story_events, stats enrichment, and anchor repairs land in the preview.
+  // The backend stores raw LLM output; until generate-spec runs normalize on
+  // save, this is where it has to happen.
+  const spec = normalizeSpec(json.data.spec);
   const sampleRecords = generateSampleRecords(spec);
   return { success: true, data: { spec, sampleRecords } };
 }
