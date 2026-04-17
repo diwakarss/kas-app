@@ -55,7 +55,7 @@ describe('buildAddFlowSpec', () => {
     const spec = buildAddFlowSpec(makeMockInput());
     expect(spec.elements['step-progress']).toBeDefined();
     expect(spec.elements['step-progress'].type).toBe('StepProgress');
-    expect(spec.elements['step-progress'].props.currentStep).toBe(1);
+    expect(spec.elements['step-progress'].props.currentStep).toBe(0);
     expect(spec.elements['step-progress'].props.totalSteps).toBe(2);
   });
 

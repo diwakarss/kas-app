@@ -35,7 +35,7 @@ export function buildAddFlowSpec(input: AddFlowInput): Spec {
   elements['step-progress'] = {
     type: 'StepProgress',
     props: {
-      currentStep: input.currentStep + 1,
+      currentStep: input.currentStep,
       totalSteps: input.totalSteps,
       label: input.entityDef.display_name,
     },
