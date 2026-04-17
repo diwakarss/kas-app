@@ -11,6 +11,7 @@ import { initializeSpec, initializeSpecFromJson } from '../../engines/spec-initi
 import { SpecContextValue, SpecContext } from './SpecContext';
 import { usePreview } from './PreviewContext';
 import type { KASAppSpec } from '../types/spec';
+import { detectVertical, buildSampleText } from '../../generation/services/sample-seeds';
 
 // InsForge backend API URL - configurable via env
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:7133';
@@ -32,24 +33,13 @@ interface PreviewApiResponse {
  * Generate sample records client-side from a spec's entity definitions.
  * Mirrors the server-side generateSampleData() in preview.ts.
  */
-/** Contextual sample values for common text field names */
-const SAMPLE_TEXT: Record<string, string[]> = {
-  description: ['Regular checkup and cleaning', 'Follow-up consultation', 'New patient intake'],
-  reason: ['Annual wellness exam', 'Persistent cough', 'Post-surgery follow-up'],
-  topic: ['Algebra fundamentals', 'Essay writing', 'Science project'],
-  activity: ['Arts and crafts', 'Story time', 'Outdoor play'],
-  style: ['Ballet', 'Contemporary', 'Hip Hop'],
-  service: ['Full grooming package', 'Nail trim only', 'Bath and brush'],
-  notes: ['Good progress overall', 'Follow up next week', 'On track with plan'],
-  note: ['Good progress overall', 'Follow up next week', 'On track with plan'],
-  address: ['123 MG Road, Bangalore', '45 Anna Nagar, Chennai', '78 Park Street, Kolkata'],
-  location: ['Main Studio', 'Conference Room A', 'Outdoor Area'],
-  title: ['Introduction Session', 'Advanced Workshop', 'Review Meeting'],
-};
 
 function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
   const records: Record<string, any[]> = {};
   if (!spec?.entities || !Array.isArray(spec.entities)) return records;
+
+  const vertical = detectVertical(spec);
+  const sampleText = buildSampleText(vertical);
 
   const sampleNames: Record<string, string[]> = {
     client: ['Ramesh Rao', 'Sunita Menon', 'Arun Pillai'],
@@ -107,7 +97,7 @@ function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
 
         switch (ft) {
           case 'text': case 'string': {
-            const contextual = SAMPLE_TEXT[fn];
+            const contextual = sampleText[fn];
             rec[field.name] = contextual ? contextual[i % contextual.length] : `Sample ${field.display_name || field.name} ${i + 1}`;
             break;
           }
@@ -136,7 +126,11 @@ function generateSampleRecords(spec: KASAppSpec): Record<string, any[]> {
           case 'boolean': case 'toggle': rec[field.name] = i % 2 === 0; break;
           case 'choice': case 'select': rec[field.name] = field.options?.[i % (field.options?.length || 1)] || 'Option 1'; break;
           case 'duration': rec[field.name] = `${30 + i * 15} min`; break;
-          case 'note': rec[field.name] = ['Good progress.', 'Follow up next week.', 'On track.'][i]; break;
+          case 'note': {
+            const noteList = sampleText[fn] || sampleText.notes || sampleText.note || ['Good progress.', 'Follow up next week.', 'On track.'];
+            rec[field.name] = noteList[i % noteList.length];
+            break;
+          }
           default: rec[field.name] = `Sample ${field.name} ${i + 1}`;
         }
       }

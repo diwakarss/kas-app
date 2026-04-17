@@ -1,0 +1,91 @@
+{
+  "law-firm.json": {
+    "validation": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "normalization_diffs": [
+      "greeting: \"Good {time_of_day}\" -> \"Good {time_of_day}, {business_name}\""
+    ],
+    "relationships_added": []
+  },
+  "personal-chef.json": {
+    "validation": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "normalization_diffs": [
+      "greeting: \"Good {time_of_day}\" -> \"Good {time_of_day}, {business_name}\"",
+      "subtitle: \"{date}\" -> \"{status}\""
+    ],
+    "relationships_added": []
+  },
+  "real-estate.json": {
+    "validation": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "normalization_diffs": [
+      "greeting: \"Good {time_of_day}\" -> \"Good {time_of_day}, {business_name}\"",
+      "subtitle: \"{scheduled_for}\" -> \"{status}\""
+    ],
+    "relationships_added": []
+  },
+  "tailor.json": {
+    "validation": {
+      "valid": false,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [
+        "Anchor entity 'Order' has no date/datetime field for day_schedule anchor type"
+      ],
+      "injection": []
+    },
+    "normalization_diffs": [
+      "greeting: \"Good {time_of_day}\" -> \"Good {time_of_day}, {business_name}\"",
+      "subtitle: \"{description}\" -> \"{notes}\"",
+      "time_field: null -> scheduled_at",
+      "title: \"{client.name}\" -> \"{order.description}\""
+    ],
+    "relationships_added": []
+  },
+  "tour-guide.json": {
+    "validation": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "normalization_diffs": [
+      "greeting: \"Good {time_of_day}\" -> \"Good {time_of_day}, {business_name}\"",
+      "subtitle: \"\" -> \"{tour_type}\""
+    ],
+    "relationships_added": []
+  },
+  "wedding-planner.json": {
+    "validation": {
+      "valid": true,
+      "structural": [],
+      "semantic": [],
+      "business_logic": [],
+      "injection": []
+    },
+    "normalization_diffs": [
+      "greeting: \"Good {time_of_day}\" -> \"Good {time_of_day}, {business_name}\"",
+      "subtitle: \"\" -> \"{notes}\"",
+      "time_field: wedding_date -> date",
+      "title: \"{name}\" -> \"{couple.name}\""
+    ],
+    "relationships_added": []
+  }
+}

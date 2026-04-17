@@ -76,11 +76,93 @@ const PERSON_LIKE_NAMES = new Set([
   'instructor', 'teacher', 'trainer', 'therapist', 'doctor',
 ]);
 
+/** Container entity names — records that represent groupings/accounts rather than daily activity */
+const CONTAINER_NAMES = new Set([
+  'couple', 'family', 'household', 'account', 'company', 'organization',
+  'team', 'group', 'profile', 'case', 'project',
+]);
+
 /** Check if an entity represents a person/subject (by name or structure) */
 function isPersonLikeEntity(entity: Entity): boolean {
   if (PERSON_LIKE_NAMES.has(entity.name.toLowerCase())) return true;
   const fieldNames = new Set(entity.fields.map(f => f.name.toLowerCase()));
   return fieldNames.has('name') && (fieldNames.has('email') || fieldNames.has('phone'));
+}
+
+/**
+ * Container anchors (Couple, Family, Company, …) have one or two far-future
+ * dates (wedding_date, founded_on) that happen to satisfy the scheduling
+ * heuristic but don't generate day-to-day activity. Swap them to a child
+ * activity entity so the home screen renders something useful.
+ */
+function isContainerEntity(entity: Entity): boolean {
+  return CONTAINER_NAMES.has(entity.name.toLowerCase());
+}
+
+/**
+ * Entity role — used by downstream inference (status taxonomy, money close-loop,
+ * rollups) to know how an entity fits the business workflow. Pure classification,
+ * does not mutate the entity.
+ *
+ *  - person:   the business's customers/subjects (Client, Patient, Student, …)
+ *  - container: groupings (Couple, Family, Company) — see isContainerEntity
+ *  - activity: the day-to-day unit of work (Fitting, Showing, Appointment, Tour, Event)
+ *  - document: long-lived records tied to a parent (Matter, Order, Contract, Prescription)
+ *  - payment:  money-in events (Payment, Invoice, Receipt, Bill, Charge)
+ *  - account:  financial aggregations (RetainerAccount, Ledger, Balance, Wallet)
+ *  - record:   fallback for anything else (Note, Attachment, Tag, …)
+ */
+export type EntityRole = 'person' | 'container' | 'activity' | 'document' | 'payment' | 'account' | 'record';
+
+const PAYMENT_NAMES = new Set([
+  'payment', 'invoice', 'receipt', 'bill', 'charge', 'transaction', 'refund',
+]);
+
+const ACCOUNT_NAMES = new Set([
+  'account', 'retaineraccount', 'ledger', 'balance', 'wallet', 'budget',
+]);
+
+const DOCUMENT_NAMES = new Set([
+  'matter', 'order', 'contract', 'agreement', 'document', 'prescription',
+  'policy', 'claim', 'ticket', 'request', 'quote', 'estimate', 'proposal',
+]);
+
+const ACTIVITY_DATE_FIELDS = new Set([
+  'scheduled_at', 'scheduled_for', 'date', 'start_time', 'appointment_at',
+  'visit_at', 'session_at', 'tour_date',
+]);
+
+function hasActivityDateField(entity: Entity): boolean {
+  for (const f of entity.fields) {
+    if (ACTIVITY_DATE_FIELDS.has(f.name.toLowerCase())) return true;
+    if ((f.type === 'date' || f.type === 'datetime' || f.type === 'time') &&
+        !METADATA_DATE_PATTERNS.test(f.name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasMoneyFields(entity: Entity): boolean {
+  const fieldNames = new Set(entity.fields.map(f => f.name.toLowerCase()));
+  return fieldNames.has('amount') || fieldNames.has('amount_paid') ||
+         fieldNames.has('paid_amount') || fieldNames.has('total');
+}
+
+/** Classify an entity by role. Pure function — no mutation. */
+export function classifyEntityRole(entity: Entity): EntityRole {
+  const lower = entity.name.toLowerCase();
+  if (PAYMENT_NAMES.has(lower)) return 'payment';
+  if (ACCOUNT_NAMES.has(lower)) return 'account';
+  if (DOCUMENT_NAMES.has(lower)) return 'document';
+  if (isPersonLikeEntity(entity)) return 'person';
+  if (isContainerEntity(entity)) return 'container';
+  // Structural fallback: money fields → payment; schedulable → activity
+  if (hasMoneyFields(entity) && entity.fields.some(f => f.type === 'currency')) {
+    return 'payment';
+  }
+  if (hasActivityDateField(entity)) return 'activity';
+  return 'record';
 }
 
 /** Auto-detect searchable fields: text, email, phone on non-FK fields */
@@ -194,17 +276,22 @@ function normalizeComputedFields(
 function findPrimaryTextField(entity: Entity | undefined): string {
   if (!entity) return 'name';
   const systemFields = new Set(['id', 'created_at', 'updated_at', 'archived']);
+  const isUsable = (f: Field) => !systemFields.has(f.name) && !f.name.endsWith('_id');
   // Prefer a field literally named "name"
   if (entity.fields.some(f => f.name === 'name')) return 'name';
   // Then first searchable text field
-  const searchable = entity.fields.find(f => f.searchable && f.type === 'text' && !systemFields.has(f.name));
+  const searchable = entity.fields.find(f => f.searchable && f.type === 'text' && isUsable(f));
   if (searchable) return searchable.name;
-  // Then first text field
-  const textField = entity.fields.find(f => f.type === 'text' && !systemFields.has(f.name));
+  // Then first text field (never FK)
+  const textField = entity.fields.find(f => f.type === 'text' && isUsable(f));
   if (textField) return textField.name;
-  // Then first non-system field
-  const firstField = entity.fields.find(f => !systemFields.has(f.name));
-  return firstField?.name || 'name';
+  // Then first non-system, non-FK field
+  const firstField = entity.fields.find(isUsable);
+  if (firstField) return firstField.name;
+  // Last resort: any non-system field (may be an FK; caller should fall through
+  // to cross-entity title resolution when this returns an _id)
+  const fallback = entity.fields.find(f => !systemFields.has(f.name));
+  return fallback?.name || 'name';
 }
 
 /**
@@ -284,19 +371,62 @@ function normalizeAnchor(anchor: Partial<KASAppSpec['anchor']> | undefined, enti
   const defaultEntity = entities[0]?.name || 'Item';
   let anchorEntityName = anchor?.entity || defaultEntity;
   let anchorEntity = entities.find(e => e.name === anchorEntityName) || entities[0];
+  let anchorType = anchor?.type || 'day_schedule';
+  let anchorSwapped = false;
 
-  // Auto-swap: if anchor entity is a person-like entity with no schedule date,
-  // prefer an activity entity (has belongs_to + datetime) for a better day-schedule view
-  if (anchorEntity && isPersonLikeEntity(anchorEntity) && !findScheduleDateField(anchorEntity)) {
+  // Auto-swap: if the anchor entity lacks a schedule date field but the app is
+  // set up as a day_schedule, find an activity entity (belongs_to + datetime)
+  // and use that instead. Covers person-like anchors (e.g. Couple, Client) AND
+  // transactional anchors that just don't have a date on them (e.g. Order in
+  // the tailor spec).
+  const needsScheduleSwap =
+    anchorEntity &&
+    anchorType === 'day_schedule' &&
+    !findScheduleDateField(anchorEntity);
+
+  // Container swap: anchor entity is a grouping (Couple, Family, Company) and
+  // has a child entity with its own recurring schedule date. Even though the
+  // container has a date (wedding_date), the child activity reads better on
+  // the home screen.
+  const prefersChildActivity =
+    !needsScheduleSwap &&
+    anchorEntity &&
+    anchorType === 'day_schedule' &&
+    (isContainerEntity(anchorEntity) || isPersonLikeEntity(anchorEntity));
+
+  const findActivityChild = (parent: Entity) =>
+    entities.find(e =>
+      e.name !== parent.name &&
+      !isPersonLikeEntity(e) &&
+      !isContainerEntity(e) &&
+      e.relationships.some(r => r.type === 'belongs_to' && r.target === parent.name) &&
+      findScheduleDateField(e) !== null
+    );
+
+  if (needsScheduleSwap) {
     const activityEntity = entities.find(e =>
       e.name !== anchorEntity!.name &&
       e.relationships.some(r => r.type === 'belongs_to') &&
       findScheduleDateField(e) !== null
     );
     if (activityEntity) {
-      console.log(`[normalizeSpec] Anchor swap: '${anchorEntityName}' (person, no date) → '${activityEntity.name}' (activity with date)`);
+      console.log(`[normalizeSpec] Anchor swap: '${anchorEntityName}' (no schedule date) → '${activityEntity.name}' (activity with date)`);
       anchorEntityName = activityEntity.name;
       anchorEntity = activityEntity;
+      anchorSwapped = true;
+    } else {
+      // No schedulable child exists → downgrade to active_list so the runtime
+      // stops rendering a day-schedule view with a blank time column.
+      console.log(`[normalizeSpec] Anchor type downgrade: '${anchorEntityName}' has no date and no schedulable child → anchor.type = 'active_list'`);
+      anchorType = 'active_list';
+    }
+  } else if (prefersChildActivity) {
+    const activityEntity = findActivityChild(anchorEntity!);
+    if (activityEntity) {
+      console.log(`[normalizeSpec] Container anchor swap: '${anchorEntityName}' (container/person-like) → '${activityEntity.name}' (recurring activity)`);
+      anchorEntityName = activityEntity.name;
+      anchorEntity = activityEntity;
+      anchorSwapped = true;
     }
   }
 
@@ -340,6 +470,30 @@ function normalizeAnchor(anchor: Partial<KASAppSpec['anchor']> | undefined, enti
       }
     }
 
+    // Phase C: primary field is not a proper text field (it's an FK, choice,
+    // date, or number). Fall back to any belongs_to parent's primary text so
+    // the card title shows something human. Covers chains like
+    // Fitting → Order → Client (tailor spec).
+    const primaryIsWeak =
+      primaryFieldDef &&
+      (primaryField.endsWith('_id') ||
+        ['choice', 'number', 'currency', 'date', 'datetime', 'time'].includes(primaryFieldDef.type));
+    if (defaultTitle === `{${primaryField}}` && primaryIsWeak) {
+      const belongsToRels = anchorEntity.relationships.filter(r => r.type === 'belongs_to');
+      for (const bt of belongsToRels) {
+        const parent = entities.find(e => e.name === bt.target);
+        if (!parent) continue;
+        const parentPrimary = findPrimaryTextField(parent);
+        const parentPrimaryDef = parent.fields.find(f => f.name === parentPrimary);
+        if (!parentPrimaryDef || parentPrimary.endsWith('_id')) continue;
+        defaultTitle = `{${bt.target.toLowerCase()}.${parentPrimary}}`;
+        const subField = findSubtitleField(anchorEntity, primaryField);
+        defaultSubtitle = subField ? `{${subField}}` : '';
+        console.log(`[normalizeSpec] Anchor title Phase C: weak primary '${primaryField}' → parent ${bt.target}.${parentPrimary}`);
+        break;
+      }
+    }
+
     // Default subtitle when title uses entity's own primary text field
     if (!defaultSubtitle && defaultTitle === `{${primaryField}}`) {
       const subField = findSubtitleField(anchorEntity, primaryField);
@@ -347,35 +501,95 @@ function normalizeAnchor(anchor: Partial<KASAppSpec['anchor']> | undefined, enti
     }
   }
 
-  const rawTitle = anchor?.card_display?.title || defaultTitle;
+  // Enrichment: anchor entity plural noun for stats labels
+  // Applies whether business_type is in the library or 'custom' — the LLM
+  // routinely ships generic "Today" / "This Week" labels; surfacing the
+  // entity noun makes the home screen feel like the user's actual business.
+  const anchorPlural = anchorEntity?.display_name_plural || anchorEntity?.display_name || 'Items';
+
+  // If we swapped the anchor entity, the LLM's original card_display templates
+  // were written for a different entity. Ignore them and recompute from
+  // defaults based on the new anchor entity.
+  const rawTitle = !anchorSwapped && anchor?.card_display?.title
+    ? anchor.card_display.title
+    : defaultTitle;
   const validatedTitle = validateTemplate(rawTitle, anchorEntity);
-  const rawSubtitle = anchor?.card_display?.subtitle || defaultSubtitle;
-  const validatedSubtitle = validateTemplate(rawSubtitle, anchorEntity);
+  const rawSubtitle = !anchorSwapped && anchor?.card_display?.subtitle
+    ? anchor.card_display.subtitle
+    : defaultSubtitle;
+  let validatedSubtitle = validateTemplate(rawSubtitle, anchorEntity);
+
+  const finalTimeField = (!anchorSwapped && anchor?.card_display?.time_field) || dateTimeField?.name || null;
+
+  // Fix: subtitle and time_field pointing at the same field leaves the subtitle
+  // rendering a duplicate of the time column. Swap to a descriptive text field.
+  if (finalTimeField && validatedSubtitle === `{${finalTimeField}}`) {
+    const alt = findSubtitleField(anchorEntity, finalTimeField);
+    if (alt) {
+      console.log(`[normalizeSpec] Anchor subtitle collided with time_field '${finalTimeField}' → swapped to '{${alt}}'`);
+      validatedSubtitle = `{${alt}}`;
+    } else {
+      console.log(`[normalizeSpec] Anchor subtitle collided with time_field '${finalTimeField}' and no descriptive field found → cleared subtitle`);
+      validatedSubtitle = '';
+    }
+  }
+
+  // Greeting: ensure business_name is present. The LLM frequently omits it,
+  // which leaves the home screen greeting feeling anonymous.
+  let greetingTemplate = anchor?.greeting_template || 'Good {time_of_day}, {business_name}';
+  if (!greetingTemplate.includes('{business_name}')) {
+    greetingTemplate = `${greetingTemplate.replace(/[.!\s]+$/, '')}, {business_name}`;
+    console.log(`[normalizeSpec] Greeting template missing {business_name} → appended`);
+  }
+
+  // Stats: upgrade generic "Today"/"This Week" labels to entity-aware ones so
+  // the anchor reads "Matters Today / This Week" instead of bare counts.
+  const rawStats = anchor?.summary?.stats;
+  const isDefaultStats =
+    !rawStats ||
+    rawStats.length === 0 ||
+    (rawStats.length <= 2 &&
+      rawStats.every(s =>
+        /^(today|this week|week|today's?)$/i.test((s as any).label || '')
+      ));
+
+  let enrichedStats = rawStats as Array<{ label: string; query: string }> | undefined;
+  if (isDefaultStats) {
+    enrichedStats = [
+      { label: `${anchorPlural} Today`, query: 'today_count' },
+      { label: 'This Week', query: 'week_count' },
+    ];
+    // Add a third "Active" stat when there is a status-like field to filter on
+    const hasStatusField = anchorEntity?.fields.some(
+      f => f.type === 'choice' && /status|state/i.test(f.name)
+    );
+    if (hasStatusField) {
+      enrichedStats.push({ label: `Active ${anchorPlural}`, query: 'active_count' });
+    }
+    console.log(`[normalizeSpec] Stats enriched with entity noun '${anchorPlural}'`);
+  }
 
   return {
     entity: anchorEntityName,
-    type: anchor?.type || 'day_schedule',
-    greeting_template: anchor?.greeting_template || 'Good {time_of_day}, {business_name}',
+    type: anchorType,
+    greeting_template: greetingTemplate,
     date_label: anchor?.date_label || 'today',
     card_display: {
       ...anchor?.card_display,
       title: validatedTitle,
       subtitle: validatedSubtitle,
-      time_field: anchor?.card_display?.time_field || dateTimeField?.name || null,
+      time_field: finalTimeField,
       actions: anchor?.card_display?.actions || ['edit', 'delete'],
     },
     empty_state: {
-      message: anchor?.empty_state?.message || 'No items today',
-      action: anchor?.empty_state?.action || 'Add an item',
+      message: anchor?.empty_state?.message || `No ${anchorPlural.toLowerCase()} today`,
+      action: anchor?.empty_state?.action || `Add ${anchorEntity?.display_name?.toLowerCase() || 'an item'}`,
       fallback_view: anchor?.empty_state?.fallback_view || 'calendar',
       ...anchor?.empty_state,
     },
     summary: {
-      stats: anchor?.summary?.stats || [
-        { label: 'Today', query: 'today_count' },
-        { label: 'This Week', query: 'week_count' },
-      ],
       ...anchor?.summary,
+      stats: enrichedStats as any,
     },
   } as KASAppSpec['anchor'];
 }
@@ -436,6 +650,39 @@ function inferStoryEvents(
 }
 
 /**
+ * Ensure every non-system entity has a story_events entry so the Story screen
+ * has something to render. Leaf entities (Invoice, Payment, Fitting) that are
+ * not belongs_to targets still deserve a minimal block with their own primary
+ * field as the stats_card label and a sensible origin line.
+ */
+function ensureStoryEventsForAllEntities(
+  existing: Record<string, any>,
+  entities: Entity[]
+): Record<string, any> {
+  const result = { ...existing };
+  for (const entity of entities) {
+    if (result[entity.name]) continue;
+    const primary = findPrimaryTextField(entity);
+    const primaryDef = entity.fields.find(f => f.name === primary);
+    const needsPrefix =
+      primaryDef &&
+      (primary.endsWith('_id') ||
+        ['date', 'datetime', 'number', 'currency'].includes(primaryDef.type));
+    const statsLabel = needsPrefix
+      ? `${entity.display_name}: {${primary}}`
+      : `{${primary}}`;
+    console.log(`[normalizeSpec] Minimal story_events for leaf entity '${entity.name}'`);
+    result[entity.name] = {
+      events: [],
+      stats_card: [{ label: statsLabel }],
+      origin: 'Created on {created_at}',
+      context: entity.display_name,
+    };
+  }
+  return result;
+}
+
+/**
  * Infer add_flows for entities that don't have them.
  * Creates a step-per-field flow for each entity.
  */
@@ -451,6 +698,68 @@ function humanizePrompt(fieldName: string, entity: Entity | undefined): string {
   return `Enter ${label}`;
 }
 
+/**
+ * When a step's field is an `_id` FK with a matching belongs_to relationship,
+ * build the step-level picker props. Returns {} for non-FK fields.
+ */
+function buildEntityPickerProps(
+  fieldName: string,
+  entity: Entity
+): { field_type?: 'entity_picker'; entity_target?: string } {
+  if (!fieldName.endsWith('_id')) return {};
+  const rel = entity.relationships.find(
+    r => r.type === 'belongs_to' && r.foreign_key === fieldName
+  );
+  if (!rel) return {};
+  return { field_type: 'entity_picker', entity_target: rel.target };
+}
+
+/**
+ * Backfill field_type: 'entity_picker' onto LLM-emitted steps that reference
+ * an `_id` FK. Idempotent — skips steps that already have field_type set.
+ */
+function markEntityPickerSteps(flow: any, entity: Entity): void {
+  if (!flow || !Array.isArray(flow.steps)) return;
+  for (const step of flow.steps) {
+    if (step.field_type || !step.field) continue;
+    const props = buildEntityPickerProps(step.field, entity);
+    if (props.field_type) {
+      step.field_type = props.field_type;
+      step.entity_target = props.entity_target;
+    }
+  }
+}
+
+/**
+ * Prepend picker steps for belongs_to FKs that aren't already a step in the
+ * flow. Without this, child entities have no way to set their FK and records
+ * land orphaned. Drill-down creation still works because preFill is applied
+ * before the step loop renders — the hook hides pre-filled steps at render
+ * time (see useAddFlow).
+ */
+function injectMissingFKSteps(flow: any, entity: Entity): void {
+  if (!flow || !Array.isArray(flow.steps)) return;
+  const existingFields = new Set(flow.steps.map((s: any) => s.field));
+  const missingFKSteps: any[] = [];
+  for (const rel of entity.relationships) {
+    if (rel.type !== 'belongs_to') continue;
+    if (existingFields.has(rel.foreign_key)) continue;
+    missingFKSteps.push({
+      field: rel.foreign_key,
+      prompt: `Select ${rel.target}`,
+      required: true,
+      field_type: 'entity_picker',
+      entity_target: rel.target,
+    });
+  }
+  if (missingFKSteps.length > 0) {
+    flow.steps = [...missingFKSteps, ...flow.steps];
+    console.log(
+      `[normalizeSpec] Injected ${missingFKSteps.length} FK picker step(s) into '${entity.name}' add_flow`
+    );
+  }
+}
+
 function inferAddFlows(
   existing: Record<string, any>,
   entities: Entity[]
@@ -458,7 +767,11 @@ function inferAddFlows(
   const result = { ...existing };
 
   for (const entity of entities) {
-    if (result[entity.name]) continue;
+    if (result[entity.name]) {
+      // Existing flow — backfill entity_picker on _id steps the LLM already emitted
+      markEntityPickerSteps(result[entity.name], entity);
+      continue;
+    }
 
     // Skip system fields
     const userFields = entity.fields.filter(f =>
@@ -475,6 +788,7 @@ function inferAddFlows(
         ...(f.type === 'number' || f.type === 'currency' ? { keyboard: 'numeric' } : {}),
         ...(f.type === 'phone' ? { keyboard: 'phone-pad' } : {}),
         ...(f.type === 'email' ? { keyboard: 'email-address' } : {}),
+        ...(buildEntityPickerProps(f.name, entity)),
       })),
     };
   }
@@ -501,7 +815,61 @@ function inferAddFlows(
     }
   }
 
+  // Inject missing FK picker steps so standalone creation works. Drill-down
+  // creation still works because useAddFlow hides steps pre-filled by the parent.
+  for (const entity of entities) {
+    const flow = result[entity.name];
+    if (!flow) continue;
+    injectMissingFKSteps(flow, entity);
+  }
+
   return result;
+}
+
+/**
+ * Infer default chat_commands from entities when the spec ships without any.
+ * Emits an "add {entity}" command for every user-facing entity and a
+ * "show {entity plural} today" command for entities that have a schedule date.
+ */
+function inferChatCommands(
+  existing: any[],
+  entities: Entity[]
+): any[] {
+  if (existing && existing.length > 0) return existing;
+
+  const commands: any[] = [];
+  for (const entity of entities) {
+    const displayLower = entity.display_name.toLowerCase();
+    const pluralLower = entity.display_name_plural.toLowerCase();
+    // add <entity>
+    commands.push({
+      pattern: `add ${displayLower}`,
+      aliases: [`new ${displayLower}`, `create ${displayLower}`],
+      action: {
+        type: 'addEntity',
+        entity: entity.name,
+      },
+      requires_confirmation: false,
+    });
+    // show <entity plural> today (only if entity has a schedule date)
+    if (findScheduleDateField(entity)) {
+      commands.push({
+        pattern: `show ${pluralLower} today`,
+        aliases: [`${pluralLower} today`, `today's ${pluralLower}`],
+        action: {
+          type: 'navigate',
+          entity: entity.name,
+        },
+        requires_confirmation: false,
+      });
+    }
+  }
+
+  if (commands.length > 0) {
+    console.log(`[normalizeSpec] Inferred ${commands.length} chat_commands from ${entities.length} entities`);
+  }
+
+  return commands;
 }
 
 /**
@@ -618,7 +986,8 @@ function normalizeStoryEventsFormat(
     }
   }
 
-  return inferStoryEvents(fixed, entities);
+  const withChildren = inferStoryEvents(fixed, entities);
+  return ensureStoryEventsForAllEntities(withChildren, entities);
 }
 
 /**
@@ -739,6 +1108,35 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
     }
   }
 
+  const normalizedAnchor = normalizeAnchor(spec.anchor, entities);
+
+  // Calendar should follow the anchor so both screens render the same list.
+  // When the LLM shipped its own calendar block, keep it unless it still points
+  // at a different entity than the (possibly swapped) anchor.
+  const anchorEntity = entities.find(e => e.name === normalizedAnchor.entity);
+  const anchorDateField = anchorEntity ? findScheduleDateField(anchorEntity) : null;
+  let calendar = spec.calendar;
+  if (!calendar || (anchorEntity && anchorDateField && calendar.entity !== normalizedAnchor.entity)) {
+    if (anchorEntity && anchorDateField) {
+      if (calendar && calendar.entity !== normalizedAnchor.entity) {
+        console.log(`[normalizeSpec] Calendar entity '${calendar.entity}' realigned to anchor '${normalizedAnchor.entity}'`);
+      }
+      calendar = {
+        entity: normalizedAnchor.entity,
+        date_field: anchorDateField.name,
+        display: `{${findPrimaryTextField(anchorEntity)}}`,
+      };
+    } else {
+      const calEntity = entities.find(e => findScheduleDateField(e) !== null) || entities[0];
+      const calDateField = findScheduleDateField(calEntity);
+      calendar = {
+        entity: calEntity?.name || entities[0]?.name,
+        date_field: calDateField?.name || 'date',
+        display: `{${findPrimaryTextField(calEntity)}}`,
+      };
+    }
+  }
+
   return {
     meta: {
       spec_id: spec.meta?.spec_id || crypto.randomUUID?.() || `spec-${Date.now()}`,
@@ -758,7 +1156,7 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
       }],
     },
     entities,
-    anchor: normalizeAnchor(spec.anchor, entities),
+    anchor: normalizedAnchor,
     computed_fields: normalizeComputedFields(spec.computed_fields),
     business_rules: spec.business_rules || [],
     story_events: normalizeStoryEventsFormat(spec.story_events || {}, entities),
@@ -775,17 +1173,8 @@ export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
         return display;
       })(),
     },
-    calendar: spec.calendar || (() => {
-      // Prefer an entity with a schedule date (not birth dates)
-      const calEntity = entities.find(e => findScheduleDateField(e) !== null) || entities[0];
-      const calDateField = findScheduleDateField(calEntity);
-      return {
-        entity: calEntity?.name || entities[0]?.name,
-        date_field: calDateField?.name || 'date',
-        display: `{${findPrimaryTextField(calEntity)}}`,
-      };
-    })(),
-    chat_commands: spec.chat_commands || [],
+    calendar,
+    chat_commands: inferChatCommands(spec.chat_commands || [], entities),
   } as KASAppSpec;
 }
 

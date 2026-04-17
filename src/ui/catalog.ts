@@ -215,6 +215,16 @@ export const catalog = defineCatalog(schema, {
       description:
         'Responsive card layout. On phones (<768px) renders a single column. On tablets renders a 2-column grid.',
     },
+
+    DetailRow: {
+      props: z.object({
+        label: z.string(),
+        value: z.string(),
+      }),
+      slots: [],
+      description:
+        'Label/value row used on the Story screen to surface an entity field. Label left (mist), value right (clay).',
+    },
   },
 
   actions: {
@@ -268,7 +278,7 @@ export const kasComponentNames = [
   'EntityCard', 'TimelineEvent', 'StatsCard', 'Greeting', 'SummaryStats',
   'ComingUpCard', 'WarningBadge', 'FieldRenderer', 'FloatingActions',
   'EmptyState', 'SectionHeader', 'MonthGrid', 'DayDetail', 'StepProgress', 'EntityPicker',
-  'CardGrid',
+  'CardGrid', 'DetailRow',
 ] as const;
 
 /** All KAS action names */

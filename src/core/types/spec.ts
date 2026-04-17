@@ -191,6 +191,8 @@ export type StoryEventsConfig = Record<string, StoryConfig>;
 // Add Flows
 // ──────────────────────────────────────────
 
+export type AddFlowFieldType = 'entity_picker';
+
 export interface AddFlowStep {
   field: string;
   prompt: string;
@@ -200,6 +202,11 @@ export interface AddFlowStep {
   suffix?: string;
   placeholder?: string;
   skip_text?: string;
+  /** Step-level renderer override (does not modify the underlying Field.type).
+   *  'entity_picker' routes an `_id` FK step through the EntityPicker component. */
+  field_type?: AddFlowFieldType;
+  /** Target entity name when field_type === 'entity_picker'. */
+  entity_target?: string;
 }
 
 export interface AfterAdd {

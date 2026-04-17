@@ -1,0 +1,414 @@
+{
+  "law-firm.json": {
+    "detected_vertical": "legal",
+    "normalized_anchor": {
+      "entity": "Matter",
+      "greeting": "Good {time_of_day}, {business_name}",
+      "title_template": "{client.name}",
+      "subtitle_template": "{description}",
+      "time_field": "court_date",
+      "stats": [
+        "Matters Today",
+        "This Week",
+        "Active Matters"
+      ]
+    },
+    "story_events_coverage": {
+      "total_entities": 5,
+      "entities_with_story": 5
+    },
+    "add_flow_picker_steps": [
+      "Matter.client_id→Client",
+      "TimeEntry.matter_id→Matter",
+      "Document.matter_id→Matter",
+      "RetainerAccount.client_id→Client"
+    ],
+    "catalog_validation": {
+      "overall": true,
+      "errors": [],
+      "warnings": []
+    },
+    "builder_validation": {
+      "anchor": {
+        "ok": true,
+        "errors": []
+      },
+      "story": {
+        "ok": true,
+        "errors": []
+      },
+      "calendar": {
+        "ok": true,
+        "errors": []
+      }
+    },
+    "simulated_cards": [
+      {
+        "title": "Ramesh Rao",
+        "subtitle": "Drafting settlement agreement",
+        "time": "Today",
+        "subtitle_raw": "Drafting settlement agreement",
+        "time_raw": "2026-04-17"
+      },
+      {
+        "title": "Sunita Menon",
+        "subtitle": "Deposition preparation",
+        "time": "Apr 20",
+        "subtitle_raw": "Deposition preparation",
+        "time_raw": "2026-04-20"
+      },
+      {
+        "title": "Arun Pillai",
+        "subtitle": "Client discovery review",
+        "time": "Apr 23",
+        "subtitle_raw": "Client discovery review",
+        "time_raw": "2026-04-23"
+      }
+    ],
+    "belongs_to": "Matter.client_id->Client",
+    "findings": [
+      "INFO: anchor \"Matter\" has multiple date fields (court_date, filing_deadline) — time_field \"court_date\" picks one"
+    ]
+  },
+  "personal-chef.json": {
+    "detected_vertical": "personal_chef",
+    "normalized_anchor": {
+      "entity": "Booking",
+      "greeting": "Good {time_of_day}, {business_name}",
+      "title_template": "{client.name}",
+      "subtitle_template": "{status}",
+      "time_field": "date",
+      "stats": [
+        "Bookings Today",
+        "This Week",
+        "Active Bookings"
+      ]
+    },
+    "story_events_coverage": {
+      "total_entities": 3,
+      "entities_with_story": 3
+    },
+    "add_flow_picker_steps": [
+      "Booking.client_id→Client",
+      "Invoice.booking_id→Booking"
+    ],
+    "catalog_validation": {
+      "overall": true,
+      "errors": [],
+      "warnings": []
+    },
+    "builder_validation": {
+      "anchor": {
+        "ok": true,
+        "errors": []
+      },
+      "story": {
+        "ok": true,
+        "errors": []
+      },
+      "calendar": {
+        "ok": true,
+        "errors": []
+      }
+    },
+    "simulated_cards": [
+      {
+        "title": "Ramesh Rao",
+        "subtitle": "Scheduled",
+        "time": "9:00 AM",
+        "subtitle_raw": "Scheduled",
+        "time_raw": "2026-04-17T03:30:00.000Z"
+      },
+      {
+        "title": "Sunita Menon",
+        "subtitle": "In Progress",
+        "time": "11:00 AM",
+        "subtitle_raw": "In Progress",
+        "time_raw": "2026-04-20T05:30:00.000Z"
+      },
+      {
+        "title": "Arun Pillai",
+        "subtitle": "Completed",
+        "time": "1:00 PM",
+        "subtitle_raw": "Completed",
+        "time_raw": "2026-04-23T07:30:00.000Z"
+      }
+    ],
+    "belongs_to": "Booking.client_id->Client",
+    "findings": []
+  },
+  "real-estate.json": {
+    "detected_vertical": "real_estate",
+    "normalized_anchor": {
+      "entity": "Showing",
+      "greeting": "Good {time_of_day}, {business_name}",
+      "title_template": "{client.name}",
+      "subtitle_template": "{status}",
+      "time_field": "scheduled_for",
+      "stats": [
+        "Showings Today",
+        "This Week",
+        "Active Showings"
+      ]
+    },
+    "story_events_coverage": {
+      "total_entities": 4,
+      "entities_with_story": 4
+    },
+    "add_flow_picker_steps": [
+      "Showing.property_id→Property",
+      "Showing.client_id→Client",
+      "Offer.property_id→Property",
+      "Offer.client_id→Client"
+    ],
+    "catalog_validation": {
+      "overall": true,
+      "errors": [],
+      "warnings": []
+    },
+    "builder_validation": {
+      "anchor": {
+        "ok": true,
+        "errors": []
+      },
+      "story": {
+        "ok": true,
+        "errors": []
+      },
+      "calendar": {
+        "ok": true,
+        "errors": []
+      }
+    },
+    "simulated_cards": [
+      {
+        "title": "Ramesh Rao",
+        "subtitle": "Scheduled",
+        "time": "9:00 AM",
+        "subtitle_raw": "Scheduled",
+        "time_raw": "2026-04-17T03:30:00.000Z"
+      },
+      {
+        "title": "Sunita Menon",
+        "subtitle": "In Progress",
+        "time": "11:00 AM",
+        "subtitle_raw": "In Progress",
+        "time_raw": "2026-04-20T05:30:00.000Z"
+      },
+      {
+        "title": "Arun Pillai",
+        "subtitle": "Completed",
+        "time": "1:00 PM",
+        "subtitle_raw": "Completed",
+        "time_raw": "2026-04-23T07:30:00.000Z"
+      }
+    ],
+    "belongs_to": "Showing.client_id->Client",
+    "findings": []
+  },
+  "tailor.json": {
+    "detected_vertical": "tailoring",
+    "normalized_anchor": {
+      "entity": "Fitting",
+      "greeting": "Good {time_of_day}, {business_name}",
+      "title_template": "{order.description}",
+      "subtitle_template": "{notes}",
+      "time_field": "scheduled_at",
+      "stats": [
+        "Fittings Today",
+        "This Week",
+        "Active Fittings"
+      ]
+    },
+    "story_events_coverage": {
+      "total_entities": 5,
+      "entities_with_story": 5
+    },
+    "add_flow_picker_steps": [
+      "Order.client_id→Client",
+      "Fitting.order_id→Order",
+      "Payment.order_id→Order"
+    ],
+    "catalog_validation": {
+      "overall": true,
+      "errors": [],
+      "warnings": []
+    },
+    "builder_validation": {
+      "anchor": {
+        "ok": true,
+        "errors": []
+      },
+      "story": {
+        "ok": true,
+        "errors": []
+      },
+      "calendar": {
+        "ok": true,
+        "errors": []
+      }
+    },
+    "simulated_cards": [
+      {
+        "title": "Bridal lehenga, heavy work",
+        "subtitle": "Awaiting fabric delivery",
+        "time": "9:00 AM",
+        "subtitle_raw": "Awaiting fabric delivery",
+        "time_raw": "2026-04-17T03:30:00.000Z"
+      },
+      {
+        "title": "Two-piece suit, charcoal wool",
+        "subtitle": "Adjust waist by 2 cm",
+        "time": "11:00 AM",
+        "subtitle_raw": "Adjust waist by 2 cm",
+        "time_raw": "2026-04-20T05:30:00.000Z"
+      },
+      {
+        "title": "Kurta set, festive trim",
+        "subtitle": "Ready for final fitting",
+        "time": "1:00 PM",
+        "subtitle_raw": "Ready for final fitting",
+        "time_raw": "2026-04-23T07:30:00.000Z"
+      }
+    ],
+    "belongs_to": "Fitting.order_id->Order",
+    "findings": []
+  },
+  "tour-guide.json": {
+    "detected_vertical": "tour_guide",
+    "normalized_anchor": {
+      "entity": "Tour",
+      "greeting": "Good {time_of_day}, {business_name}",
+      "title_template": "{meeting_point}",
+      "subtitle_template": "{tour_type}",
+      "time_field": "date",
+      "stats": [
+        "Tours Today",
+        "This Week",
+        "Active Tours"
+      ]
+    },
+    "story_events_coverage": {
+      "total_entities": 4,
+      "entities_with_story": 4
+    },
+    "add_flow_picker_steps": [
+      "Booking.guest_id→Guest",
+      "Booking.tour_id→Tour",
+      "Payment.booking_id→Booking"
+    ],
+    "catalog_validation": {
+      "overall": true,
+      "errors": [],
+      "warnings": []
+    },
+    "builder_validation": {
+      "anchor": {
+        "ok": true,
+        "errors": []
+      },
+      "story": {
+        "ok": true,
+        "errors": []
+      },
+      "calendar": {
+        "ok": true,
+        "errors": []
+      }
+    },
+    "simulated_cards": [
+      {
+        "title": "Piazza del Popolo",
+        "subtitle": "Ancient Rome",
+        "time": "Today",
+        "subtitle_raw": "Ancient Rome",
+        "time_raw": "2026-04-17"
+      },
+      {
+        "title": "Spanish Steps",
+        "subtitle": "Vatican",
+        "time": "Apr 20",
+        "subtitle_raw": "Vatican",
+        "time_raw": "2026-04-20"
+      },
+      {
+        "title": "Vatican entrance",
+        "subtitle": "Food Tour",
+        "time": "Apr 23",
+        "subtitle_raw": "Food Tour",
+        "time_raw": "2026-04-23"
+      }
+    ],
+    "belongs_to": null,
+    "findings": []
+  },
+  "wedding-planner.json": {
+    "detected_vertical": "wedding",
+    "normalized_anchor": {
+      "entity": "Event",
+      "greeting": "Good {time_of_day}, {business_name}",
+      "title_template": "{couple.name}",
+      "subtitle_template": "{notes}",
+      "time_field": "date",
+      "stats": [
+        "Events Today",
+        "This Week",
+        "Active Events"
+      ]
+    },
+    "story_events_coverage": {
+      "total_entities": 5,
+      "entities_with_story": 5
+    },
+    "add_flow_picker_steps": [
+      "Appointment.couple_id→Couple",
+      "Appointment.vendor_id→Vendor",
+      "Event.couple_id→Couple",
+      "Payment.couple_id→Couple"
+    ],
+    "catalog_validation": {
+      "overall": true,
+      "errors": [],
+      "warnings": []
+    },
+    "builder_validation": {
+      "anchor": {
+        "ok": true,
+        "errors": []
+      },
+      "story": {
+        "ok": true,
+        "errors": []
+      },
+      "calendar": {
+        "ok": true,
+        "errors": []
+      }
+    },
+    "simulated_cards": [
+      {
+        "title": "Priya & Arjun",
+        "subtitle": "Bride wants mandap facing east",
+        "time": "Today",
+        "subtitle_raw": "Bride wants mandap facing east",
+        "time_raw": "2026-04-17"
+      },
+      {
+        "title": "Sarah & Mike",
+        "subtitle": "Confirm cocktail hour start time",
+        "time": "Apr 20",
+        "subtitle_raw": "Confirm cocktail hour start time",
+        "time_raw": "2026-04-20"
+      },
+      {
+        "title": "Lee & Hana",
+        "subtitle": "Rain backup: banquet hall",
+        "time": "Apr 23",
+        "subtitle_raw": "Rain backup: banquet hall",
+        "time_raw": "2026-04-23"
+      }
+    ],
+    "belongs_to": "Event.couple_id->Couple",
+    "findings": []
+  }
+}
