@@ -55,8 +55,9 @@ describe('buildCalendarSpec', () => {
     const spec = buildCalendarSpec(makeMockCalendarData(), getTutorV2());
     expect(spec.elements['month-grid']).toBeDefined();
     expect(spec.elements['month-grid'].type).toBe('MonthGrid');
-    expect(spec.elements['month-grid'].props.entityType).toBe('Class');
-    expect(spec.elements['month-grid'].props.dateField).toBe('datetime');
+    expect(spec.elements['month-grid'].props.year).toBe(2026);
+    expect(spec.elements['month-grid'].props.month).toBe(4);
+    expect((spec.elements['month-grid'].props as any).events['2026-04-16']).toBeDefined();
   });
 
   test('shows DayDetail when date is selected with events', () => {
@@ -72,7 +73,7 @@ describe('buildCalendarSpec', () => {
     );
     expect(spec.elements['day-detail']).toBeDefined();
     expect(spec.elements['day-detail'].type).toBe('DayDetail');
-    expect((spec.elements['day-detail'].props as any).items.length).toBe(1);
+    expect((spec.elements['day-detail'].props as any).events.length).toBe(1);
   });
 
   test('shows EmptyState when date is selected but no events', () => {

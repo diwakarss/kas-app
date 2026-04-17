@@ -57,9 +57,12 @@ function formatTime(time: string): string {
     const hour12 = h % 12 || 12;
     return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
   }
-  // If it's an ISO datetime, extract and format the time
-  if (time.includes('T')) {
+  // If it's an ISO datetime, extract and format the time.
+  // Use a strict regex rather than .includes('T') — strings like "Today"/"Tomorrow"
+  // also contain 'T' and would render as "12:NaN AM".
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(time)) {
     const date = new Date(time);
+    if (isNaN(date.getTime())) return '';
     const h = date.getHours();
     const m = date.getMinutes();
     const period = h >= 12 ? 'PM' : 'AM';

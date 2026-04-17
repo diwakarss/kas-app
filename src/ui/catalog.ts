@@ -166,9 +166,11 @@ export const catalog = defineCatalog(schema, {
 
     MonthGrid: {
       props: z.object({
-        entityType: z.string(),
-        dateField: z.string(),
-        displayTemplate: z.string(),
+        year: z.number(),
+        month: z.number(),
+        events: z.record(z.string(), z.array(z.any())),
+        selectedDate: z.string().nullable(),
+        onSelectDate: z.any(),
       }),
       slots: [],
       description: 'Calendar month grid showing entity records on their dates.',
@@ -177,13 +179,8 @@ export const catalog = defineCatalog(schema, {
     DayDetail: {
       props: z.object({
         date: z.string(),
-        items: z.array(
-          z.object({
-            display: z.string(),
-            entityType: z.string(),
-            entityId: z.number(),
-          }),
-        ),
+        events: z.array(z.any()),
+        onEventPress: z.any(),
       }),
       slots: [],
       description: 'Day detail view showing all items for a selected calendar date.',
@@ -214,6 +211,16 @@ export const catalog = defineCatalog(schema, {
       slots: ['default'],
       description:
         'Responsive card layout. On phones (<768px) renders a single column. On tablets renders a 2-column grid.',
+    },
+
+    DetailRow: {
+      props: z.object({
+        label: z.string(),
+        value: z.string(),
+      }),
+      slots: [],
+      description:
+        'Label/value row used on the Story screen to surface an entity field. Label left (mist), value right (clay).',
     },
   },
 
@@ -268,7 +275,7 @@ export const kasComponentNames = [
   'EntityCard', 'TimelineEvent', 'StatsCard', 'Greeting', 'SummaryStats',
   'ComingUpCard', 'WarningBadge', 'FieldRenderer', 'FloatingActions',
   'EmptyState', 'SectionHeader', 'MonthGrid', 'DayDetail', 'StepProgress', 'EntityPicker',
-  'CardGrid',
+  'CardGrid', 'DetailRow',
 ] as const;
 
 /** All KAS action names */

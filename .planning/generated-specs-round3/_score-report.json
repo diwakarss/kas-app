@@ -1,0 +1,494 @@
+{
+  "law-firm.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{description}",
+        "reason": "rich(description)"
+      },
+      "time": {
+        "score": 6,
+        "field": "court_date"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "5/5"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 8
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 4,
+        "picker_steps": 4
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Matter",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{description}",
+        "time_field": "court_date",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Matters Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Matters",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "personal-chef.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{menu_plan}",
+        "reason": "rich(menu_plan)"
+      },
+      "time": {
+        "score": 6,
+        "field": "date"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "3/3"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 5
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 2,
+        "picker_steps": 2
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Booking",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{menu_plan}",
+        "time_field": "date",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Bookings Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Bookings",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "real-estate.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{property.address}",
+        "reason": "rich(property.address)"
+      },
+      "time": {
+        "score": 6,
+        "field": "scheduled_for"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "4/4"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 5
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 4,
+        "picker_steps": 4
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Showing",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{property.address}",
+        "time_field": "scheduled_for",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Showings Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Showings",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "tailor.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{order.description}",
+        "reason": "rich(order.description)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{notes}",
+        "reason": "rich(notes)"
+      },
+      "time": {
+        "score": 6,
+        "field": "scheduled_at"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "5/5"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 7
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 3,
+        "picker_steps": 3
+      },
+      "money": {
+        "score": 5,
+        "note": "fired correctly"
+      }
+    },
+    "raw_valid": false,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Fitting",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{order.description}",
+        "subtitle": "{notes}",
+        "time_field": "scheduled_at",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Fittings Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Fittings",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "tour-guide.json": {
+    "score": 96,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{meeting_point}",
+        "reason": "rich(meeting_point)"
+      },
+      "subtitle": {
+        "score": 8,
+        "template": "{tour_type}",
+        "reason": "medium(tour_type)"
+      },
+      "time": {
+        "score": 6,
+        "field": "date"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "4/4"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 6
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 3,
+        "picker_steps": 3
+      },
+      "money": {
+        "score": 5,
+        "note": "manual balance field preserved"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Tour",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{meeting_point}",
+        "subtitle": "{tour_type}",
+        "time_field": "date",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Tours Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Tours",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "wedding-planner.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{couple.name}",
+        "reason": "rich(couple.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{notes}",
+        "reason": "rich(notes)"
+      },
+      "time": {
+        "score": 6,
+        "field": "date"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "5/5"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 9
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 4,
+        "picker_steps": 4
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Event",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{couple.name}",
+        "subtitle": "{notes}",
+        "time_field": "date",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Events Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Events",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  }
+}

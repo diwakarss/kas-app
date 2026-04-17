@@ -1,0 +1,494 @@
+{
+  "dog-walker.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{client.address}",
+        "reason": "rich(client.address)"
+      },
+      "time": {
+        "score": 6,
+        "field": "scheduled_at"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "5/5"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 7
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 4,
+        "picker_steps": 4
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Walk",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{client.address}",
+        "time_field": "scheduled_at",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Walks Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Walks",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "math-tutor.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{description}",
+        "reason": "rich(description)"
+      },
+      "time": {
+        "score": 6,
+        "field": "date"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "6/6"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 9
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 5,
+        "picker_steps": 5
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Lesson",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{description}",
+        "time_field": "date",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Lessons Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Lessons",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "mobile-car-wash.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{package} Wash Package - {status}",
+        "reason": "medium(package,status)+literal"
+      },
+      "time": {
+        "score": 6,
+        "field": "schedule"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "5/5"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 6
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 6,
+        "picker_steps": 6
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Appointment",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{package} Wash Package - {status}",
+        "time_field": "schedule",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Appointments Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Appointments",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "photo-studio.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{description}",
+        "reason": "rich(description)"
+      },
+      "time": {
+        "score": 6,
+        "field": "schedule"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "5/5"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 8
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 6,
+        "picker_steps": 6
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Session",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{description}",
+        "time_field": "schedule",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Sessions Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Sessions",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "plumber.json": {
+    "score": 100,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 12,
+        "template": "{description}",
+        "reason": "rich(description)"
+      },
+      "time": {
+        "score": 6,
+        "field": "scheduled_at"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "5/5"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 7
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 4,
+        "picker_steps": 4
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": true,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Job",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{description}",
+        "time_field": "scheduled_at",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Jobs Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Jobs",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  },
+  "yoga-studio.json": {
+    "score": 96,
+    "breakdown": {
+      "core": 25,
+      "title": {
+        "score": 12,
+        "template": "{client.name}",
+        "reason": "rich(client.name)"
+      },
+      "subtitle": {
+        "score": 8,
+        "template": "{type}",
+        "reason": "medium(type)"
+      },
+      "time": {
+        "score": 6,
+        "field": "start_date"
+      },
+      "story": {
+        "score": 15,
+        "coverage": "5/5"
+      },
+      "polish": {
+        "score": 15,
+        "greet": "Good {time_of_day}, {business_name}",
+        "stats_count": 3,
+        "chat_count": 7
+      },
+      "sample": {
+        "score": 5,
+        "note": "detectVertical at render time"
+      },
+      "pickers": {
+        "score": 5,
+        "fk_steps": 3,
+        "picker_steps": 3
+      },
+      "money": {
+        "score": 5,
+        "note": "N/A (no candidate)"
+      }
+    },
+    "raw_valid": false,
+    "norm_valid": true,
+    "injection_warnings": [],
+    "anchor": {
+      "entity": "Membership",
+      "type": "day_schedule",
+      "greeting_template": "Good {time_of_day}, {business_name}",
+      "date_label": "today",
+      "card_display": {
+        "title": "{client.name}",
+        "subtitle": "{type}",
+        "time_field": "start_date",
+        "actions": [
+          "edit",
+          "delete"
+        ]
+      },
+      "empty_state": {
+        "message": "No items today",
+        "action": "Add an item",
+        "fallback_view": "calendar"
+      },
+      "summary": {
+        "stats": [
+          {
+            "label": "Memberships Today",
+            "query": "today_count"
+          },
+          {
+            "label": "This Week",
+            "query": "week_count"
+          },
+          {
+            "label": "Active Memberships",
+            "query": "active_count"
+          }
+        ]
+      }
+    }
+  }
+}

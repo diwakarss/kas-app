@@ -185,8 +185,8 @@ const kasComponents = {
   DayDetail: ({ props }: any) => (
     <DayDetailComponent
       date={props.date}
-      events={props.items ?? []}
-      onEventPress={() => {}}
+      events={props.events ?? []}
+      onEventPress={props.onEventPress ?? (() => {})}
     />
   ),
 

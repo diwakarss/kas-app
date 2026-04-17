@@ -24,8 +24,10 @@ export default function CalendarScreen() {
 
   const uiSpec = useMemo(() => {
     if (!calData || !spec) return null;
-    return buildCalendarSpec(calData, ensureV2(spec));
-  }, [calData, spec]);
+    return buildCalendarSpec(calData, ensureV2(spec), (entityType, entityId) => {
+      navigation.navigate('Story', { entityType, entityId });
+    });
+  }, [calData, spec, navigation]);
 
   const actionHandlers = useMemo(() => ({
     navigate: async (params: Record<string, unknown>) => {

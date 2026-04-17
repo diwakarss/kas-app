@@ -10,18 +10,25 @@ import type { CalendarData, CalendarDayEvent } from '../../hooks/useCalendarData
 import type { KASAppSpecV2 } from '../../core/types/kas-spec-v2';
 import { catalog } from '../catalog';
 
-export function buildCalendarSpec(calendarData: CalendarData, appSpec: KASAppSpecV2): Spec {
+export function buildCalendarSpec(
+  calendarData: CalendarData,
+  appSpec: KASAppSpecV2,
+  onEventPress: (entityType: string, entityId: number) => void = () => {},
+): Spec {
   const elements: Record<string, any> = {};
   const rootChildren: string[] = [];
   const cal = appSpec.ui_hints.calendar;
 
-  // Month grid
+  // Month grid — wire live event data + select handler so day dots render
+  // and taps update the selected day in useCalendarData.
   elements['month-grid'] = {
     type: 'MonthGrid',
     props: {
-      entityType: cal.entity,
-      dateField: cal.date_field,
-      displayTemplate: cal.display,
+      year: calendarData.year,
+      month: calendarData.month,
+      events: calendarData.events,
+      selectedDate: calendarData.selectedDate,
+      onSelectDate: calendarData.selectDate,
     },
     children: [],
   };
@@ -33,11 +40,8 @@ export function buildCalendarSpec(calendarData: CalendarData, appSpec: KASAppSpe
       type: 'DayDetail',
       props: {
         date: calendarData.selectedDate,
-        items: calendarData.selectedEvents.map((ev) => ({
-          display: ev.display,
-          entityType: ev.entityType,
-          entityId: ev.id,
-        })),
+        events: calendarData.selectedEvents,
+        onEventPress,
       },
       children: [],
     };

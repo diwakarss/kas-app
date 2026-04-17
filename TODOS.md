@@ -228,3 +228,25 @@
 **Effort:** M (human: 4h, CC: 1h)
 **Priority:** P3
 **No blockers**
+
+### Multi-hop template resolution (Phase 3.3)
+**Status:** Deferred from Phase 3 — not a bug, polish item.
+**What:** Support `{parent.grandparent.field}` dot-notation so e.g. a Fitting
+card can show `{order.client.name}` instead of single-hop `{order.description}`.
+**Why:** Tailor-style chains (Fitting → Order → Client) currently display the
+intermediate entity's primary text. Richer chained titles would surface the
+human stakeholder directly.
+**Touchpoints:**
+- `src/engines/template-engine.ts` — chained lookup for `{a.b.c}` (~15 LOC)
+- `src/hooks/useAnchorData.ts` — batch-fetch grandparents, flatten into
+  `relatedData['a.b']` (~30 LOC, preserves N+1 avoidance)
+- `src/hooks/useStoryData.ts` — same pattern (~30 LOC)
+- `src/generation/services/normalizers/anchor.ts` — Phase D: chain further
+  when Phase C's parent primary is itself a weak FK (~20 LOC)
+- Tests across each layer
+**Effort:** M (human: half day, CC: 2-3h)
+**Priority:** P2
+**Context:** Flagged as "deferred, current single-hop reads fine" in
+`.planning/design-review-round3-post-fix.md`. Re-surfaced during Phase 3
+planning on 2026-04-17.
+**Added:** 2026-04-17

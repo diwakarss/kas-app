@@ -46,19 +46,25 @@ export function useAddFlow(entityType: string, preFill?: Record<string, any>): A
     [spec, entityType]
   );
 
-  // Normalize steps: convert legacy {fields: [...]} format to {field: ...} format
-  // and filter out any malformed steps that don't have a valid field
+  // Normalize steps: convert legacy {fields: [...]} format to {field: ...} format,
+  // filter out malformed steps, and skip steps whose field is already set by preFill.
   const steps = useMemo(() => {
     const rawSteps = flowConfig?.steps ?? [];
     const normalizedSteps: AddFlowStep[] = [];
+    const prefilled = new Set(
+      Object.entries(preFill ?? {})
+        .filter(([, v]) => v !== undefined && v !== null && v !== '')
+        .map(([k]) => k)
+    );
 
     for (const step of rawSteps) {
       if (step.field) {
-        // Correct format: single field per step
+        if (prefilled.has(step.field)) continue;
         normalizedSteps.push(step);
       } else if (Array.isArray((step as any).fields)) {
         // Legacy format: expand fields array into individual steps
         for (const fieldName of (step as any).fields) {
+          if (prefilled.has(fieldName)) continue;
           normalizedSteps.push({
             field: fieldName,
             prompt: `Enter ${fieldName.replace(/_/g, ' ')}`,
@@ -70,14 +76,19 @@ export function useAddFlow(entityType: string, preFill?: Record<string, any>): A
     }
 
     return normalizedSteps;
-  }, [flowConfig]);
+  }, [flowConfig, preFill]);
   const afterAdd = flowConfig?.after_add ?? null;
   const totalSteps = steps.length;
   const currentStepDef = steps[currentStep] ?? null;
 
-  // Determine if this step is a FK picker
+  // Determine if this step is a FK picker.
+  // Step-level hint (field_type: 'entity_picker' + entity_target) wins when
+  // present; otherwise fall back to relationship-derived lookup.
   const fkInfo = useMemo(() => {
     if (!currentStepDef || !entityDef) return null;
+    if (currentStepDef.field_type === 'entity_picker' && currentStepDef.entity_target) {
+      return { target: currentStepDef.entity_target, fk: currentStepDef.field };
+    }
     const rel = entityDef.relationships.find(
       r => r.foreign_key === currentStepDef.field && r.type === 'belongs_to'
     );

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { View, Text, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -21,20 +21,30 @@ export default function AddFlowScreen() {
   const flow = useAddFlow(entityType, preFill);
   const [afterAddState, setAfterAddState] = useState<{ id: number } | null>(null);
 
+  // ActionProvider from @json-render/react-native captures handlers via
+  // useState on first mount, so later renders would hand back stale closures
+  // over `flow`. Route all handler logic through a ref to always see the
+  // latest flow state.
+  const flowRef = useRef(flow);
+  useEffect(() => {
+    flowRef.current = flow;
+  });
+
   const handleNext = useCallback(() => {
-    if (flow.isLastStep) {
-      const id = flow.submit();
+    const f = flowRef.current;
+    if (f.isLastStep) {
+      const id = f.submit();
       if (id !== null) {
-        if (flow.afterAdd && flow.afterAdd.action !== 'none') {
+        if (f.afterAdd && f.afterAdd.action !== 'none') {
           setAfterAddState({ id });
         } else {
           navigation.goBack();
         }
       }
     } else {
-      flow.next();
+      f.next();
     }
-  }, [flow, navigation]);
+  }, [navigation]);
 
   const uiSpec = useMemo(() => {
     if (!flow.entityDef || flow.steps.length === 0) return null;
@@ -57,23 +67,25 @@ export default function AddFlowScreen() {
   const actionHandlers = useMemo(() => ({
     addFlowNext: async () => handleNext(),
     addFlowBack: async () => {
-      if (flow.currentStep > 0) {
-        flow.back();
+      const f = flowRef.current;
+      if (f.currentStep > 0) {
+        f.back();
       } else {
         navigation.goBack();
       }
     },
     addFlowSkip: async () => {
-      if (flow.isLastStep) {
+      const f = flowRef.current;
+      if (f.isLastStep) {
         handleNext();
       } else {
-        flow.skip();
+        f.skip();
       }
     },
     navigate: async (params: Record<string, unknown>) => {
       navigation.navigate(params.screen as any, params as any);
     },
-  }), [flow, handleNext, navigation]);
+  }), [handleNext, navigation]);
 
   if (!flow.entityDef || flow.steps.length === 0) {
     return (
