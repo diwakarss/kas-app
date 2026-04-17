@@ -88,10 +88,24 @@ export function findPrimaryTextField(entity: Entity | undefined): string {
 }
 
 const SUBTITLE_PREFERRED = ['description', 'reason', 'notes', 'note', 'topic', 'activity', 'service', 'title', 'summary'];
+const CATEGORY_CHOICE_NAMES = /^(type|package|plan|category|kind|level|tier|grade|stage|phase|class|format|variant|option)$/i;
+const STATUS_CHOICE_NAMES = /^(status|state)$/i;
+
+/** A choice field that describes a category (Type=Monthly, Package=Premium) rather than a lifecycle state (Status=Scheduled). */
+export function isCategoryChoice(fieldName: string): boolean {
+  return CATEGORY_CHOICE_NAMES.test(fieldName);
+}
+
+/** A choice field whose values are lifecycle states (Status=Scheduled/Active/Completed). */
+export function isStatusChoice(fieldName: string): boolean {
+  return STATUS_CHOICE_NAMES.test(fieldName);
+}
 
 /**
  * Find the best subtitle field on an entity, excluding the title field.
- * Prefers descriptive text → other text → choice/status → null.
+ * Ranking: descriptive text (description/notes/reason) → other text/note →
+ * category-like choice (type/package/plan) → any other choice → status-like
+ * choice (last resort) → null.
  */
 export function findSubtitleField(entity: Entity | undefined, excludeField: string): string | null {
   if (!entity) return null;
@@ -103,10 +117,14 @@ export function findSubtitleField(entity: Entity | undefined, excludeField: stri
     const field = entity.fields.find(f => f.name.toLowerCase() === pref && isUsable(f));
     if (field) return field.name;
   }
-  const textField = entity.fields.find(f => f.type === 'text' && isUsable(f));
+  const textField = entity.fields.find(f => (f.type === 'text' || f.type === 'note') && isUsable(f));
   if (textField) return textField.name;
-  const choiceField = entity.fields.find(f => f.type === 'choice' && isUsable(f));
-  if (choiceField) return choiceField.name;
+  const categoryChoice = entity.fields.find(f => f.type === 'choice' && isUsable(f) && isCategoryChoice(f.name));
+  if (categoryChoice) return categoryChoice.name;
+  const otherChoice = entity.fields.find(f => f.type === 'choice' && isUsable(f) && !isStatusChoice(f.name));
+  if (otherChoice) return otherChoice.name;
+  const statusChoice = entity.fields.find(f => f.type === 'choice' && isUsable(f));
+  if (statusChoice) return statusChoice.name;
   return null;
 }
 

@@ -12,6 +12,7 @@ import {
   findSubtitleField,
   findScheduleDateField,
   validateTemplate,
+  isStatusChoice,
 } from './shared';
 import { isContainerEntity, isPersonLikeEntity } from './roles';
 
@@ -162,6 +163,46 @@ export function normalizeAnchor(
     } else {
       console.log(`[normalizeSpec] Anchor subtitle collided with time_field '${finalTimeField}' and no descriptive field found → cleared subtitle`);
       validatedSubtitle = '';
+    }
+  }
+
+  // Fix: subtitle is a single status-like choice placeholder (e.g. `{status}`)
+  // but the entity has a richer candidate. findSubtitleField already ranks
+  // category/text > status, so asking it to exclude the status field yields
+  // the better option.
+  const statusOnlyMatch = validatedSubtitle.match(/^\{([a-zA-Z_][\w]*)\}$/);
+  if (statusOnlyMatch && anchorEntity && isStatusChoice(statusOnlyMatch[1])) {
+    const alt = findSubtitleField(anchorEntity, statusOnlyMatch[1]);
+    if (alt && alt !== finalTimeField) {
+      console.log(`[normalizeSpec] Anchor subtitle demoted from status '${statusOnlyMatch[1]}' → richer field '{${alt}}'`);
+      validatedSubtitle = `{${alt}}`;
+    }
+  }
+
+  // Phase E: if validated subtitle is a single choice placeholder and a
+  // second belongs_to parent (distinct from the one used in title) has a
+  // rich text field (note/address/description), upgrade to `{parent.text}`.
+  // Covers real-estate Showing → `{property.address}`.
+  const subtitlePlaceholder = validatedSubtitle.match(/^\{([a-zA-Z_][\w]*)\}$/);
+  if (subtitlePlaceholder && anchorEntity) {
+    const subField = anchorEntity.fields.find(f => f.name === subtitlePlaceholder[1]);
+    if (subField && subField.type === 'choice') {
+      const titleParent = validatedTitle.match(/^\{([a-zA-Z_]\w*)\.[\w]+\}$/)?.[1]?.toLowerCase();
+      const belongsToRels = anchorEntity.relationships.filter(r => r.type === 'belongs_to');
+      for (const bt of belongsToRels) {
+        if (bt.target.toLowerCase() === titleParent) continue;
+        const parent = entities.find(e => e.name === bt.target);
+        if (!parent) continue;
+        const richField = parent.fields.find(f =>
+          (f.type === 'note' || (f.type === 'text' && /address|description|notes|summary|topic/i.test(f.name)))
+          && !f.name.endsWith('_id')
+        );
+        if (richField) {
+          console.log(`[normalizeSpec] Anchor subtitle Phase E: '{${subtitlePlaceholder[1]}}' → '{${bt.target.toLowerCase()}.${richField.name}}' via belongs_to ${bt.target}`);
+          validatedSubtitle = `{${bt.target.toLowerCase()}.${richField.name}}`;
+          break;
+        }
+      }
     }
   }
 
