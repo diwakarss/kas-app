@@ -26,6 +26,9 @@ export type Vertical =
   | 'creative_studio'
   | 'repair_shop'
   | 'field_service'
+  | 'bakery'
+  | 'professional_services'
+  | 'pet_walking'
   | 'generic';
 
 export const VERTICAL_SAMPLE_TEXT: Record<Vertical, SampleTextBucket> = {
@@ -131,6 +134,27 @@ export const VERTICAL_SAMPLE_TEXT: Record<Vertical, SampleTextBucket> = {
     location: ['12 Oak Lane', '88 Marine Drive', '5B Koramangala'],
     title: ['Weekly clean', 'Lawn maintenance', 'Hedge pruning'],
   },
+  bakery: {
+    description: ['Custom birthday cake, chocolate ganache', 'Wedding cake, three tiers', 'Sourdough loaves, weekly order'],
+    notes: ['Pickup at 9am sharp', 'Gluten-free, no nuts', 'Delivery to venue'],
+    note: ['Pickup at 9am sharp', 'Gluten-free, no nuts', 'Delivery to venue'],
+    title: ['Birthday cake', 'Wedding cake', 'Sourdough order'],
+    item_name: ['Chocolate Eclair', 'Almond Croissant', 'Sourdough Boule'],
+  },
+  professional_services: {
+    description: ['Quarterly tax filing', 'Year-end bookkeeping review', 'Payroll setup for new client'],
+    notes: ['Awaiting receipts from client', 'Send draft Friday', 'Schedule follow-up call'],
+    note: ['Awaiting receipts from client', 'Send draft Friday', 'Schedule follow-up call'],
+    title: ['Q3 tax filing', 'Year-end review', 'Payroll setup'],
+    topic: ['Tax planning', 'Cash flow review', 'Compliance check'],
+  },
+  pet_walking: {
+    description: ['30-min neighborhood walk', '60-min park walk and play', 'Quick lunch break walk'],
+    notes: ['Reactive to other dogs', 'Loves tennis balls', 'No off-leash, please'],
+    note: ['Reactive to other dogs', 'Loves tennis balls', 'No off-leash, please'],
+    service: ['Standard walk', 'Long walk + play', 'Quick break walk'],
+    title: ['Morning walk', 'Park walk', 'Lunch walk'],
+  },
   generic: {
     description: ['Initial consultation', 'Standard service', 'Follow-up visit'],
     notes: ['Good progress.', 'Follow up next week.', 'On track.'],
@@ -154,7 +178,7 @@ export function detectVertical(spec: Partial<KASAppSpec>): Vertical {
   const haystack = `${entityBag} ${fieldBag}`;
 
   if (/\b(matter|attorney|lawyer|counsel|plaintiff|retainer)\b/.test(haystack)) return 'legal';
-  if (/\b(showing|listing|property|offer|realtor|mls)\b/.test(haystack) && !/\b(crew|cleaner|landscape|lawn)\b/.test(haystack)) return 'real_estate';
+  if (/\b(showing|listing|offer|realtor|mls)\b/.test(haystack) && !/\b(crew|cleaner|landscape|lawn|walker|plumb)\b/.test(haystack)) return 'real_estate';
   if (/\b(fitting|tailor|fabric|garment|alteration|measurement)\b/.test(haystack)) return 'tailoring';
   if (/\b(tour|guide|itinerary|meeting_point|traveler)\b/.test(haystack)) return 'tour_guide';
   if (/\b(chef|menu|meal|dish|tasting|kitchen|booking)\b/.test(haystack) && /\b(client|customer)\b/.test(haystack)) return 'personal_chef';
@@ -165,7 +189,10 @@ export function detectVertical(spec: Partial<KASAppSpec>): Vertical {
   if (/\b(patient|diagnosis|prescription|medication|dentist|clinic)\b/.test(haystack)) return 'health';
   if (/\b(stylist|salon|haircut|colorist|barber)\b/.test(haystack)) return 'salon';
   if (/\b(tattoo|artist|design|shoot|photographer|gallery|editing)\b/.test(haystack)) return 'creative_studio';
-  if (/\b(part|repair|service_request|service_order|mechanic|bike|bicycle|spare)\b/.test(haystack)) return 'repair_shop';
+  if (/\b(part|repair|service_request|service_order|mechanic|bike|bicycle|spare|plumber|plumbing)\b/.test(haystack)) return 'repair_shop';
+  if (/\b(walker|walk|dog_walker)\b/.test(haystack)) return 'pet_walking';
+  if (/\b(bakery|bake|cake|pastry|loaf|production_schedule|order_item|orderitem)\b/.test(haystack)) return 'bakery';
+  if (/\b(taxreturn|tax_return|bookkeeping|payroll|accountant|cpa|attorney_)\b/.test(haystack)) return 'professional_services';
   if (/\b(crew|cleaner|cleaning|landscape|lawn|mowing|pruning|dispatch|job)\b/.test(haystack)) return 'field_service';
   return 'generic';
 }

@@ -28,6 +28,7 @@ import {
   normalizeStatusForRole,
 } from './normalizers/entity';
 import { normalizeAnchor } from './normalizers/anchor';
+import { injectMissingDomainEntities } from './normalizers/inject-entities';
 import {
   normalizeStoryEventsFormat,
   injectBalanceDueStats,
@@ -49,7 +50,14 @@ export { classifyEntityRole, type EntityRole };
  */
 export function normalizeSpec(spec: Partial<KASAppSpec>): KASAppSpec {
   // 1. Entity/field/relationship shape
-  const entities = (spec.entities || []).map(normalizeEntity);
+  let entities = (spec.entities || []).map(normalizeEntity);
+
+  // 1b. Domain-entity injection (Property for dispatch verticals, Pet for
+  // pet-care verticals). Runs before relationship validation so injected
+  // FKs flow through the same fix-up pipeline. Pass meta.name so verticals
+  // like "Evergreen Landscapes" detect even when entity names don't carry
+  // the keyword.
+  entities = injectMissingDomainEntities(entities, spec.meta?.name || '');
   const entityNames = new Set(entities.map(e => e.name));
 
   // 2. Filter relationships to only reference existing entities

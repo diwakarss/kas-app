@@ -128,8 +128,17 @@ Create 3-5 entities that make sense for this business type. Include:
 - Any supporting entities needed
 
 ENTITY MODELING RULES (apply when relevant to this business):
-- If the business sells discrete services with menu pricing (haircut, treatment, lesson package, photo session), include a "Service" or "Package" entity with name, price, duration fields. Activity entities should reference it via service_id.
-- If the business dispatches workers to customer locations (cleaning, landscaping, repair-on-site), include a "Property" or "Location" entity belongs_to the customer, with address, access_notes, and reference it from the activity (job_id, property_id).
+- If the business sells discrete services with menu pricing, include a "Service" or "Package" entity with name, price, duration fields. The activity entity (Appointment/Visit/Session) MUST reference it via service_id.
+  Concrete examples:
+    salon → Service: "Haircut" $40, "Color" $120, "Gloss" $30
+    music school → LessonPackage: "10-lesson piano package" $400
+    spa → Package: "Signature Facial" $90, Membership: "Unlimited monthly" $200
+- If the business dispatches workers to customer LOCATIONS (cleaning, landscaping, plumbing, mobile pet services), include a "Property" or "Home" entity belongs_to the customer, with address, access_notes, gate_code fields. The activity entity MUST reference it via property_id.
+  Concrete examples:
+    house cleaning → Home (address, access_notes) belongs_to Client
+    landscaping → Property (address, lot_size) belongs_to Client
+    plumbing → ServiceAddress (address, unit) belongs_to Client
+- If the business serves pets/animals, include a "Pet" entity belongs_to the owner, with name, species, breed. The activity entity references it via pet_id.
 - If the business holds physical inventory (parts, supplies, products), include a "Part" or "Product" entity with name, sku, stock_count, unit_price.
 
 RELATIONSHIPS ARE CRITICAL:
