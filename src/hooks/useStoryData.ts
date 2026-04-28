@@ -12,6 +12,7 @@ import { evaluateComputedFields } from '../engines/computed-field-engine';
 import { evaluateRules, filterWarningsByLocation, Warning } from '../engines/business-rules-engine';
 import { toTableName, StoryEventSource } from '../data/query-builder';
 import { resolveColor } from '../core/theme/tokens';
+import { humanizeDateStrings } from '../lib/format-dates';
 
 export interface TimelineEventData {
   id: number;
@@ -68,10 +69,18 @@ export function useStoryData(entityType: string, entityId: number, page: number 
     const computed = evaluateComputedFields(entityType, entityId, spec, db, entity);
     const combinedData = { ...entity, ...computed };
 
-    // Stats card (default to entity name if no config)
+    // Stats card (default to entity name if no config). Date-shaped values
+    // get humanized so a leaf-entity stat like "{schedule}" renders
+    // "Apr 28, 2026, 9:00 AM" instead of the raw ISO string. When the spec
+    // provides a separate value template, render label + value as distinct
+    // strings; otherwise fall back to label-only (so StatsCard doesn't show
+    // the same line twice).
     const statsCard = (storyConfig?.stats_card || [{ label: '{name}' }]).map(item => {
-      const label = resolveTemplate(item.label, combinedData, relatedMap);
-      return { label, value: label };
+      const label = humanizeDateStrings(resolveTemplate(item.label, combinedData, relatedMap));
+      const value = item.value
+        ? humanizeDateStrings(resolveTemplate(item.value, combinedData, relatedMap))
+        : label;
+      return { label, value };
     });
 
     // Coming up
@@ -162,8 +171,12 @@ export function useStoryData(entityType: string, entityId: number, page: number 
     // Origin + Context (provide defaults if no config)
     const originTemplate = storyConfig?.origin?.display || storyConfig?.origin || 'Created on {created_at}';
     const contextTemplate = storyConfig?.context?.display || storyConfig?.context || entityDef.display_name;
-    const origin = resolveTemplate(typeof originTemplate === 'string' ? originTemplate : '', combinedData, relatedMap);
-    const context = resolveTemplate(typeof contextTemplate === 'string' ? contextTemplate : '', combinedData, relatedMap);
+    const origin = humanizeDateStrings(
+      resolveTemplate(typeof originTemplate === 'string' ? originTemplate : '', combinedData, relatedMap)
+    );
+    const context = humanizeDateStrings(
+      resolveTemplate(typeof contextTemplate === 'string' ? contextTemplate : '', combinedData, relatedMap)
+    );
 
     // Warnings
     let warnings = evaluateRules(entityType, entity, computed, spec, relatedMap);

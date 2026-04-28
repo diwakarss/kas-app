@@ -94,17 +94,20 @@ function ensureStoryEventsForAllEntities(
     if (result[entity.name]) continue;
     const primary = findPrimaryTextField(entity);
     const primaryDef = entity.fields.find(f => f.name === primary);
-    const needsPrefix =
+    const isDateLikePrimary =
       primaryDef &&
       (primary.endsWith('_id') ||
         ['date', 'datetime', 'number', 'currency'].includes(primaryDef.type));
-    const statsLabel = needsPrefix
-      ? `${entity.display_name}: {${primary}}`
-      : `{${primary}}`;
+    // For leaf entities whose primary is a date / number / FK, render a real
+    // 2-line stats card (label = "Schedule", value = "{schedule}") instead of
+    // a single concatenated string that StatsCard would duplicate top + bottom.
+    const statsCardItems = isDateLikePrimary
+      ? [{ label: primaryDef!.display_name || entity.display_name, value: `{${primary}}` }]
+      : [{ label: `{${primary}}` }];
     console.log(`[normalizeSpec] Minimal story_events for leaf entity '${entity.name}'`);
     result[entity.name] = {
       events: [],
-      stats_card: [{ label: statsLabel }],
+      stats_card: statsCardItems,
       origin: 'Created on {created_at}',
       context: entity.display_name,
     };

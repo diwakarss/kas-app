@@ -8,33 +8,7 @@
 import type { Spec } from '@json-render/core';
 import type { StoryData, TimelineEventData } from '../../hooks/useStoryData';
 import { catalog } from '../catalog';
-
-const ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-function formatDetailValue(value: unknown, fieldType?: string): string {
-  if (value == null) return '';
-  const str = String(value);
-  if (fieldType === 'datetime' || (typeof value === 'string' && ISO_DATETIME_RE.test(str))) {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      return d.toLocaleString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      });
-    }
-  }
-  if (fieldType === 'date' || (typeof value === 'string' && ISO_DATE_RE.test(str))) {
-    const d = new Date(str + (str.length === 10 ? 'T00:00:00' : ''));
-    if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-    }
-  }
-  return str;
-}
+import { formatDateValue } from '../../lib/format-dates';
 
 export function buildStorySpec(storyData: StoryData): Spec {
   const elements: Record<string, any> = {};
@@ -149,7 +123,7 @@ export function buildStorySpec(storyData: StoryData): Spec {
       type: 'DetailRow',
       props: {
         label: field.display_name || field.name,
-        value: formatDetailValue(value, field.type),
+        value: formatDateValue(value, field.type),
       },
       children: [],
     };
