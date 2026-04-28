@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -53,31 +53,34 @@ export default function CalendarScreen() {
     );
   }
 
+  // Imperative back + month nav at the top, then the json-render spec in a
+  // flex-1 wrapper so the spec's SafeArea root inherits the rest of the
+  // viewport. Without this, FloatingActions's `position: absolute, bottom: 0`
+  // anchored to a content-sized container, which left it overlapping the
+  // last week of the calendar grid.
   return (
     <SafeAreaView className="flex-1 bg-dawn">
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Navigation — stays imperative (back + month nav) */}
-        <Pressable
-          onPress={() => navigation.goBack()}
-          className="px-5 py-3"
-        >
-          <Text className="font-inter-medium text-base text-stream">{'\u2190'} Back</Text>
+      <Pressable
+        onPress={() => navigation.goBack()}
+        className="px-5 py-3"
+      >
+        <Text className="font-inter-medium text-base text-stream">{'←'} Back</Text>
+      </Pressable>
+
+      <View className="flex-row items-center justify-between px-5 mb-4">
+        <Pressable onPress={calData.prevMonth} className="p-2">
+          <Text className="font-inter-medium text-lg text-stream">{'‹'}</Text>
         </Pressable>
+        <Text className="font-inter-semibold text-lg text-clay">
+          {MONTH_NAMES[calData.month - 1]} {calData.year}
+        </Text>
+        <Pressable onPress={calData.nextMonth} className="p-2">
+          <Text className="font-inter-medium text-lg text-stream">{'›'}</Text>
+        </Pressable>
+      </View>
 
-        <View className="flex-row items-center justify-between px-5 mb-4">
-          <Pressable onPress={calData.prevMonth} className="p-2">
-            <Text className="font-inter-medium text-lg text-stream">{'\u2039'}</Text>
-          </Pressable>
-          <Text className="font-inter-semibold text-lg text-clay">
-            {MONTH_NAMES[calData.month - 1]} {calData.year}
-          </Text>
-          <Pressable onPress={calData.nextMonth} className="p-2">
-            <Text className="font-inter-medium text-lg text-stream">{'\u203A'}</Text>
-          </Pressable>
-        </View>
-
-        {/* Calendar content via json-render */}
-        {uiSpec && (
+      {uiSpec && (
+        <View className="flex-1">
           <StateProvider>
             <VisibilityProvider>
               <ActionProvider handlers={actionHandlers}>
@@ -87,8 +90,8 @@ export default function CalendarScreen() {
               </ActionProvider>
             </VisibilityProvider>
           </StateProvider>
-        )}
-      </ScrollView>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
