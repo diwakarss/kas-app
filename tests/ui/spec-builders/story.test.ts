@@ -121,4 +121,24 @@ describe('buildStorySpec', () => {
     expect(spec.elements['warning-0']).toBeDefined();
     expect(spec.elements['warning-0'].type).toBe('WarningBadge');
   });
+
+  test('formats datetime DetailRow values to human-readable strings', () => {
+    const spec = buildStorySpec(makeMockStoryData({
+      entity: { id: 7, schedule: '2026-04-17T03:30:00.000Z', status: 'Scheduled' },
+      entityDef: {
+        name: 'Appointment',
+        display_name: 'Appointment',
+        icon: '📅',
+        fields: [
+          { name: 'schedule', type: 'datetime', display_name: 'Schedule' },
+          { name: 'status', type: 'choice', display_name: 'Status' },
+        ],
+      } as any,
+    }));
+    const row = spec.elements['detail-schedule'];
+    expect(row).toBeDefined();
+    expect(row.props.value).not.toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(row.props.value).toMatch(/2026|Apr/);
+    expect(spec.elements['detail-status'].props.value).toBe('Scheduled');
+  });
 });

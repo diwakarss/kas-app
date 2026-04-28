@@ -22,6 +22,10 @@ export type Vertical =
   | 'education'
   | 'pet_care'
   | 'fitness'
+  | 'salon'
+  | 'creative_studio'
+  | 'repair_shop'
+  | 'field_service'
   | 'generic';
 
 export const VERTICAL_SAMPLE_TEXT: Record<Vertical, SampleTextBucket> = {
@@ -97,8 +101,38 @@ export const VERTICAL_SAMPLE_TEXT: Record<Vertical, SampleTextBucket> = {
     notes: ['Tight hips, emphasize warmup', 'Rehab right shoulder', 'Push HR zone 4'],
     note: ['Tight hips, emphasize warmup', 'Rehab right shoulder', 'Push HR zone 4'],
   },
+  salon: {
+    description: ['Cut and color, balayage', 'Trim and gloss treatment', 'Bridal styling, full prep'],
+    service: ['Haircut + Color', 'Gloss Treatment', 'Bridal Styling'],
+    notes: ['Allergic to ammonia', 'Loves warm tones', 'Wants subtle highlights'],
+    note: ['Allergic to ammonia', 'Loves warm tones', 'Wants subtle highlights'],
+    title: ['Cut and color', 'Gloss treatment', 'Bridal styling'],
+  },
+  creative_studio: {
+    description: ['Full sleeve sketch, second sitting', 'Engagement shoot, outdoor', 'Album editing, pass two'],
+    service: ['Custom design', 'Engagement shoot', 'Album edit'],
+    notes: ['Bring reference photos', 'Outdoor shoot, 7am call', 'Awaiting client review'],
+    note: ['Bring reference photos', 'Outdoor shoot, 7am call', 'Awaiting client review'],
+    title: ['Custom design', 'Engagement shoot', 'Album edit'],
+  },
+  repair_shop: {
+    description: ['Brake service and tune-up', 'Drivetrain overhaul', 'Annual safety check'],
+    service: ['Brake service', 'Drivetrain overhaul', 'Safety check'],
+    notes: ['Customer brought own parts', 'Awaiting backordered cassette', 'Pickup confirmed for Friday'],
+    note: ['Customer brought own parts', 'Awaiting backordered cassette', 'Pickup confirmed for Friday'],
+    title: ['Brake service', 'Drivetrain overhaul', 'Safety check'],
+  },
+  field_service: {
+    description: ['Weekly cleaning, focus on kitchen', 'Lawn mow and edge trim', 'Hedge prune and leaf cleanup'],
+    service: ['Weekly clean', 'Lawn maintenance', 'Hedge pruning'],
+    notes: ['Gate code 4421', 'Dog in the yard, friendly', 'Park on the street, not the driveway'],
+    note: ['Gate code 4421', 'Dog in the yard, friendly', 'Park on the street, not the driveway'],
+    address: ['12 Oak Lane', '88 Marine Drive', '5B Koramangala'],
+    location: ['12 Oak Lane', '88 Marine Drive', '5B Koramangala'],
+    title: ['Weekly clean', 'Lawn maintenance', 'Hedge pruning'],
+  },
   generic: {
-    description: ['First item in the list', 'Second item in the list', 'Third item in the list'],
+    description: ['Initial consultation', 'Standard service', 'Follow-up visit'],
     notes: ['Good progress.', 'Follow up next week.', 'On track.'],
     note: ['Good progress.', 'Follow up next week.', 'On track.'],
     address: ['123 MG Road, Bangalore', '45 Anna Nagar, Chennai', '78 Park Street, Kolkata'],
@@ -120,15 +154,19 @@ export function detectVertical(spec: Partial<KASAppSpec>): Vertical {
   const haystack = `${entityBag} ${fieldBag}`;
 
   if (/\b(matter|attorney|lawyer|counsel|plaintiff|retainer)\b/.test(haystack)) return 'legal';
-  if (/\b(showing|listing|property|offer|realtor|mls)\b/.test(haystack)) return 'real_estate';
+  if (/\b(showing|listing|property|offer|realtor|mls)\b/.test(haystack) && !/\b(crew|cleaner|landscape|lawn)\b/.test(haystack)) return 'real_estate';
   if (/\b(fitting|tailor|fabric|garment|alteration|measurement)\b/.test(haystack)) return 'tailoring';
   if (/\b(tour|guide|itinerary|meeting_point|traveler)\b/.test(haystack)) return 'tour_guide';
   if (/\b(chef|menu|meal|dish|tasting|kitchen|booking)\b/.test(haystack) && /\b(client|customer)\b/.test(haystack)) return 'personal_chef';
   if (/\b(couple|wedding|bride|groom|vendor|venue|ceremony)\b/.test(haystack)) return 'wedding';
-  if (/\b(student|lesson|assignment|grade|teacher)\b/.test(haystack)) return 'education';
-  if (/\b(pet|kennel|vet|breed)\b/.test(haystack)) return 'pet_care';
-  if (/\b(workout|exercise|trainer|gym|rep)\b/.test(haystack)) return 'fitness';
+  if (/\b(student|lesson|assignment|grade|teacher|enrollment|attendance|child|parent)\b/.test(haystack)) return 'education';
+  if (/\b(pet|kennel|vet|breed|vaccination)\b/.test(haystack)) return 'pet_care';
+  if (/\b(workout|exercise|trainer|gym|rep|yoga|class|membership)\b/.test(haystack)) return 'fitness';
   if (/\b(patient|diagnosis|prescription|medication|dentist|clinic)\b/.test(haystack)) return 'health';
+  if (/\b(stylist|salon|haircut|colorist|barber)\b/.test(haystack)) return 'salon';
+  if (/\b(tattoo|artist|design|shoot|photographer|gallery|editing)\b/.test(haystack)) return 'creative_studio';
+  if (/\b(part|repair|service_request|service_order|mechanic|bike|bicycle|spare)\b/.test(haystack)) return 'repair_shop';
+  if (/\b(crew|cleaner|cleaning|landscape|lawn|mowing|pruning|dispatch|job)\b/.test(haystack)) return 'field_service';
   return 'generic';
 }
 

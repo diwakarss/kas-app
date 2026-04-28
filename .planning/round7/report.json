@@ -1,0 +1,203 @@
+[
+  {
+    "slug": "accounting-firm",
+    "name": "Ledger & Co",
+    "specId": "0e83bc29-247b-4ee3-82cb-644346262a62",
+    "vertical": "generic",
+    "entities": [
+      "Client",
+      "TaxReturn",
+      "BookkeepingEntry",
+      "Payroll"
+    ],
+    "hasServiceEntity": false,
+    "hasLocationEntity": false,
+    "chatCommands": 7,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=0e83bc29-247b-4ee3-82cb-644346262a62"
+  },
+  {
+    "slug": "bakery",
+    "name": "Daily Crumb Bakery",
+    "specId": "9e6a4083-0958-4fa9-8275-471203efacfe",
+    "vertical": "generic",
+    "entities": [
+      "Client",
+      "Order",
+      "OrderItem",
+      "ProductionSchedule"
+    ],
+    "hasServiceEntity": false,
+    "hasLocationEntity": false,
+    "chatCommands": 6,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=9e6a4083-0958-4fa9-8275-471203efacfe"
+  },
+  {
+    "slug": "beauty-spa",
+    "name": "Lotus Wellness Spa",
+    "specId": "c29f2b23-74d1-44d4-9015-d7039c5dd589",
+    "vertical": "fitness",
+    "entities": [
+      "Client",
+      "Appointment",
+      "Package",
+      "Membership"
+    ],
+    "hasServiceEntity": true,
+    "hasLocationEntity": false,
+    "chatCommands": 5,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=c29f2b23-74d1-44d4-9015-d7039c5dd589"
+  },
+  {
+    "slug": "dental-practice",
+    "name": "Bright Smile Dental",
+    "specId": "9e086ebf-ae9f-4305-8be4-f58dcc5e25fc",
+    "vertical": "health",
+    "entities": [
+      "Patient",
+      "DentalVisit",
+      "Treatment",
+      "Payment"
+    ],
+    "hasServiceEntity": true,
+    "hasLocationEntity": false,
+    "chatCommands": 6,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=9e086ebf-ae9f-4305-8be4-f58dcc5e25fc"
+  },
+  {
+    "slug": "dog-walker",
+    "name": "Pawfect Walks",
+    "specId": "87a54420-5ace-4b23-8db4-6757b26c779c",
+    "vertical": "generic",
+    "entities": [
+      "Client",
+      "Walker",
+      "Walk",
+      "WalkRequest"
+    ],
+    "hasServiceEntity": false,
+    "hasLocationEntity": false,
+    "chatCommands": 6,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=87a54420-5ace-4b23-8db4-6757b26c779c"
+  },
+  {
+    "slug": "hair-salon-v2",
+    "name": "Shear Luxe Salon",
+    "specId": "c01aa486-d803-45aa-aa1a-c802d8a84c3e",
+    "vertical": "salon",
+    "entities": [
+      "Client",
+      "Stylist",
+      "Appointment",
+      "Payment"
+    ],
+    "hasServiceEntity": false,
+    "hasLocationEntity": false,
+    "chatCommands": 5,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=c01aa486-d803-45aa-aa1a-c802d8a84c3e"
+  },
+  {
+    "slug": "house-cleaning-v2",
+    "name": "Sparkle Homes",
+    "specId": "48aa792c-ea19-4c42-86ac-bb57db9289bc",
+    "vertical": "field_service",
+    "entities": [
+      "Client",
+      "Job",
+      "Cleaner",
+      "JobAssignment"
+    ],
+    "hasServiceEntity": false,
+    "hasLocationEntity": false,
+    "chatCommands": 6,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=48aa792c-ea19-4c42-86ac-bb57db9289bc"
+  },
+  {
+    "slug": "landscaping-v2",
+    "name": "Evergreen Landscapes",
+    "specId": "49488b49-ae81-460c-85f3-5bf2d4d47744",
+    "vertical": "field_service",
+    "entities": [
+      "Client",
+      "Crew",
+      "Job",
+      "WorkOrder"
+    ],
+    "hasServiceEntity": false,
+    "hasLocationEntity": false,
+    "chatCommands": 5,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=49488b49-ae81-460c-85f3-5bf2d4d47744"
+  },
+  {
+    "slug": "music-school-v2",
+    "name": "Crescendo Academy",
+    "specId": "e9544c3a-69ef-4533-b692-57478b0d1827",
+    "vertical": "education",
+    "entities": [
+      "Student",
+      "Teacher",
+      "LessonPackage",
+      "Lesson"
+    ],
+    "hasServiceEntity": true,
+    "hasLocationEntity": false,
+    "chatCommands": 5,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=e9544c3a-69ef-4533-b692-57478b0d1827"
+  },
+  {
+    "slug": "plumber",
+    "name": "Quick Pipe Plumbing",
+    "specId": "9df6f3d8-85f7-4157-86fc-e78ce491aa29",
+    "vertical": "repair_shop",
+    "entities": [
+      "Client",
+      "Plumber",
+      "Job",
+      "Part",
+      "JobPart"
+    ],
+    "hasServiceEntity": false,
+    "hasLocationEntity": false,
+    "chatCommands": 6,
+    "addFlows": 5,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=9df6f3d8-85f7-4157-86fc-e78ce491aa29"
+  }
+]

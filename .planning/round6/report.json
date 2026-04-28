@@ -1,0 +1,122 @@
+[
+  {
+    "slug": "bicycle-repair",
+    "name": "Spokes & Wheels",
+    "specId": "80a87247-84f3-4d83-81a2-e320e6555a6a",
+    "entities": 4,
+    "chatCommands": 5,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=80a87247-84f3-4d83-81a2-e320e6555a6a"
+  },
+  {
+    "slug": "daycare",
+    "name": "Little Sprouts Daycare",
+    "specId": "83d62af7-efbe-423d-aa00-6b08e5695ace",
+    "entities": 4,
+    "chatCommands": 5,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=83d62af7-efbe-423d-aa00-6b08e5695ace"
+  },
+  {
+    "slug": "hair-salon",
+    "name": "Shear Luxe Salon",
+    "specId": "0966af07-148c-44b2-b27d-5bb10605cd3f",
+    "entities": 3,
+    "chatCommands": 4,
+    "addFlows": 3,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=0966af07-148c-44b2-b27d-5bb10605cd3f"
+  },
+  {
+    "slug": "house-cleaning",
+    "name": "Sparkle Homes",
+    "specId": "e44527ae-4514-41ca-bffd-94339c25be85",
+    "entities": 4,
+    "chatCommands": 6,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=e44527ae-4514-41ca-bffd-94339c25be85"
+  },
+  {
+    "slug": "landscaping",
+    "name": "Evergreen Landscapes",
+    "specId": "87795de4-ff2e-45c1-ae61-46a6d83f056e",
+    "entities": 4,
+    "chatCommands": 6,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=87795de4-ff2e-45c1-ae61-46a6d83f056e"
+  },
+  {
+    "slug": "music-school",
+    "name": "Crescendo Academy",
+    "specId": "104438a7-431b-478e-84bb-452d43731d90",
+    "entities": 3,
+    "chatCommands": 4,
+    "addFlows": 3,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=104438a7-431b-478e-84bb-452d43731d90"
+  },
+  {
+    "slug": "photo-studio",
+    "name": "Aperture Studios",
+    "specId": "0f57bf86-b291-4e37-b12a-132cd9b68a58",
+    "entities": 4,
+    "chatCommands": 7,
+    "addFlows": 4,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=0f57bf86-b291-4e37-b12a-132cd9b68a58"
+  },
+  {
+    "slug": "tattoo-parlor",
+    "name": "Ink District",
+    "specId": "556fa66b-e370-440a-81eb-6009dd8f1182",
+    "entities": 5,
+    "chatCommands": 7,
+    "addFlows": 5,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=556fa66b-e370-440a-81eb-6009dd8f1182"
+  },
+  {
+    "slug": "vet-clinic",
+    "name": "Happy Paws Vet",
+    "specId": "dce468c4-fd3a-4c8c-a0d5-86d9ca2eb7e6",
+    "entities": 5,
+    "chatCommands": 8,
+    "addFlows": 5,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=dce468c4-fd3a-4c8c-a0d5-86d9ca2eb7e6"
+  },
+  {
+    "slug": "yoga-studio",
+    "name": "Zen Flow Yoga",
+    "specId": "c0953721-cbb3-4604-8515-77c72c037170",
+    "entities": 5,
+    "chatCommands": 8,
+    "addFlows": 5,
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "url": "http://localhost:8081/?spec_id=c0953721-cbb3-4604-8515-77c72c037170"
+  }
+]

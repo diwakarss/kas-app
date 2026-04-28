@@ -185,12 +185,17 @@ export function useAnchorData(): AnchorData | null {
       const rawSubtitle = resolveTemplate(anchor.card_display.subtitle, entity, relatedMap);
       const subtitle = humanizeSubtitle(rawSubtitle);
 
-      // Time display — prefer HH:MM from datetime, else show day label for date-only fields
+      // Time display — prefer HH:MM from datetime in local TZ, else show day label for date-only fields
       const rawTime = dateField ? (entity[dateField] ?? '') : '';
       let time = '';
       if (typeof rawTime === 'string' && rawTime) {
         if (ISO_DATETIME_RE.test(rawTime)) {
-          time = rawTime.split('T')[1]?.substring(0, 5) ?? rawTime;
+          const d = new Date(rawTime);
+          if (!isNaN(d.getTime())) {
+            time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+          } else {
+            time = rawTime.split('T')[1]?.substring(0, 5) ?? rawTime;
+          }
         } else if (ISO_DATE_RE.test(rawTime)) {
           time = formatDayLabel(rawTime);
         } else {

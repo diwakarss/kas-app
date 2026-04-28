@@ -127,6 +127,11 @@ Create 3-5 entities that make sense for this business type. Include:
 - A main "activity" entity (appointment/class/session/transaction)
 - Any supporting entities needed
 
+ENTITY MODELING RULES (apply when relevant to this business):
+- If the business sells discrete services with menu pricing (haircut, treatment, lesson package, photo session), include a "Service" or "Package" entity with name, price, duration fields. Activity entities should reference it via service_id.
+- If the business dispatches workers to customer locations (cleaning, landscaping, repair-on-site), include a "Property" or "Location" entity belongs_to the customer, with address, access_notes, and reference it from the activity (job_id, property_id).
+- If the business holds physical inventory (parts, supplies, products), include a "Part" or "Product" entity with name, sku, stock_count, unit_price.
+
 RELATIONSHIPS ARE CRITICAL:
 - Activity entities MUST have a belongs_to relationship to the person entity.
   Example: Workout belongs_to Client via "client_id" foreign key.
@@ -134,6 +139,10 @@ RELATIONSHIPS ARE CRITICAL:
 - The relationship object must have: {"target": "Client", "type": "belongs_to", "foreign_key": "client_id", "display_in_story": true}
 - story_events MUST exist for every entity that is a belongs_to target (e.g. Client needs story_events showing Workouts).
 - add_flows MUST exist for at least the activity entity with steps for each field.
+
+SAMPLE / DEFAULT VALUES:
+- Each activity entity field must have a "description" or equivalent text field meaningful to the business (e.g. "Cut and color, balayage" for a salon, "Brake service and tune-up" for a bike shop). Avoid placeholder strings like "First item".
+- Schedule fields should fall in business hours (9am-6pm), not 3am.
 
 Return the complete JSON spec with all sections populated.`;
 
