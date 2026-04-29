@@ -24,6 +24,19 @@ Install these once. macOS commands shown — adapt for your OS.
 | Node.js | 20+ | `brew install node` (or use `fnm` / `nvm`) |
 | Bun | 1.3+ | `brew install oven-sh/bun/bun` |
 
+**Windows users:** the rest of this guide assumes a bash-compatible
+shell because the helper scripts under `scripts/` are bash. Easiest path:
+
+- Install **WSL2** (Ubuntu) — Docker Desktop on Windows already requires
+  it. Run all commands inside the WSL terminal. Docker Desktop bridges
+  the WSL distro to the host, so `localhost:7130` etc. work the same.
+- **Or**, use **Git Bash** (ships with Git for Windows) for the bash
+  scripts, and PowerShell for Docker / Node / Bun. Same end result,
+  slightly more shell-juggling.
+
+The PowerShell-only path requires rewriting `scripts/*.sh` and
+`scripts/encrypt-secret.mjs` invocations as `.ps1` — not done yet.
+
 Verify:
 
 ```bash
@@ -108,13 +121,19 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 
 You should see:
 
+Names vary by Docker Compose version — older versions show `insforge-deno`,
+newer ones show `insforge-deno-1`. Both work, just match the pattern:
+
 ```
-insforge-postgres    Up (healthy)
-insforge             Up
-insforge-postgrest   Up
-insforge-deno        Up
-insforge-vector      Up
+insforge-postgres(-1)    Up (healthy)    # the database
+insforge(-1)             Up              # the InsForge backend API
+insforge-postgrest(-1)   Up              # PostgREST (REST over Postgres)
+insforge-deno(-1)        Up              # Deno runtime for edge functions
+insforge-vector(-1)      Up              # optional, vector embeddings
 ```
+
+`insforge-vector` is optional; spec generation doesn't need it. Four
+running containers (without vector) is a healthy stack for our use.
 
 If `insforge` shows `restarting`, give it 30–60 seconds — it waits for
 postgres to be healthy before it migrates.
@@ -172,10 +191,18 @@ that won't decrypt; replace it with the real key.
 
 ```bash
 cd ~/code/peoplenet/kas-app
+
+# Discover the actual container names (they vary by Compose version:
+# `insforge-postgres` vs `insforge-postgres-1`).
+PG=$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])postgres([-_][0-9]+)?$' | head -1)
+DENO=$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])deno([-_][0-9]+)?$' | head -1)
+echo "Postgres: $PG"
+echo "Deno:     $DENO"
+
 # Replace YOUR_KEY_HERE with the actual DeepInfra key
 KEY="YOUR_KEY_HERE"
 CIPHER=$(node scripts/encrypt-secret.mjs "$KEY")
-docker exec insforge-postgres psql -U postgres -d insforge -c \
+docker exec "$PG" psql -U postgres -d insforge -c \
   "UPDATE system.secrets SET value_ciphertext = '$CIPHER', is_active = true, updated_at = NOW() WHERE key = 'DEEPINFRA_API_KEY';"
 ```
 
@@ -184,14 +211,14 @@ Expected output: `UPDATE 1`.
 If the row doesn't exist (`UPDATE 0`), insert it:
 
 ```bash
-docker exec insforge-postgres psql -U postgres -d insforge -c \
+docker exec "$PG" psql -U postgres -d insforge -c \
   "INSERT INTO system.secrets (key, value_ciphertext, is_active) VALUES ('DEEPINFRA_API_KEY', '$CIPHER', true);"
 ```
 
 Restart the Deno runtime so it picks up the new secret on next request:
 
 ```bash
-docker restart insforge-deno
+docker restart "$DENO"
 ```
 
 ### 2e. Smoke-test the backend
@@ -342,11 +369,12 @@ You forgot `WORKER_TIMEOUT_MS=300000` in `insforge-repo/.env`. Set it,
 then `docker compose up -d --force-recreate deno` to apply.
 
 **`{"error":"DEEPINFRA_API_KEY not configured"}`**
-Step 2c didn't take or the encryption key changed. Re-run 2c, then
-`docker restart insforge-deno`.
+Step 2d didn't take or the encryption key changed. Re-run 2d, then
+restart the deno container (find its name via
+`docker ps --format '{{.Names}}' | grep deno`).
 
 **Postgres connection refused inside the deno container**
-Almost always means `insforge-postgres` isn't running.
+Almost always means the postgres container isn't running.
 `docker compose up -d postgres` and wait for healthy.
 
 **Port 8081 in use**
@@ -356,7 +384,7 @@ Another Expo or Metro instance. Kill it: `lsof -i :8081` then
 **Web preview shows "Preview unavailable / Failed to fetch"**
 Backend is down or wrong URL. The app expects
 `http://localhost:7133` for the InsForge edge functions. Check
-`docker ps` shows `insforge-deno` running.
+`docker ps` shows a deno container running.
 
 **Tests fail with "Cannot find package 'chai'"**
 Pre-existing in a foundation submodule, not blocking. Ignore — it's not
@@ -405,7 +433,7 @@ bun run typecheck                         # TypeScript check
 bun run .planning/round7/validate.ts      # Validate all 10 generated specs
 docker compose down                       # Stop backend
 docker compose up -d                      # Start backend
-docker logs --tail 50 insforge-deno       # Edge function logs
+docker logs --tail 50 $(docker ps --format '{{.Names}}' | grep deno | head -1)   # Edge function logs
 ```
 
 If anything in this guide is wrong or out of date, edit it and open a PR.

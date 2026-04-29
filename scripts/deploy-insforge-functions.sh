@@ -27,23 +27,41 @@ set -euo pipefail
 API="${API:-http://localhost:7130}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-change-this-password}"
-DENO_CONTAINER="${DENO_CONTAINER:-insforge-deno}"
+
+# ── Discover container names ──────────────────────────────────────────
+# Docker Compose names containers as either `<service>` (when
+# container_name: is set in compose.yml) or `<project>-<service>-1`
+# (the default v2 pattern). InsForge versions vary, so match by
+# pattern instead of hardcoding.
+find_container() {
+  local pattern="$1"
+  docker ps --format '{{.Names}}' 2>/dev/null \
+    | grep -E "(^|[-_])${pattern}([-_][0-9]+)?$" \
+    | head -1
+}
+
+DENO_CONTAINER="${DENO_CONTAINER:-$(find_container deno)}"
+POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-$(find_container postgres)}"
 
 # ── Locate function source ────────────────────────────────────────────
 # Prefer the running container so the dev never has to set a path.
 # Fall back to a local insforge-repo clone if the container is down.
 SRC_MODE=""
-if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${DENO_CONTAINER}$"; then
+if [ -n "$DENO_CONTAINER" ]; then
   SRC_MODE="container"
   echo "→ Reading function source from container '$DENO_CONTAINER'"
 elif [ -n "${INSFORGE_REPO:-}" ] && [ -d "$INSFORGE_REPO/functions/examples" ]; then
   SRC_MODE="filesystem"
   echo "→ Reading function source from $INSFORGE_REPO/functions/examples"
 else
-  echo "Error: container '$DENO_CONTAINER' is not running and INSFORGE_REPO is not set." >&2
+  echo "Error: no Deno container found and INSFORGE_REPO not set." >&2
   echo "Either start the InsForge stack (cd insforge-repo && docker compose up -d)" >&2
   echo "or set INSFORGE_REPO to your local clone of insforge-repo." >&2
+  echo "Tip: 'docker ps' should show a container with 'deno' in the name." >&2
   exit 1
+fi
+if [ -z "$POSTGRES_CONTAINER" ]; then
+  echo "Warning: no Postgres container found — verification step will be skipped." >&2
 fi
 
 read_source() {
@@ -128,10 +146,12 @@ for slug in generate-spec get-spec; do
 done
 
 # ── Verify ────────────────────────────────────────────────────────────
-echo ""
-echo "→ Final state of functions.definitions:"
-docker exec insforge-postgres psql -U postgres -d insforge -c \
-  "SELECT slug, status, length(code) AS code_bytes, deployed_at FROM functions.definitions ORDER BY slug;"
+if [ -n "$POSTGRES_CONTAINER" ]; then
+  echo ""
+  echo "→ Final state of functions.definitions:"
+  docker exec "$POSTGRES_CONTAINER" psql -U postgres -d insforge -c \
+    "SELECT slug, status, length(code) AS code_bytes, deployed_at FROM functions.definitions ORDER BY slug;"
+fi
 
 echo ""
 echo "✓ Done. Smoke-test with:"
