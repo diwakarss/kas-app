@@ -128,12 +128,18 @@ spec generation) and `get-spec` (fetch a stored spec by id). The source
 lives in your `insforge-repo` clone at `functions/examples/`.
 
 This repo ships a deploy script that logs in as admin and uploads both
-functions. From the kas-app repo root:
+functions. It reads the JS source straight from the running Deno
+container (which has `insforge-repo/functions/examples/` mounted into
+it via docker-compose), so it works regardless of where you cloned
+`insforge-repo` on disk. From the kas-app repo root:
 
 ```bash
-INSFORGE_REPO=~/code/peoplenet/insforge-repo \
-  bash scripts/deploy-insforge-functions.sh
+bash scripts/deploy-insforge-functions.sh
 ```
+
+(If for some reason the Deno container isn't running yet, you can fall
+back to `INSFORGE_REPO=/path/to/your/insforge-repo bash scripts/deploy-insforge-functions.sh`,
+but normally `docker compose up -d` from step 2b is enough.)
 
 You should see:
 

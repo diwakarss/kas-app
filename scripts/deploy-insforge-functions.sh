@@ -1,33 +1,61 @@
 #!/usr/bin/env bash
-# Deploy the InsForge edge functions (generate-spec, get-spec) from the
-# example .js files into a fresh InsForge install.
+# Deploy the InsForge edge functions (generate-spec, get-spec) into a
+# fresh InsForge install.
 #
 # A fresh `docker compose up` doesn't auto-load functions — they live as
 # rows in `functions.definitions` that have to be inserted via the admin
 # API. This script logs in, uploads each function, and verifies status.
 #
+# By default it reads the JS source from the running Deno container
+# (which has `insforge-repo/functions/examples/` mounted at
+# `/app/functions/examples/`). That means it works regardless of where
+# the dev cloned `insforge-repo` on disk — only requirement is that the
+# InsForge stack is running (`docker compose up -d`).
+#
 # Usage:
-#   INSFORGE_REPO=~/code/peoplenet/insforge-repo ./scripts/deploy-insforge-functions.sh
+#   ./scripts/deploy-insforge-functions.sh
+#
 # Optional env:
 #   ADMIN_EMAIL=admin@example.com
 #   ADMIN_PASSWORD=change-this-password
 #   API=http://localhost:7130
+#   DENO_CONTAINER=insforge-deno
+#   INSFORGE_REPO=/path/to/insforge-repo   # fallback if container not running
 
 set -euo pipefail
 
 API="${API:-http://localhost:7130}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-change-this-password}"
-INSFORGE_REPO="${INSFORGE_REPO:-$HOME/code/peoplenet/insforge-repo}"
-FN_DIR="$INSFORGE_REPO/functions/examples"
+DENO_CONTAINER="${DENO_CONTAINER:-insforge-deno}"
 
-if [ ! -d "$FN_DIR" ]; then
-  echo "Error: $FN_DIR not found." >&2
-  echo "Set INSFORGE_REPO to the path of your insforge-repo clone." >&2
+# ── Locate function source ────────────────────────────────────────────
+# Prefer the running container so the dev never has to set a path.
+# Fall back to a local insforge-repo clone if the container is down.
+SRC_MODE=""
+if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${DENO_CONTAINER}$"; then
+  SRC_MODE="container"
+  echo "→ Reading function source from container '$DENO_CONTAINER'"
+elif [ -n "${INSFORGE_REPO:-}" ] && [ -d "$INSFORGE_REPO/functions/examples" ]; then
+  SRC_MODE="filesystem"
+  echo "→ Reading function source from $INSFORGE_REPO/functions/examples"
+else
+  echo "Error: container '$DENO_CONTAINER' is not running and INSFORGE_REPO is not set." >&2
+  echo "Either start the InsForge stack (cd insforge-repo && docker compose up -d)" >&2
+  echo "or set INSFORGE_REPO to your local clone of insforge-repo." >&2
   exit 1
 fi
 
-# Login → get admin access token
+read_source() {
+  local slug="$1"
+  if [ "$SRC_MODE" = "container" ]; then
+    docker exec "$DENO_CONTAINER" cat "/app/functions/examples/${slug}.js"
+  else
+    cat "$INSFORGE_REPO/functions/examples/${slug}.js"
+  fi
+}
+
+# ── Admin login ───────────────────────────────────────────────────────
 echo "→ Logging in as $ADMIN_EMAIL..."
 TOKEN=$(curl -s -m 10 -X POST "$API/api/auth/admin/sessions" \
   -H "Content-Type: application/json" \
@@ -40,30 +68,34 @@ if [ -z "$TOKEN" ]; then
 fi
 echo "  got token (${#TOKEN} chars)"
 
-# Deploy a single function file
+# ── Deploy a single function ──────────────────────────────────────────
 deploy_fn() {
-  local file="$1"
-  local slug
-  slug=$(basename "$file" .js)
-  echo "→ Deploying '$slug' from $file..."
+  local slug="$1"
+  echo "→ Deploying '$slug'..."
 
-  # Build payload as JSON, embedding the JS source as a string.
-  local payload
+  # Pull source and build payload as JSON, embedding the JS as a string.
+  local code payload
+  code=$(read_source "$slug")
+  if [ -z "$code" ]; then
+    echo "  failed: could not read source for '$slug'" >&2
+    exit 1
+  fi
   payload=$(node -e '
-    const fs = require("fs");
-    const code = fs.readFileSync(process.argv[1], "utf8");
-    const slug = process.argv[2];
-    process.stdout.write(JSON.stringify({
-      name: slug,
-      slug,
-      code,
-      description: `Deployed from ${slug}.js`,
-      status: "active",
-    }));
-  ' "$file" "$slug")
+    let buf = "";
+    process.stdin.on("data", c => buf += c);
+    process.stdin.on("end", () => {
+      process.stdout.write(JSON.stringify({
+        name: process.argv[1],
+        slug: process.argv[1],
+        code: buf,
+        description: `Deployed from ${process.argv[1]}.js`,
+        status: "active",
+      }));
+    });
+  ' "$slug" <<< "$code")
 
-  # Try create first (POST). If slug already exists, upgrade via PUT.
-  local response status
+  # Try create (POST). If slug already exists, fall back to update (PUT).
+  local response status body
   response=$(curl -s -m 30 -w "\n%{http_code}" -X POST "$API/api/functions" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
@@ -76,7 +108,6 @@ deploy_fn() {
     return
   fi
 
-  # Likely 409 (already exists) — update via PUT
   echo "  POST returned $status — trying PUT to update..."
   response=$(curl -s -m 30 -w "\n%{http_code}" -X PUT "$API/api/functions/$slug" \
     -H "Content-Type: application/json" \
@@ -92,18 +123,11 @@ deploy_fn() {
   fi
 }
 
-# Deploy the two functions the kas-app preview pipeline needs.
-# generate-spec runs LLM-powered spec generation.
-# get-spec serves stored specs back to the app via spec_id.
 for slug in generate-spec get-spec; do
-  if [ ! -f "$FN_DIR/$slug.js" ]; then
-    echo "Error: $FN_DIR/$slug.js missing" >&2
-    exit 1
-  fi
-  deploy_fn "$FN_DIR/$slug.js"
+  deploy_fn "$slug"
 done
 
-# Verify
+# ── Verify ────────────────────────────────────────────────────────────
 echo ""
 echo "→ Final state of functions.definitions:"
 docker exec insforge-postgres psql -U postgres -d insforge -c \
