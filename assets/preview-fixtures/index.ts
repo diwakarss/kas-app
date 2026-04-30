@@ -1,0 +1,64 @@
+/**
+ * Bundled spec fixtures for offline UI development.
+ *
+ * Each entry is a complete InsForge spec (the same shape `/get-spec`
+ * returns) for one business vertical. Lets a UI developer preview the
+ * app without running the InsForge backend — load with
+ * `http://localhost:8081/?fixture=<slug>`.
+ *
+ * Source: .planning/round6/specs and .planning/round7/specs, copied
+ * into assets so Metro bundles them. Refresh by re-running
+ * `cp .planning/round{6,7}/specs/*.json assets/preview-fixtures/`
+ * after generating new specs.
+ */
+
+import accountingFirm from './accounting-firm.json';
+import bakery from './bakery.json';
+import beautySpa from './beauty-spa.json';
+import bicycleRepair from './bicycle-repair.json';
+import daycare from './daycare.json';
+import dentalPractice from './dental-practice.json';
+import dogWalker from './dog-walker.json';
+import hairSalonV2 from './hair-salon-v2.json';
+import hairSalon from './hair-salon.json';
+import houseCleaningV2 from './house-cleaning-v2.json';
+import houseCleaning from './house-cleaning.json';
+import landscapingV2 from './landscaping-v2.json';
+import landscaping from './landscaping.json';
+import musicSchoolV2 from './music-school-v2.json';
+import musicSchool from './music-school.json';
+import photoStudio from './photo-studio.json';
+import plumber from './plumber.json';
+import tattooParlor from './tattoo-parlor.json';
+import vetClinic from './vet-clinic.json';
+import yogaStudio from './yoga-studio.json';
+
+export const PREVIEW_FIXTURES: Record<string, any> = {
+  'accounting-firm': accountingFirm,
+  bakery,
+  'beauty-spa': beautySpa,
+  'bicycle-repair': bicycleRepair,
+  daycare,
+  'dental-practice': dentalPractice,
+  'dog-walker': dogWalker,
+  'hair-salon': hairSalon,
+  'hair-salon-v2': hairSalonV2,
+  'house-cleaning': houseCleaning,
+  'house-cleaning-v2': houseCleaningV2,
+  landscaping,
+  'landscaping-v2': landscapingV2,
+  'music-school': musicSchool,
+  'music-school-v2': musicSchoolV2,
+  'photo-studio': photoStudio,
+  plumber,
+  'tattoo-parlor': tattooParlor,
+  'vet-clinic': vetClinic,
+  'yoga-studio': yogaStudio,
+};
+
+export const FIXTURE_SLUGS = Object.keys(PREVIEW_FIXTURES).sort();
+
+/** Get a fixture spec by slug. Returns the raw `/get-spec`-shaped JSON. */
+export function getPreviewFixture(slug: string): any | null {
+  return PREVIEW_FIXTURES[slug] ?? null;
+}

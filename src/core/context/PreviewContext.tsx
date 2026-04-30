@@ -14,6 +14,12 @@ import { Platform } from 'react-native';
 export interface PreviewState {
   isPreviewMode: boolean;
   specId: string | null;
+  /**
+   * Bundled fixture slug ("yoga-studio", "vet-clinic", ...) when the URL has
+   * `?fixture=<slug>`. Lets a UI developer preview without the InsForge
+   * backend running.
+   */
+  fixtureSlug: string | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -28,6 +34,7 @@ export interface PreviewContextValue extends PreviewState {
 const defaultState: PreviewContextValue = {
   isPreviewMode: false,
   specId: null,
+  fixtureSlug: null,
   isLoading: false,
   error: null,
   setPreviewReady: () => {},
@@ -41,16 +48,20 @@ export function usePreview(): PreviewContextValue {
 }
 
 /**
- * Extract spec_id from URL query params (web only)
+ * Extract preview source from URL query params (web only).
+ * Either `?spec_id=<uuid>` (fetched from InsForge) or `?fixture=<slug>`
+ * (loaded from a JSON bundled into the app for offline UI work).
  */
-function getSpecIdFromUrl(): string | null {
-  if (Platform.OS !== 'web') return null;
-
+function getPreviewSourceFromUrl(): { specId: string | null; fixtureSlug: string | null } {
+  if (Platform.OS !== 'web') return { specId: null, fixtureSlug: null };
   try {
     const params = new URLSearchParams(window.location.search);
-    return params.get('spec_id');
+    return {
+      specId: params.get('spec_id'),
+      fixtureSlug: params.get('fixture'),
+    };
   } catch {
-    return null;
+    return { specId: null, fixtureSlug: null };
   }
 }
 
@@ -60,11 +71,13 @@ interface PreviewProviderProps {
 
 export function PreviewProvider({ children }: PreviewProviderProps) {
   const [state, setState] = useState<PreviewState>(() => {
-    const specId = getSpecIdFromUrl();
+    const { specId, fixtureSlug } = getPreviewSourceFromUrl();
+    const inPreview = specId !== null || fixtureSlug !== null;
     return {
-      isPreviewMode: specId !== null,
+      isPreviewMode: inPreview,
       specId,
-      isLoading: specId !== null,
+      fixtureSlug,
+      isLoading: inPreview,
       error: null,
     };
   });

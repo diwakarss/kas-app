@@ -246,6 +246,51 @@ view edge functions, and inspect logs.
 
 ---
 
+## UI-only path (skip the backend entirely)
+
+If you're only working on UI / design and don't care about generating
+new specs, **you can skip steps 1b and 2 entirely**. The repo bundles
+20 pre-generated specs under `assets/preview-fixtures/`, and the app
+loads them directly from disk when you use a `?fixture=<slug>` URL.
+
+```bash
+git clone https://github.com/diwakarss/kas-app.git
+cd kas-app
+bun install
+bun run web
+```
+
+Then open any of these in your browser:
+
+```
+http://localhost:8081/?fixture=vet-clinic
+http://localhost:8081/?fixture=yoga-studio
+http://localhost:8081/?fixture=dental-practice
+http://localhost:8081/?fixture=hair-salon-v2
+http://localhost:8081/?fixture=bakery
+```
+
+Full list of available slugs (20 total):
+
+```
+accounting-firm   bakery              beauty-spa          bicycle-repair
+daycare           dental-practice     dog-walker          hair-salon
+hair-salon-v2     house-cleaning      house-cleaning-v2   landscaping
+landscaping-v2    music-school        music-school-v2     photo-studio
+plumber           tattoo-parlor       vet-clinic          yoga-studio
+```
+
+The fixture URL bypasses the auth/login flow and the InsForge backend
+entirely — perfect for iterating on components, theme tokens, or layouts.
+You'll see the `📱 Preview Mode — Sample data only` banner at the top
+to make it clear you're in offline preview.
+
+When the team generates fresh specs (round 8, 9, ...), copy them into
+`assets/preview-fixtures/` and add them to the index in
+`assets/preview-fixtures/index.ts` so they show up here.
+
+---
+
 ## 3. Run the frontend app
 
 ```bash

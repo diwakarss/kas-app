@@ -172,6 +172,27 @@ function topoSortEntities(spec: KASAppSpec, available: string[]): string[] {
 }
 
 /**
+ * Load a preview spec from a bundled fixture JSON. Used when the URL has
+ * `?fixture=<slug>` instead of `?spec_id=<uuid>`. Lets UI development work
+ * happen without the InsForge backend running.
+ */
+function loadPreviewFixture(slug: string): PreviewApiResponse {
+  // Lazy import so the assets bundle doesn't load on every preview path.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { getPreviewFixture } = require('../../../assets/preview-fixtures');
+  const raw = getPreviewFixture(slug);
+  if (!raw) {
+    return { success: false, error: `Unknown fixture '${slug}'. Check assets/preview-fixtures/index.ts.` };
+  }
+  // Fixture JSONs are stored in the same shape as the InsForge `/get-spec`
+  // response: { success, data: { spec, ... } }. Unwrap, then run through the
+  // same normalize + sample-records pipeline the network path uses.
+  const spec = normalizeSpec(raw?.data?.spec ?? raw?.spec ?? raw);
+  const sampleRecords = generateSampleRecords(spec);
+  return { success: true, data: { spec, sampleRecords } };
+}
+
+/**
  * Fetch preview data from InsForge backend API
  */
 async function fetchPreviewSpec(specId: string): Promise<PreviewApiResponse> {
@@ -220,10 +241,17 @@ export function WebSpecProvider({ children }: WebSpecProviderProps) {
         const adapter = await createInMemoryAdapter();
         console.log('[WebSpecProvider] sql.js adapter ready');
 
-        // Preview mode: fetch spec from API
-        if (preview.isPreviewMode && preview.specId) {
-          console.log(`[WebSpecProvider] Preview mode: fetching spec ${preview.specId}`);
-          const response = await fetchPreviewSpec(preview.specId);
+        // Preview mode: load from a bundled fixture (offline UI dev) or
+        // fetch from the InsForge backend.
+        if (preview.isPreviewMode && (preview.specId || preview.fixtureSlug)) {
+          let response: PreviewApiResponse;
+          if (preview.fixtureSlug) {
+            console.log(`[WebSpecProvider] Preview mode: loading fixture '${preview.fixtureSlug}'`);
+            response = loadPreviewFixture(preview.fixtureSlug);
+          } else {
+            console.log(`[WebSpecProvider] Preview mode: fetching spec ${preview.specId}`);
+            response = await fetchPreviewSpec(preview.specId!);
+          }
 
           if (!response.success || !response.data) {
             const errorMsg = response.error || 'Failed to load preview';
