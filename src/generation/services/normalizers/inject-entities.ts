@@ -45,9 +45,9 @@ const RULES: InjectionRule[] = [
       fields: [
         { name: 'label', display_name: 'Label', type: 'text', required: false, searchable: true },
         { name: 'address', display_name: 'Address', type: 'text', required: true, searchable: true },
-        { name: 'access_notes', display_name: 'Access Notes', type: 'note', required: false },
-        { name: 'gate_code', display_name: 'Gate Code', type: 'text', required: false },
-        { name: `${person.name.toLowerCase()}_id`, display_name: person.display_name, type: 'number', required: true },
+        { name: 'access_notes', display_name: 'Access Notes', type: 'note', required: false, searchable: false },
+        { name: 'gate_code', display_name: 'Gate Code', type: 'text', required: false, searchable: false },
+        { name: `${person.name.toLowerCase()}_id`, display_name: person.display_name, type: 'number', required: true, searchable: false },
       ],
       relationships: [
         { target: person.name, type: 'belongs_to', foreign_key: `${person.name.toLowerCase()}_id`, display_in_story: true },
@@ -67,10 +67,10 @@ const RULES: InjectionRule[] = [
       icon: '🐾',
       fields: [
         { name: 'name', display_name: 'Name', type: 'text', required: true, searchable: true },
-        { name: 'species', display_name: 'Species', type: 'choice', required: false, options: ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'] },
-        { name: 'breed', display_name: 'Breed', type: 'text', required: false },
-        { name: 'notes', display_name: 'Notes', type: 'note', required: false },
-        { name: `${person.name.toLowerCase()}_id`, display_name: person.display_name, type: 'number', required: true },
+        { name: 'species', display_name: 'Species', type: 'choice', required: false, searchable: false, options: ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'] },
+        { name: 'breed', display_name: 'Breed', type: 'text', required: false, searchable: false },
+        { name: 'notes', display_name: 'Notes', type: 'note', required: false, searchable: false },
+        { name: `${person.name.toLowerCase()}_id`, display_name: person.display_name, type: 'number', required: true, searchable: false },
       ],
       relationships: [
         { target: person.name, type: 'belongs_to', foreign_key: `${person.name.toLowerCase()}_id`, display_in_story: true },
