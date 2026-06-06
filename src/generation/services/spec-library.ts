@@ -7,8 +7,8 @@
  * - Returns template metadata for matching
  */
 
-import type { KASAppSpec } from '../../core/types/spec';
-import type { TemplateRegistry, TemplateMetadata } from '../types/generation';
+import type { KASAppSpec } from "../../core/types/spec";
+import type { TemplateRegistry, TemplateMetadata } from "../types/generation";
 
 // Template index loaded at module initialization
 let templateRegistry: TemplateRegistry | null = null;
@@ -23,11 +23,14 @@ function loadRegistry(): TemplateRegistry {
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const index = require('../../../assets/templates/index.json');
+    const index = require("../../../assets/templates/index.json");
     templateRegistry = index as TemplateRegistry;
     return templateRegistry;
   } catch (error: any) {
-    console.error('[SpecLibrary] Failed to load template index:', error.message);
+    console.error(
+      "[SpecLibrary] Failed to load template index:",
+      error.message,
+    );
     // Return empty registry as fallback
     templateRegistry = { version: 0, templates: [] };
     return templateRegistry;
@@ -49,24 +52,29 @@ function loadTemplate(templateId: string): KASAppSpec | null {
     // Note: In production, this would use a more robust loading mechanism
     let spec: KASAppSpec;
     switch (templateId) {
-      case 'tutor':
-        spec = require('../../../assets/templates/tutor.json');
+      case "tutor":
+        spec = require("../../../assets/templates/tutor.json");
         break;
-      case 'shopkeeper':
-        spec = require('../../../assets/templates/shopkeeper.json');
+      case "shopkeeper":
+        spec = require("../../../assets/templates/shopkeeper.json");
         break;
-      case 'doctor':
-        spec = require('../../../assets/templates/doctor.json');
+      case "doctor":
+        spec = require("../../../assets/templates/doctor.json");
         break;
       default:
-        console.warn(`[SpecLibrary] Unknown template: ${templateId}`);
+        if (process.env.NODE_ENV !== "test") {
+          console.warn(`[SpecLibrary] Unknown template: ${templateId}`);
+        }
         return null;
     }
 
     templateCache.set(templateId, spec);
     return spec;
   } catch (error: any) {
-    console.error(`[SpecLibrary] Failed to load template ${templateId}:`, error.message);
+    console.error(
+      `[SpecLibrary] Failed to load template ${templateId}:`,
+      error.message,
+    );
     return null;
   }
 }
@@ -92,7 +100,9 @@ export const SpecLibrary = {
     const metadata = registry.templates.find((t) => t.id === templateId);
 
     if (!metadata) {
-      console.warn(`[SpecLibrary] Template not in registry: ${templateId}`);
+      if (process.env.NODE_ENV !== "test") {
+        console.warn(`[SpecLibrary] Template not in registry: ${templateId}`);
+      }
       return null;
     }
 
@@ -131,10 +141,11 @@ export const SpecLibrary = {
     const registry = loadRegistry();
     const normalizedKeyword = keyword.toLowerCase().trim();
 
-    return registry.templates.filter((t) =>
-      t.keywords.some((k) => k.toLowerCase().includes(normalizedKeyword)) ||
-      t.name.toLowerCase().includes(normalizedKeyword) ||
-      t.description.toLowerCase().includes(normalizedKeyword)
+    return registry.templates.filter(
+      (t) =>
+        t.keywords.some((k) => k.toLowerCase().includes(normalizedKeyword)) ||
+        t.name.toLowerCase().includes(normalizedKeyword) ||
+        t.description.toLowerCase().includes(normalizedKeyword),
     );
   },
 
