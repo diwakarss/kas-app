@@ -7,15 +7,15 @@ All tokens live in `src/core/theme/tokens.ts`. When you need a style, import fro
 
 All tokens are designed for a light, warm, low-chroma background with high-contrast text.
 
-| Token    | Hex       | Semantic role                                             | On which background          |
-|----------|-----------|-----------------------------------------------------------|------------------------------|
-| `dawn`   | `#FAF7F2` | Primary app background (warm cream)                       | —                            |
-| `dusk`   | `#1A1614` | Reserved for future dark theme; unused today              | —                            |
-| `clay`   | `#3D3530` | Primary text, headings                                    | `dawn`, white cards          |
-| `mist`   | `#B8AFA6` | Secondary text, labels, inactive state                    | `dawn`, white cards          |
-| `ember`  | `#D4845A` | Warning / urgent accent, primary CTA (FAB)                | `dawn`, white cards          |
-| `bloom`  | `#6B9E78` | Success / confirm accent                                  | `dawn`, white cards          |
-| `stream` | `#5B8BA4` | Link / action / time accent                               | `dawn`, white cards          |
+| Token    | Hex       | Semantic role                                | On which background |
+| -------- | --------- | -------------------------------------------- | ------------------- |
+| `dawn`   | `#FAF7F2` | Primary app background (warm cream)          | —                   |
+| `dusk`   | `#1A1614` | Reserved for future dark theme; unused today | —                   |
+| `clay`   | `#3D3530` | Primary text, headings                       | `dawn`, white cards |
+| `mist`   | `#B8AFA6` | Secondary text, labels, inactive state       | `dawn`, white cards |
+| `ember`  | `#D4845A` | Warning / urgent accent, primary CTA (FAB)   | `dawn`, white cards |
+| `bloom`  | `#6B9E78` | Success / confirm accent                     | `dawn`, white cards |
+| `stream` | `#0D47A1` | Link / action / time accent                  | `dawn`, white cards |
 
 Contrast (WCAG AA target `4.5:1` body, `3:1` large):
 
@@ -27,14 +27,14 @@ Contrast (WCAG AA target `4.5:1` body, `3:1` large):
 
 All weights come from the `Inter` family (loaded in `app.config` via Expo fonts).
 
-| Style        | Family                | Size | Token path                  | Use                          |
-|--------------|-----------------------|------|-----------------------------|------------------------------|
-| `heading`    | `Inter_600SemiBold`   | 20   | `typography.heading`        | Screen headers, greeting     |
-| `subheading` | `Inter_500Medium`     | 16   | `typography.subheading`     | Section titles, card titles  |
-| `body`       | `Inter_400Regular`    | 14   | `typography.body`           | Paragraph text               |
-| `secondary`  | `Inter_400Regular`    | 13   | `typography.secondary`      | Card subtitles, metadata     |
-| `action`     | `Inter_500Medium`     | 14   | `typography.action`         | Links, time, button labels   |
-| `warning`    | `Inter_500Medium`     | 13   | `typography.warning`        | Warning badges               |
+| Style        | Family              | Size | Token path              | Use                         |
+| ------------ | ------------------- | ---- | ----------------------- | --------------------------- |
+| `heading`    | `Inter_600SemiBold` | 20   | `typography.heading`    | Screen headers, greeting    |
+| `subheading` | `Inter_500Medium`   | 16   | `typography.subheading` | Section titles, card titles |
+| `body`       | `Inter_400Regular`  | 14   | `typography.body`       | Paragraph text              |
+| `secondary`  | `Inter_400Regular`  | 13   | `typography.secondary`  | Card subtitles, metadata    |
+| `action`     | `Inter_500Medium`   | 14   | `typography.action`     | Links, time, button labels  |
+| `warning`    | `Inter_500Medium`   | 13   | `typography.warning`    | Warning badges              |
 
 NativeWind utility equivalents (kept in sync by convention — when adding a new size, add it to both):
 
@@ -45,23 +45,23 @@ NativeWind utility equivalents (kept in sync by convention — when adding a new
 
 ## Spacing
 
-| Token | px  | Typical use                               |
-|-------|-----|-------------------------------------------|
-| `xs`  | 4   | Icon gap, badge inner                     |
-| `sm`  | 8   | Row gap, small stack                      |
-| `md`  | 16  | Card padding, section padding             |
-| `lg`  | 24  | Screen-edge margin (also `mx-5` = 20px)   |
-| `xl`  | 32  | Section break                             |
+| Token | px  | Typical use                             |
+| ----- | --- | --------------------------------------- |
+| `xs`  | 4   | Icon gap, badge inner                   |
+| `sm`  | 8   | Row gap, small stack                    |
+| `md`  | 16  | Card padding, section padding           |
+| `lg`  | 24  | Screen-edge margin (also `mx-5` = 20px) |
+| `xl`  | 32  | Section break                           |
 
 ## Border radius
 
-| Token   | px     | Use                              |
-|---------|--------|----------------------------------|
-| `sm`    | 8      | Chips, tags                      |
-| `md`    | 12     | Buttons                          |
-| `lg`    | 16     | Cards (`rounded-2xl` equivalent) |
-| `xl`    | 24     | Modals, sheets                   |
-| `pill`  | 9999   | Pill buttons, status badges      |
+| Token  | px   | Use                              |
+| ------ | ---- | -------------------------------- |
+| `sm`   | 8    | Chips, tags                      |
+| `md`   | 12   | Buttons                          |
+| `lg`   | 16   | Cards (`rounded-2xl` equivalent) |
+| `xl`   | 24   | Modals, sheets                   |
+| `pill` | 9999 | Pill buttons, status badges      |
 
 ## Shadows
 

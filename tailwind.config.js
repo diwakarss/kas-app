@@ -14,7 +14,7 @@ module.exports = {
         mist: "#B8AFA6",
         ember: "#D4845A",
         bloom: "#6B9E78",
-        stream: "#5B8BA4",
+        stream: "#0D47A1",
       },
       fontFamily: {
         inter: ["Inter_400Regular"],

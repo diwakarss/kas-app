@@ -22,6 +22,7 @@ Open [http://localhost:3000](http://localhost:3000)
 Before running the website, ensure:
 
 1. **Backend is running** (port 7131)
+
    ```bash
    cd ../backend
    docker compose up -d
@@ -42,18 +43,19 @@ Before running the website, ensure:
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:7131` | Backend API |
+| Variable                  | Default                  | Description      |
+| ------------------------- | ------------------------ | ---------------- |
+| `NEXT_PUBLIC_API_URL`     | `http://localhost:7131`  | Backend API      |
 | `NEXT_PUBLIC_PREVIEW_URL` | `http://localhost:19006` | Expo Web preview |
 
 ## Design System
 
 Uses the "Liquid Story" design tokens:
+
 - **dawn** (#FAF7F2) — Background
 - **clay** (#3D3530) — Primary text
 - **mist** (#B8AFA6) — Secondary text
-- **stream** (#5B8BA4) — Primary button
+- **stream** (#0D47A1) — Primary button
 - **ember** (#D4845A) — Error
 - **bloom** (#6B9E78) — Success
 

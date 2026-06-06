@@ -8,9 +8,9 @@
   <!-- Magnifying glass -->
   <g transform="translate(60, 50)">
     <!-- Glass circle -->
-    <circle cx="40" cy="40" r="35" fill="white" stroke="#5B8BA4" stroke-width="4"/>
+    <circle cx="40" cy="40" r="35" fill="white" stroke="#0D47A1" stroke-width="4"/>
     <!-- Inner reflection -->
-    <path d="M25 30 Q30 20 45 25" fill="none" stroke="#5B8BA4" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+    <path d="M25 30 Q30 20 45 25" fill="none" stroke="#0D47A1" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
     <!-- Handle -->
     <line x1="65" y1="65" x2="90" y2="90" stroke="#3D3530" stroke-width="6" stroke-linecap="round"/>
   </g>

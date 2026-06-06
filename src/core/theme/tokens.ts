@@ -1,11 +1,11 @@
 export const colors = {
-  dawn: '#FAF7F2',
-  dusk: '#1A1614',
-  clay: '#3D3530',
-  mist: '#B8AFA6',
-  ember: '#D4845A',
-  bloom: '#6B9E78',
-  stream: '#5B8BA4',
+  dawn: "#FAF7F2",
+  dusk: "#1A1614",
+  clay: "#3D3530",
+  mist: "#B8AFA6",
+  ember: "#D4845A",
+  bloom: "#6B9E78",
+  stream: "#0D47A1",
 } as const;
 
 export type ColorToken = keyof typeof colors;
@@ -17,32 +17,32 @@ export function resolveColor(token: string): string {
 
 export const typography = {
   heading: {
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: "Inter_600SemiBold",
     fontSize: 20,
     color: colors.clay,
   },
   subheading: {
-    fontFamily: 'Inter_500Medium',
+    fontFamily: "Inter_500Medium",
     fontSize: 16,
     color: colors.clay,
   },
   body: {
-    fontFamily: 'Inter_400Regular',
+    fontFamily: "Inter_400Regular",
     fontSize: 14,
     color: colors.clay,
   },
   secondary: {
-    fontFamily: 'Inter_400Regular',
+    fontFamily: "Inter_400Regular",
     fontSize: 13,
     color: colors.mist,
   },
   action: {
-    fontFamily: 'Inter_500Medium',
+    fontFamily: "Inter_500Medium",
     fontSize: 14,
     color: colors.stream,
   },
   warning: {
-    fontFamily: 'Inter_500Medium',
+    fontFamily: "Inter_500Medium",
     fontSize: 13,
     color: colors.ember,
   },
@@ -54,7 +54,7 @@ export const cardStyle = {
   backgroundColor: colors.dawn,
   borderRadius: 16,
   padding: 16,
-  shadowColor: 'rgba(61,53,48,0.08)',
+  shadowColor: "rgba(61,53,48,0.08)",
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 1,
   shadowRadius: 8,
@@ -63,7 +63,7 @@ export const cardStyle = {
 
 /** Shared shadow preset for elevated surfaces (cards, stats, etc). */
 export const cardShadow = {
-  shadowColor: '#3D3530',
+  shadowColor: "#3D3530",
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.08,
   shadowRadius: 8,

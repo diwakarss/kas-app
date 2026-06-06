@@ -42,9 +42,9 @@
 
   <!-- Thought bubble (ideas waiting) -->
   <g transform="translate(45, 130)" opacity="0.4">
-    <circle cx="0" cy="0" r="4" fill="#5B8BA4"/>
-    <circle cx="8" cy="-5" r="3" fill="#5B8BA4"/>
-    <circle cx="14" cy="-12" r="2" fill="#5B8BA4"/>
+    <circle cx="0" cy="0" r="4" fill="#0D47A1"/>
+    <circle cx="8" cy="-5" r="3" fill="#0D47A1"/>
+    <circle cx="14" cy="-12" r="2" fill="#0D47A1"/>
   </g>
 
   <!-- Sparkle (inspiration) -->

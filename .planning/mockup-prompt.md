@@ -18,7 +18,7 @@ stat labels that didn't exist in code).
 > - All text in **Inter**. Heading 20px semibold, body 14px regular,
 >   metadata 13px regular, action 14px medium.
 > - Palette: primary text **#3D3530** (clay), secondary **#B8AFA6** (mist),
->   accent **#5B8BA4** (stream), success **#6B9E78** (bloom),
+>   accent **#0D47A1** (stream), success **#6B9E78** (bloom),
 >   urgent **#D4845A** (ember). No other colors, no gradients.
 > - Card: white `#FFFFFF`, 16px corner radius, 16px padding, 20px horizontal
 >   margin, 12px gap between cards. Shadow: `0 2px 8px rgba(61,53,48,0.08)`.
@@ -63,15 +63,15 @@ stat labels that didn't exist in code).
 
 ## Per-vertical inputs to supply
 
-| Field | Example |
-|---|---|
-| Business name | "Priya's Music School" |
-| Vertical | music-school, cafe, grooming, plumbing … |
-| Anchor entity | Class |
-| Anchor title template | `{student.name}` |
-| Anchor subtitle template | `{topic}` |
-| Stats | `Today / This Week / This Month` |
-| Sample records (3–4) | distinct names, distinct times |
+| Field                    | Example                                  |
+| ------------------------ | ---------------------------------------- |
+| Business name            | "Priya's Music School"                   |
+| Vertical                 | music-school, cafe, grooming, plumbing … |
+| Anchor entity            | Class                                    |
+| Anchor title template    | `{student.name}`                         |
+| Anchor subtitle template | `{topic}`                                |
+| Stats                    | `Today / This Week / This Month`         |
+| Sample records (3–4)     | distinct names, distinct times           |
 
 ## Review checklist before accepting a mockup
 
