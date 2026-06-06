@@ -8,9 +8,9 @@
  * FieldRenderer and EntityPicker use FieldChangeContext for value changes.
  */
 
-import type { Spec } from '@json-render/core';
-import type { AddFlowStep, Entity, Field } from '../../core/types/spec';
-import { catalog } from '../catalog';
+import type { Spec } from "@json-render/core";
+import type { AddFlowStep, Entity, Field } from "../../core/types/spec";
+import { catalog } from "../catalog";
 
 export interface AddFlowInput {
   entityDef: Entity;
@@ -32,8 +32,8 @@ export function buildAddFlowSpec(input: AddFlowInput): Spec {
   const rootChildren: string[] = [];
 
   // Step progress
-  elements['step-progress'] = {
-    type: 'StepProgress',
+  elements["step-progress"] = {
+    type: "StepProgress",
     props: {
       currentStep: input.currentStep,
       totalSteps: input.totalSteps,
@@ -41,31 +41,31 @@ export function buildAddFlowSpec(input: AddFlowInput): Spec {
     },
     children: [],
   };
-  rootChildren.push('step-progress');
+  rootChildren.push("step-progress");
 
   // Context summary (if available)
   if (input.contextSummary) {
-    elements['context'] = {
-      type: 'Paragraph',
-      props: { text: input.contextSummary, fontSize: 13, color: '#B8AFA6' },
+    elements["context"] = {
+      type: "Paragraph",
+      props: { text: input.contextSummary, fontSize: 13, color: "#B8AFA6" },
       children: [],
     };
-    rootChildren.push('context');
+    rootChildren.push("context");
   }
 
   // Current field
   if (input.currentStepDef) {
-    elements['prompt'] = {
-      type: 'Heading',
-      props: { text: input.currentStepDef.prompt, level: 'h3' },
+    elements["prompt"] = {
+      type: "Heading",
+      props: { text: input.currentStepDef.prompt, level: "h3" },
       children: [],
     };
-    rootChildren.push('prompt');
+    rootChildren.push("prompt");
 
     if (input.fkTarget) {
       // FK field — render EntityPicker
-      elements['field'] = {
-        type: 'EntityPicker',
+      elements["field"] = {
+        type: "EntityPicker",
         props: {
           options: input.fkOptions,
           entityDisplayName: input.fkTarget,
@@ -75,14 +75,17 @@ export function buildAddFlowSpec(input: AddFlowInput): Spec {
       };
     } else if (input.fieldDef) {
       // Regular field — render FieldRenderer
-      elements['field'] = {
-        type: 'FieldRenderer',
+      elements["field"] = {
+        type: "FieldRenderer",
         props: {
           fieldType: input.fieldDef.type,
           value: input.currentValue ?? null,
           label: input.fieldDef.display_name,
           required: input.currentStepDef.required,
-          placeholder: input.currentStepDef.placeholder ?? input.fieldDef.placeholder ?? null,
+          placeholder:
+            input.currentStepDef.placeholder ??
+            input.fieldDef.placeholder ??
+            null,
           prefix: input.currentStepDef.prefix ?? input.fieldDef.prefix ?? null,
           suffix: input.currentStepDef.suffix ?? input.fieldDef.suffix ?? null,
           options: input.fieldDef.options ?? null,
@@ -92,71 +95,77 @@ export function buildAddFlowSpec(input: AddFlowInput): Spec {
       };
     }
 
-    if (elements['field']) {
-      rootChildren.push('field');
+    if (elements["field"]) {
+      rootChildren.push("field");
     }
 
     // Skip button (if not required)
     if (!input.currentStepDef.required && input.currentStepDef.skip_text) {
-      elements['skip-btn'] = {
-        type: 'Button',
+      elements["skip-btn"] = {
+        type: "Button",
         props: {
           label: input.currentStepDef.skip_text,
-          variant: 'ghost',
-          size: 'sm',
+          variant: "ghost",
+          size: "sm",
         },
         children: [],
-        on: { press: { action: 'addFlowSkip', params: {} } },
+        on: { press: { action: "addFlowSkip", params: {} } },
       };
-      rootChildren.push('skip-btn');
+      rootChildren.push("skip-btn");
     }
   }
 
   // Navigation buttons
   const navChildren: string[] = [];
 
-  if (input.currentStep > 0) {
-    elements['back-btn'] = {
-      type: 'Button',
-      props: { label: 'Back', variant: 'outline', size: 'md' },
-      children: [],
-      on: { press: { action: 'addFlowBack', params: {} } },
-    };
-    navChildren.push('back-btn');
-  }
-
-  elements['next-btn'] = {
-    type: 'Button',
+  elements["back-btn"] = {
+    type: "Button",
     props: {
-      label: input.isLastStep ? 'Done' : 'Next',
-      variant: 'primary',
-      size: 'md',
+      label: input.currentStep > 0 ? "Back" : "Cancel",
+      variant: "outline",
+      size: "md",
+    },
+    children: [],
+    on: { press: { action: "addFlowBack", params: {} } },
+  };
+  navChildren.push("back-btn");
+
+  elements["next-btn"] = {
+    type: "Button",
+    props: {
+      label: input.isLastStep ? "Done" : "Next",
+      variant: "primary",
+      size: "md",
       disabled: !input.canAdvance,
     },
     children: [],
-    on: { press: { action: 'addFlowNext', params: {} } },
+    on: { press: { action: "addFlowNext", params: {} } },
   };
-  navChildren.push('next-btn');
+  navChildren.push("next-btn");
 
-  elements['nav-row'] = {
-    type: 'Row',
-    props: { gap: 12, justifyContent: 'space-between', padding: 20 },
+  elements["nav-row"] = {
+    type: "Row",
+    props: {
+      gap: 12,
+      justifyContent: "space-between",
+      paddingVertical: 20,
+    },
     children: navChildren,
   };
-  rootChildren.push('nav-row');
+  rootChildren.push("nav-row");
 
   // Root
-  elements['root'] = {
-    type: 'SafeArea',
-    props: { backgroundColor: '#FAF7F2' },
+  elements["root"] = {
+    type: "SafeArea",
+    props: { backgroundColor: "#FAF7F2" },
     children: rootChildren,
   };
 
-  const builtSpec: Spec = { root: 'root', elements };
+  const builtSpec: Spec = { root: "root", elements };
 
   const validation = catalog.validate(builtSpec);
   if (!validation.success) {
-    console.warn('[add-flow builder] produced invalid spec:', validation.error);
+    console.warn("[add-flow builder] produced invalid spec:", validation.error);
   }
 
   return builtSpec;
