@@ -1,4 +1,7 @@
-import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
+/* sql.js (WASM) is loaded dynamically at runtime — only on web. */
+// Avoid top-level import so native bundlers (Android/iOS) don't include Node-only modules.
+
+type SqlJsDatabase = any;
 import type { DatabaseAdapter, RunResult } from './database-adapter';
 
 /**
@@ -70,6 +73,13 @@ export class InMemoryDatabaseAdapter implements DatabaseAdapter {
  * Loads sql.js WASM binary — must be called once at startup.
  */
 export async function createInMemoryAdapter(): Promise<InMemoryDatabaseAdapter> {
+  // Only load sql.js on web to avoid referencing Node built-ins on native platforms
+  if (typeof document === 'undefined') {
+    throw new Error('InMemoryDatabaseAdapter is only available on web platform');
+  }
+  const sqljsModule = await import('sql.js');
+  // initSqlJs is the default export in many builds, fallback to module itself
+  const initSqlJs = (sqljsModule && (sqljsModule.default ?? sqljsModule)) as any;
   const SQL = await initSqlJs({
     // Expo Web's bundler can't serve the .wasm file from node_modules.
     // Load it from CDN instead (matches installed sql.js version).

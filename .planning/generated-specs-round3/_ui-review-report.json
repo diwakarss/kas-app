@@ -48,21 +48,21 @@
         "subtitle": "Drafting settlement agreement",
         "time": "Today",
         "subtitle_raw": "Drafting settlement agreement",
-        "time_raw": "2026-04-17"
+        "time_raw": "2026-06-06"
       },
       {
         "title": "Sunita Menon",
         "subtitle": "Deposition preparation",
-        "time": "Apr 20",
+        "time": "9 Jun",
         "subtitle_raw": "Deposition preparation",
-        "time_raw": "2026-04-20"
+        "time_raw": "2026-06-09"
       },
       {
         "title": "Arun Pillai",
         "subtitle": "Client discovery review",
-        "time": "Apr 23",
+        "time": "12 Jun",
         "subtitle_raw": "Client discovery review",
-        "time_raw": "2026-04-23"
+        "time_raw": "2026-06-12"
       }
     ],
     "belongs_to": "Matter.client_id->Client",
@@ -115,23 +115,23 @@
       {
         "title": "Ramesh Rao",
         "subtitle": "Thai green curry + brown rice",
-        "time": "9:00 AM",
+        "time": "9:00 am",
         "subtitle_raw": "Thai green curry + brown rice",
-        "time_raw": "2026-04-17T03:30:00.000Z"
+        "time_raw": "2026-06-06T03:30:00.000Z"
       },
       {
         "title": "Sunita Menon",
         "subtitle": "Mediterranean bowls",
-        "time": "11:00 AM",
+        "time": "11:00 am",
         "subtitle_raw": "Mediterranean bowls",
-        "time_raw": "2026-04-20T05:30:00.000Z"
+        "time_raw": "2026-06-09T05:30:00.000Z"
       },
       {
         "title": "Arun Pillai",
         "subtitle": "Chicken tikka + naan",
-        "time": "1:00 PM",
+        "time": "1:00 pm",
         "subtitle_raw": "Chicken tikka + naan",
-        "time_raw": "2026-04-23T07:30:00.000Z"
+        "time_raw": "2026-06-12T07:30:00.000Z"
       }
     ],
     "belongs_to": "Booking.client_id->Client",
@@ -184,23 +184,23 @@
       {
         "title": "Ramesh Rao",
         "subtitle": "",
-        "time": "9:00 AM",
+        "time": "9:00 am",
         "subtitle_raw": "",
-        "time_raw": "2026-04-17T03:30:00.000Z"
+        "time_raw": "2026-06-06T03:30:00.000Z"
       },
       {
         "title": "Sunita Menon",
         "subtitle": "",
-        "time": "11:00 AM",
+        "time": "11:00 am",
         "subtitle_raw": "",
-        "time_raw": "2026-04-20T05:30:00.000Z"
+        "time_raw": "2026-06-09T05:30:00.000Z"
       },
       {
         "title": "Arun Pillai",
         "subtitle": "",
-        "time": "1:00 PM",
+        "time": "1:00 pm",
         "subtitle_raw": "",
-        "time_raw": "2026-04-23T07:30:00.000Z"
+        "time_raw": "2026-06-12T07:30:00.000Z"
       }
     ],
     "belongs_to": "Showing.client_id->Client",
@@ -252,23 +252,23 @@
       {
         "title": "Bridal lehenga, heavy work",
         "subtitle": "Awaiting fabric delivery",
-        "time": "9:00 AM",
+        "time": "9:00 am",
         "subtitle_raw": "Awaiting fabric delivery",
-        "time_raw": "2026-04-17T03:30:00.000Z"
+        "time_raw": "2026-06-06T03:30:00.000Z"
       },
       {
         "title": "Two-piece suit, charcoal wool",
         "subtitle": "Adjust waist by 2 cm",
-        "time": "11:00 AM",
+        "time": "11:00 am",
         "subtitle_raw": "Adjust waist by 2 cm",
-        "time_raw": "2026-04-20T05:30:00.000Z"
+        "time_raw": "2026-06-09T05:30:00.000Z"
       },
       {
         "title": "Kurta set, festive trim",
         "subtitle": "Ready for final fitting",
-        "time": "1:00 PM",
+        "time": "1:00 pm",
         "subtitle_raw": "Ready for final fitting",
-        "time_raw": "2026-04-23T07:30:00.000Z"
+        "time_raw": "2026-06-12T07:30:00.000Z"
       }
     ],
     "belongs_to": "Fitting.order_id->Order",
@@ -322,21 +322,21 @@
         "subtitle": "Ancient Rome",
         "time": "Today",
         "subtitle_raw": "Ancient Rome",
-        "time_raw": "2026-04-17"
+        "time_raw": "2026-06-06"
       },
       {
         "title": "Spanish Steps",
         "subtitle": "Vatican",
-        "time": "Apr 20",
+        "time": "9 Jun",
         "subtitle_raw": "Vatican",
-        "time_raw": "2026-04-20"
+        "time_raw": "2026-06-09"
       },
       {
         "title": "Vatican entrance",
         "subtitle": "Food Tour",
-        "time": "Apr 23",
+        "time": "12 Jun",
         "subtitle_raw": "Food Tour",
-        "time_raw": "2026-04-23"
+        "time_raw": "2026-06-12"
       }
     ],
     "belongs_to": null,
@@ -391,21 +391,21 @@
         "subtitle": "Bride wants mandap facing east",
         "time": "Today",
         "subtitle_raw": "Bride wants mandap facing east",
-        "time_raw": "2026-04-17"
+        "time_raw": "2026-06-06"
       },
       {
         "title": "Sarah & Mike",
         "subtitle": "Confirm cocktail hour start time",
-        "time": "Apr 20",
+        "time": "9 Jun",
         "subtitle_raw": "Confirm cocktail hour start time",
-        "time_raw": "2026-04-20"
+        "time_raw": "2026-06-09"
       },
       {
         "title": "Lee & Hana",
         "subtitle": "Rain backup: banquet hall",
-        "time": "Apr 23",
+        "time": "12 Jun",
         "subtitle_raw": "Rain backup: banquet hall",
-        "time_raw": "2026-04-23"
+        "time_raw": "2026-06-12"
       }
     ],
     "belongs_to": "Event.couple_id->Couple",
