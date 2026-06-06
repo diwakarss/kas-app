@@ -40,13 +40,16 @@ export default function SearchBar({
         accessibilityLabel="Search students, classes, and payments"
         accessibilityRole="search"
         accessibilityHint="Type to search across all your data"
-        style={{
-          flex: 1,
-          fontFamily: "Inter_400Regular",
-          fontSize: 16,
-          color: colors.clay,
-          paddingVertical: 8,
-        }}
+        style={
+          {
+            flex: 1,
+            fontFamily: "Inter_400Regular",
+            fontSize: 16,
+            color: colors.clay,
+            paddingVertical: 8,
+            outlineStyle: "none",
+          } as any
+        }
       />
       {value.length > 0 && (
         <Pressable
